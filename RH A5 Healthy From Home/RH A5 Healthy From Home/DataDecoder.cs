@@ -1,11 +1,16 @@
-﻿
-namespace RHA5HealthyFromHome
+﻿namespace RHA5HealthyFromHome
 {
-    class DataDecoder
-{
-    static void Main(string[] args)
-    {
-        Console.WriteLine("Hello World!");
+    class DataDecode{
+        public static string Decode(string data)
+        {
+            int[] difData = [];
+            string decodedData = "";
+            for (int i = 0; i < data.Length; i++)
+            {
+                
+            }
+            return decodedData;
+
+        }
     }
-}
 }
