@@ -1,16 +1,29 @@
-﻿namespace RHA5HealthyFromHome
+﻿using System.Data.SqlTypes;
+
+namespace RH_A5_Healthy_From_Home
 {
-    class DataDecode{
-        public static string Decode(string data)
+    public class DataDecode{
+
+       public static List<int> Decode(string data)
         {
-            int[] difData = [];
+            List<int> difDataInt = new List<int>();
             string decodedData = "";
+            string substring = "";
             for (int i = 0; i < data.Length; i++)
             {
-                
+                string charData = data.Substring(i, 1);
+                if (charData != " ")
+                {
+                    substring += charData;
+                }
+                else
+                {
+                    int decValue = Convert.ToInt32(substring, 16);
+                    difDataInt.Add(decValue);
+                    substring = "";
+                }
             }
-            return decodedData;
-
+            return difDataInt;
         }
     }
 }

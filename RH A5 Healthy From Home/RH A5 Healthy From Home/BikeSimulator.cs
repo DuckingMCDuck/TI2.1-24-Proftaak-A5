@@ -2,7 +2,7 @@
 using System.Text;
 using System.Threading;
 
-namespace FietsDemo
+namespace FietsDemoRH_A5_Healthy_From_Home
 {
     public class HexSimulator
     {
@@ -23,12 +23,12 @@ namespace FietsDemo
 
                 string dataPage = rand.Next(2) == 0 ? "10" : "19";
 
-                string randomHexPart = GenerateRandomHex(12);  
+                string randomHexPart = GenerateRandomHex(12);
 
                 string simulatedMessage = $"{fixedPrefix} {dataPage} {randomHexPart}";
                 Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage}");
 
-                Thread.Sleep(250); 
+                Thread.Sleep(250);
             }
         }
 
