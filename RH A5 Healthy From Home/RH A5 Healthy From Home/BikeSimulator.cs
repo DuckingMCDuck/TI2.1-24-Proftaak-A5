@@ -2,7 +2,7 @@
 using System.Text;
 using System.Threading;
 
-namespace FietsDemoRH_A5_Healthy_From_Home
+namespace RH_A5_Healthy_From_Home
 {
     public class HexSimulator
     {
