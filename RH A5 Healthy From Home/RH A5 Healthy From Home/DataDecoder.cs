@@ -11,56 +11,72 @@ namespace RH_A5_Healthy_From_Home
 
         public static List<(string, int)> Decode(string data)
         {
-            List<(string, int)> dataWithNames = new List<(string, int)>();
-            List<int> difDataInt = new List<int>();
-            string substring = "";
-            for (int i = 0; i < data.Length; i++)
-            {
-                string charData = data.Substring(i, 1);
 
-                if (charData != " ")
-                {
-                    substring += charData;
-                }
-                else if (charData == " ")
-                {
-                    int decValue = Convert.ToInt32(substring, 16);
-                    difDataInt.Add(decValue);
-                    substring = "";
-                }
-            }
-            if (difDataInt[4] == 16)
+            try
             {
-                for (int i = 0; i < difDataInt.Count; i++)
+                List<(string, int)> dataWithNames = new List<(string, int)>();
+                List<int> difDataInt = new List<int>();
+                string substring = "";
+                for (int i = 0; i < data.Length; i++)
                 {
-                    string name = Enum.GetName(typeof(DataNames16), i);
-                    (string, int) tuple = (name, difDataInt[i]);
-                    dataWithNames.Add(tuple);
+                    string charData = data.Substring(i, 1);
+
+                    if (charData != " ")
+                    {
+                        substring += charData;
+                    }
+                    else if (charData == " ")
+                    {
+                        int decValue = Convert.ToInt32(substring, 16);
+                        difDataInt.Add(decValue);
+                        substring = "";
+                    }
                 }
+                if (difDataInt[4] == 16)
+                {
+                    for (int i = 0; i < difDataInt.Count; i++)
+                    {
+                        string name = Enum.GetName(typeof(DataNames16), i);
+                        (string, int) tuple = (name, difDataInt[i]);
+                        dataWithNames.Add(tuple);
+                    }
+                }
+                if (difDataInt[4] == 25)
+                {
+                    for (int i = 0; i < difDataInt.Count; i++)
+                    {
+                        string name = Enum.GetName(typeof(DataNames25), i);
+                        (string, int) tuple = (name, difDataInt[i]);
+                        dataWithNames.Add(tuple);
+                    }
+                }
+                listForToString = dataWithNames;
+                return dataWithNames;
             }
-            if (difDataInt[4] == 25)
+            catch (Exception e)
             {
-                for (int i = 0; i < difDataInt.Count; i++)
-                {
-                    string name = Enum.GetName(typeof(DataNames25), i);
-                    (string, int) tuple = (name, difDataInt[i]);
-                    dataWithNames.Add(tuple);
-                }
+                Console.WriteLine("Not able to decode data");
+                return null;
             }
-            listForToString = dataWithNames;
-            return dataWithNames;
         }
 
         public static string MakeString(List<(string, int)> list)
         {
-            string result = String.Empty;
-
-            for (int i = 0; i < listForToString.Count; i++)
+            try
             {
-                result += $"{listForToString[i].Item1}: {listForToString[i].Item2} \n";
-            }
+                string result = String.Empty;
 
-            return result;
+                for (int i = 0; i < listForToString.Count; i++)
+                {
+                    result += $"{listForToString[i].Item1}: {listForToString[i].Item2} \n";
+                }
+
+                return result;
+            }
+            catch (Exception e)
+            {
+                return "not able to make string";
+            }
         }
     }
 }
