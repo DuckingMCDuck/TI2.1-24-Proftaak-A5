@@ -8,16 +8,16 @@ namespace RH_A5_Healthy_From_Home
        public static List<int> Decode(string data)
         {
             List<int> difDataInt = new List<int>();
-            string decodedData = "";
             string substring = "";
             for (int i = 0; i < data.Length; i++)
             {
                 string charData = data.Substring(i, 1);
-                if (charData != " ")
+                
+                if (charData != " " )
                 {
                     substring += charData;
                 }
-                else
+                else if (charData == " ")
                 {
                     int decValue = Convert.ToInt32(substring, 16);
                     difDataInt.Add(decValue);

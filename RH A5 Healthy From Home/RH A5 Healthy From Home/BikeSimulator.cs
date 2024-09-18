@@ -6,12 +6,12 @@ namespace RH_A5_Healthy_From_Home
 {
     public class HexSimulator
     {
-        static void Main(string[] args)
-        {
-            HexSimulator simulator = new HexSimulator();
+        //static void Main(string[] args)
+        //{
+        //    HexSimulator simulator = new HexSimulator();
 
-            simulator.StartSimulation();
-        }
+        //    simulator.StartSimulation();
+        //}
 
         public void StartSimulation()
         {
