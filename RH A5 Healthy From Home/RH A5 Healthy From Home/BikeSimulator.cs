@@ -26,20 +26,21 @@ namespace RH_A5_Healthy_From_Home
             while (true)
             {
                 string fixedPrefix = "A4 09 4E 05";
-                string dataPage = rand.Next(2) == 0 ? "10" : "19";
-                string randomHexPart;
+                string randomHexPart16;
+                string randomHexPart25;
 
-                if (dataPage == "10")
-                {
-                    randomHexPart = GenerateDataPage16(rand);
-                }
-                else
-                {
-                    randomHexPart = GenerateDataPage25(rand);
-                }
 
-                string simulatedMessage = $"{fixedPrefix} {randomHexPart}";
-                Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage}");
+
+                randomHexPart16 = GenerateDataPage16(rand);
+
+                string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
+                Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}");
+
+
+                randomHexPart25 = GenerateDataPage25(rand);
+
+                string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
+                Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}");
 
                 Thread.Sleep(1000);
             }
