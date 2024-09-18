@@ -12,25 +12,20 @@ namespace RH_A5_Healthy_From_Home
         public static List<(string, int)> Decode(string data)
         {
 
+
             try
             {
                 List<(string, int)> dataWithNames = new List<(string, int)>();
                 List<int> difDataInt = new List<int>();
-                string substring = "";
-                for (int i = 0; i < data.Length; i++)
-                {
-                    string charData = data.Substring(i, 1);
 
-                    if (charData != " ")
-                    {
-                        substring += charData;
-                    }
-                    else if (charData == " ")
-                    {
-                        int decValue = Convert.ToInt32(substring, 16);
-                        difDataInt.Add(decValue);
-                        substring = "";
-                    }
+                string[] substrings = data.Split(":" + " ");
+                string chopedData = substrings[1];
+
+                string[] splitData = chopedData.Split(" ");
+                for (int i =  0; i < splitData.Length; i++)
+                {
+                    int decValue = Convert.ToInt32(splitData[i], 16);
+                    difDataInt.Add(decValue);
                 }
                 if (difDataInt[4] == 16)
                 {
@@ -40,6 +35,7 @@ namespace RH_A5_Healthy_From_Home
                         (string, int) tuple = (name, difDataInt[i]);
                         dataWithNames.Add(tuple);
                     }
+
                 }
                 if (difDataInt[4] == 25)
                 {
@@ -51,6 +47,7 @@ namespace RH_A5_Healthy_From_Home
                     }
                 }
                 listForToString = dataWithNames;
+                Console.WriteLine(MakeString(dataWithNames));
                 return dataWithNames;
             }
             catch (Exception e)
@@ -75,7 +72,7 @@ namespace RH_A5_Healthy_From_Home
             }
             catch (Exception e)
             {
-                return "not able to make string";
+                return "Not able to make string";
             }
         }
     }
