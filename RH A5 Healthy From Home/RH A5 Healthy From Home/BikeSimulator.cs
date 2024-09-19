@@ -28,13 +28,18 @@ namespace RH_A5_Healthy_From_Home
                 randomHexPart16 = GenerateDataPage16(rand);
 
                 string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
-                Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}");
-
+                Console.Clear();
+                string result16 = $"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}";
+                //Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}");
+                DataDecode.Decode(result16);
+                
 
                 randomHexPart25 = GenerateDataPage25(rand);
 
                 string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
-                Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}");
+                string result25 = $"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}";
+                //Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}");
+                DataDecode.Decode(result25);
 
                 Thread.Sleep(1000);
             }
@@ -45,10 +50,10 @@ namespace RH_A5_Healthy_From_Home
             StringBuilder sb = new StringBuilder();
 
             // Byte 0: Data Page Number 
-            sb.Append("10 ").Append(" ");
+            sb.Append("10").Append(" ");
 
             // Byte 1: Equipment Type Bit Field 
-            sb.Append("19 ").Append(" ");
+            sb.Append("19").Append(" ");
 
             // Byte 2: Elapsed Time in increments of 0.25 seconds, rolls over at 64 seconds (256 * 0.25)
             elapsedTime = (elapsedTime + 1) % 256; 
@@ -81,7 +86,7 @@ namespace RH_A5_Healthy_From_Home
             StringBuilder sb = new StringBuilder();
 
             // Byte 0: Data Page Number 
-            sb.Append("19 ").Append(" ");
+            sb.Append("19").Append(" ");
 
             // Byte 1: Update Event Count (increments with each information update)
             updateEventCount = (updateEventCount + 1) % 256;
