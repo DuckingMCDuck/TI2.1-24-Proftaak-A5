@@ -13,12 +13,6 @@ namespace RH_A5_Healthy_From_Home
         private int instantaneousPower = 150; 
         private int cadence = 80; 
 
-        static void Main(string[] args)
-        {
-            HexSimulator simulator = new HexSimulator();
-            simulator.StartSimulation();
-        }
-
         public void StartSimulation()
         {
             Random rand = new Random();
