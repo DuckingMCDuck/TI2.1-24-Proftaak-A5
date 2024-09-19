@@ -8,4 +8,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="BLELibrary">
+      <HintPath>BLELibrary.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
