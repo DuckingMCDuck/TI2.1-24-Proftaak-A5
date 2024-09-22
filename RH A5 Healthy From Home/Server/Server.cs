@@ -11,6 +11,10 @@ namespace Server
     internal class Server
     {
         // EXAMPLE CODE:
+        //dit is example is door Daan gemaakt. Misschien moeten we gaan werken met Async. 
+
+        //methodes die moeten komen van de klassendiagram zijn: 
+        //-Update(string ConvertedData) en WriteToFile(String ConvertedData)
 
         private static TcpListener listener;
         private static List<ClientHandler> clients = new List<ClientHandler>();
@@ -54,6 +58,17 @@ namespace Server
             {
                 client.Write(packet);
             }
+        }
+
+        public void Update(string convertedData)
+        {
+
+
+        }
+
+        public void WriteToFile(string convertedData) 
+        { 
+        
         }
     }
 }
