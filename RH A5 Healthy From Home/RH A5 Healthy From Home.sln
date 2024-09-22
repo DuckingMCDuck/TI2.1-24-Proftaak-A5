@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34018.315
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RH A5 Healthy From Home", "RH A5 Healthy From Home\RH A5 Healthy From Home.csproj", "{4763382B-6395-41FE-B5CC-32DD3F325B40}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RH A5 Healthy From Home", "RH A5 Healthy From Home\RH A5 Healthy From Home.csproj", "{4763382B-6395-41FE-B5CC-32DD3F325B40}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{F5E4A44D-6225-4C31-85BF-49E9FD375CE3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{4763382B-6395-41FE-B5CC-32DD3F325B40}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4763382B-6395-41FE-B5CC-32DD3F325B40}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4763382B-6395-41FE-B5CC-32DD3F325B40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5E4A44D-6225-4C31-85BF-49E9FD375CE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5E4A44D-6225-4C31-85BF-49E9FD375CE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5E4A44D-6225-4C31-85BF-49E9FD375CE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5E4A44D-6225-4C31-85BF-49E9FD375CE3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
