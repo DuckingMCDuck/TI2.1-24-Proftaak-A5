@@ -47,7 +47,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client.cs" />
+    <Compile Include="DokterClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VREngine.cs" />
+    <Compile Include="VRServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
