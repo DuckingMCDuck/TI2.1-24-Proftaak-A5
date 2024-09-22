@@ -10,6 +10,8 @@ namespace Server
 {
     internal class Server
     {
+        // EXAMPLE CODE:
+
         private static TcpListener listener;
         private static List<ClientHandler> clients = new List<ClientHandler>();
 

@@ -11,6 +11,8 @@ namespace Server
 {
     internal class ClientHandler
     {
+        // EXAMPLE CODE:
+
         #region connection stuff
         private TcpClient tcpClient;
         private NetworkStream stream;
