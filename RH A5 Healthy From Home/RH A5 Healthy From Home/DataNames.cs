@@ -42,4 +42,9 @@ namespace RH_A5_Healthy_From_Home
         Checksum
 
     }
+
+    enum HeartRate
+    {
+        HeartRate
+    }
 }

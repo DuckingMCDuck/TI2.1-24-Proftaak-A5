@@ -22,10 +22,13 @@ namespace RH_A5_Healthy_From_Home
                 string chopedData = substrings[1];
 
                 string[] splitData = chopedData.Split(" ");
-                for (int i =  0; i < splitData.Length; i++)
+                for (int i = 0; i < splitData.Length; i++)
                 {
+                    if (splitData[i].Length == 2)
+                    {
                     int decValue = Convert.ToInt32(splitData[i], 16);
                     difDataInt.Add(decValue);
+                    }
                 }
                 if (difDataInt[4] == 16)
                 {
@@ -45,6 +48,12 @@ namespace RH_A5_Healthy_From_Home
                         (string, int) tuple = (name, difDataInt[i]);
                         dataWithNames.Add(tuple);
                     }
+                }
+                if (difDataInt.Count == 8)
+                {
+                    string name = Enum.GetName(typeof(HeartRate), 0);
+                    (string, int) tuple = (name, difDataInt[1]);
+                    dataWithNames.Add(tuple);
                 }
                 listForToString = dataWithNames;
                 Console.WriteLine(MakeString(dataWithNames));
