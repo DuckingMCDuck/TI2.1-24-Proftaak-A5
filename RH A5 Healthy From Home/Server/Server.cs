@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Server
 {
@@ -66,9 +67,16 @@ namespace Server
 
         }
 
-        public void WriteToFile(string convertedData) 
-        { 
-        
+        public async void WriteToFile(string convertedData) 
+        {
+            // is asynchroon, kan ook zonder.
+            string documentPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            using (StreamWriter outputToFile = new StreamWriter(Path.Combine(documentPath, "Async Data of Client")))
+            { 
+                await outputToFile.WriteAsync(convertedData);
+            }
+
         }
     }
 }
