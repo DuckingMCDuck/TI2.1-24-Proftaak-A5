@@ -11,7 +11,9 @@ namespace RH_A5_Healthy_From_Home
         private int updateEventCount = 0;
         private int heartRate = 80; 
         private int instantaneousPower = 150; 
-        private int cadence = 80; 
+        private int cadence = 80;
+        private int dataPagePrintCount = 0;
+        private int energyExpended = 0;
 
         public void StartSimulation()
         {
@@ -23,25 +25,26 @@ namespace RH_A5_Healthy_From_Home
                 string randomHexPart16;
                 string randomHexPart25;
 
-
-
                 randomHexPart16 = GenerateDataPage16(rand);
-
                 string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
-                Console.Clear();
-                string result16 = $"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}";
-                //Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}");
-                DataDecode.Decode(result16);
-                
+                Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}");
 
                 randomHexPart25 = GenerateDataPage25(rand);
-
                 string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
                 string result25 = $"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}";
                 //Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}");
                 DataDecode.Decode(result25);
 
-                Thread.Sleep(1000);
+                dataPagePrintCount++;
+
+                if (dataPagePrintCount >= 2)
+                {
+                    string heartRateString = GenerateHeartRateString(rand);
+                    Console.WriteLine($"Received from 00002a37 - 0000 - 1000 - 8000 - 00805f9b34fb: {heartRateString}");
+                    dataPagePrintCount = 0; 
+                }
+
+                Thread.Sleep(250); 
             }
         }
 
@@ -115,6 +118,38 @@ namespace RH_A5_Healthy_From_Home
             int targetPowerLimit = rand.Next(0, 4); 
             int flagsAndStatus = (trainerStatus << 4) | targetPowerLimit; 
             sb.Append(flagsAndStatus.ToString("X2"));
+
+            return sb.ToString();
+        }
+
+        private string GenerateHeartRateString(Random rand)
+        {
+            // Gradual change
+            heartRate += rand.Next(-1, 2); 
+            heartRate = Math.Clamp(heartRate, 60, 180); 
+
+            // Increase energy expended over time
+            energyExpended += rand.Next(1, 5); 
+
+            // Generate 1 or 2 RR intervals
+            int rrInterval1 = rand.Next(600, 1000); 
+            int rrInterval2 = rand.Next(600, 1000); 
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append("16 "); 
+            sb.Append(heartRate.ToString("X2")).Append(" "); 
+
+            // Add Energy Expended (2 bytes)
+            sb.Append((energyExpended & 0xFF).ToString("X2")).Append(" ");
+            sb.Append(((energyExpended >> 8) & 0xFF).ToString("X2")).Append(" ");
+
+            // Add RR-Interval 1 (2 bytes)
+            sb.Append((rrInterval1 & 0xFF).ToString("X2")).Append(" ");
+            sb.Append(((rrInterval1 >> 8) & 0xFF).ToString("X2")).Append(" ");
+
+            // Add RR-Interval 2 (2 bytes)
+            sb.Append((rrInterval2 & 0xFF).ToString("X2")).Append(" ");
+            sb.Append(((rrInterval2 >> 8) & 0xFF).ToString("X2"));
 
             return sb.ToString();
         }
