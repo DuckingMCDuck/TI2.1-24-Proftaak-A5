@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace RH_A5_Healthy_From_Home
+namespace Client
 {
     public class DataDecode{
 
@@ -18,11 +19,11 @@ namespace RH_A5_Healthy_From_Home
                 List<(string, int)> dataWithNames = new List<(string, int)>();
                 List<int> difDataInt = new List<int>();
 
-                string[] substrings = data.Split(":" + " ");
+                string[] substrings = data.Split(new char[] { ':' });
                 string chopedData = substrings[1];
 
-                string[] splitData = chopedData.Split(" ");
-                for (int i =  0; i < splitData.Length; i++)
+                string[] splitData = chopedData.Split(' ');
+                for (int i =  1; i < splitData.Length; i++)
                 {
                     int decValue = Convert.ToInt32(splitData[i], 16);
                     difDataInt.Add(decValue);
