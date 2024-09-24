@@ -6,6 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Net.Http;
 
 namespace Server
 {
@@ -16,6 +17,18 @@ namespace Server
 
         //methodes die moeten komen van de klassendiagram zijn: 
         //-Update(string ConvertedData) en WriteToFile(String ConvertedData)
+
+        // wat willen we gebruiken qua threadsafety iets makelijks zoals ConcurrentBag dan hoef je alleen de lijst zo te maken:
+        // ConcurrentBag<ClientHandler> clients = new ConcurrentBag<ClientHandler>(); en in de Disconnect methode dit: clients = new ConcurrentBag<ClientHandler>(clients.Except(new[] { client })); 
+        //voor de clients.remove(...) statement
+        //of we kunnen lock gebruiken, dan moeten we alles in een lock gooien zoals dit:
+        //private static readonly object clientsLock = new object();
+        //  lock (clientsLock)
+        //{
+        //    clients.Add(new ClientHandler(tcpClient));
+        //}
+
+
 
         private static TcpListener listener;
         private static List<ClientHandler> clients = new List<ClientHandler>();
