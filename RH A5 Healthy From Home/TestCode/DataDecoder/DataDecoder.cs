@@ -4,7 +4,7 @@ using System.Data.SqlTypes;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace Client
+namespace TestCode
 {
     public class DataDecode{
 
@@ -19,11 +19,8 @@ namespace Client
                 List<(string, int)> dataWithNames = new List<(string, int)>();
                 List<int> difDataInt = new List<int>();
 
-                string[] substrings = data.Split(new char[] { ':' });
-                string chopedData = substrings[1];
-
-                string[] splitData = chopedData.Split(' ');
-                for (int i =  1; i < splitData.Length; i++)
+                string[] splitData = data.Split(' ');
+                for (int i = 0; i < splitData.Length; i++)
                 {
                     int decValue = Convert.ToInt32(splitData[i], 16);
                     difDataInt.Add(decValue);
@@ -38,7 +35,7 @@ namespace Client
                     }
 
                 }
-                if (difDataInt[4] == 25)
+                else if (difDataInt[4] == 25)
                 {
                     for (int i = 0; i < difDataInt.Count; i++)
                     {
@@ -46,6 +43,12 @@ namespace Client
                         (string, int) tuple = (name, difDataInt[i]);
                         dataWithNames.Add(tuple);
                     }
+                }
+                else if (difDataInt.Count >= 1 && difDataInt.Count <= 10)
+                {
+                    string name = "Heartrate";
+                    (string, int) tuple = (name, difDataInt[1]);
+                    dataWithNames.Add(tuple);
                 }
                 listForToString = dataWithNames;
                 Console.WriteLine(MakeString(dataWithNames));

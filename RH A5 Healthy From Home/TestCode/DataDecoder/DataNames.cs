@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Client
+namespace TestCode
 {
     enum DataNames16
     {
@@ -41,5 +41,9 @@ namespace Client
         FE_State_Bit_Field,
         Checksum
 
+    }
+    enum Heartrate
+    {
+        HeartRate
     }
 }
