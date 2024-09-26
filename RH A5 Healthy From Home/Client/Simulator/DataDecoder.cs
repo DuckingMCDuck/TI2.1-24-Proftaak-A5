@@ -6,14 +6,12 @@ using System.Runtime.CompilerServices;
 
 namespace Client
 {
-    public class DataDecode{
+    public class DataDecoder {
 
         public static List<(string, int)> listForToString = new List<(string, int)>();
 
         public static List<(string, int)> Decode(string data)
         {
-
-
             try
             {
                 List<(string, int)> dataWithNames = new List<(string, int)>();
@@ -51,7 +49,7 @@ namespace Client
                     dataWithNames.Add(tuple);
                 }
                 listForToString = dataWithNames;
-                Console.WriteLine(MakeString(dataWithNames));
+                MainWindow.Client.DebugText = MakeString(dataWithNames);
                 return dataWithNames;
             }
             catch (Exception e)

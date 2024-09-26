@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace Client
 {
@@ -29,20 +31,21 @@ namespace Client
                 randomHexPart16 = GenerateDataPage16(rand);
 
                 string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
-                Console.Clear();
+                MainWindow.Client.DebugText = "";
                 string result16 = $"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}";
-                //Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}");
-                DataDecode.Decode(result16);
+
+                MainWindow.Client.DebugText = $"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}\n";
+                DataDecoder.Decode(result16);
 
 
                 randomHexPart25 = GenerateDataPage25(rand);
 
                 string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
                 string result25 = $"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}";
-                //Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}");
-                DataDecode.Decode(result25);
 
-                Thread.Sleep(1000);
+                MainWindow.Client.DebugText = $"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}\n";
+                DataDecoder.Decode(result25);
+                Thread.Sleep(500);
             }
         }
 
