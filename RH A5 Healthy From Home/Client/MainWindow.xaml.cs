@@ -36,5 +36,26 @@ namespace Client
 
             //}
         }
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            //is de read only box, hierin moet de chats weergegeven worden, chat logica moet nog wordnen toegevoegd.
+            ChatReadOnly.ScrollToEnd();
+        }
+
+        private void TextBox_TextChanged_1(object sender, TextChangedEventArgs e)
+        {
+            //dit is de chatbar, hierin wordt wat getypt is verstuurd hoeft dus niks mee te gebeuren
+        }
+
+        private void sendButton_Click(object sender, RoutedEventArgs e)
+        {
+            //button voor het versturen van de tekst wat in de chatbar staat, en daarna cleared hij wat er in staat
+            string message = ChatBar.Text;
+            if (!string.IsNullOrEmpty(message)) { 
+                ChatReadOnly.AppendText(message);// wissel deze statement om voor chat logica
+                ChatBar.Clear();
+            }
+        }
     }
 }

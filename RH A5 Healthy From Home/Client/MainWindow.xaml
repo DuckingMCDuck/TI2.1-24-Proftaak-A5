@@ -6,7 +6,12 @@
         xmlns:local="clr-namespace:Client"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Loaded="MainWindow_Loaded">
-    <Grid>
-        
+    <Grid Background="Black" OpacityMask="#FF001FFF">
+        <TextBox x:Name="ChatReadOnly" HorizontalAlignment="Center" Margin="0,10,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="780" Height="323" TextChanged="TextBox_TextChanged" IsReadOnly="True"/>
+        <TextBox x:Name="ChatBar" HorizontalAlignment="Center" Margin="0,338,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="780" Height="43" TextChanged="TextBox_TextChanged_1"/>
+        <Button x:Name="sendButton" Content="Send" HorizontalAlignment="Left" Margin="190,400,0,0" VerticalAlignment="Top" Width="430" Click="sendButton_Click"/>
+
+
+
     </Grid>
 </Window>
