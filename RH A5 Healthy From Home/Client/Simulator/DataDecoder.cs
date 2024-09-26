@@ -31,7 +31,6 @@ namespace Client
                         (string, int) tuple = (name, difDataInt[i]);
                         dataWithNames.Add(tuple);
                     }
-
                 }
                 else if (difDataInt[4] == 25)
                 {
@@ -54,7 +53,7 @@ namespace Client
             }
             catch (Exception e)
             {
-                Console.WriteLine("Not able to decode data");
+                MainWindow.Client.DebugText = "Not able to decode data\n";
                 return null;
             }
         }
