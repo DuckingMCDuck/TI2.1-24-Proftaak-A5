@@ -7,6 +7,9 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+        <TextBox x:Name="chatReadOnly" HorizontalAlignment="Left" Margin="10,23,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="311" RenderTransformOrigin="2.781,7.57" Height="283" TextChanged="TextBox_TextChanged"/>
+        <TextBox x:Name="chatBar" HorizontalAlignment="Left" Margin="10,311,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="311" RenderTransformOrigin="0.502,0.535" Height="41" TextChanged="TextBox_TextChanged_1"/>
+        <Button x:Name="sendButton" Content="Button" HorizontalAlignment="Left" Margin="78,372,0,0" VerticalAlignment="Top" Height="19" Width="175" Click="sendButton_Click"/>
+
     </Grid>
 </Window>
