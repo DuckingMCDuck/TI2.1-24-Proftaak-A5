@@ -31,7 +31,7 @@ namespace Server
 
 
         private static TcpListener listener;
-        private static List<ClientHandler> clients = new List<ClientHandler>();
+        private static List<TcpClient> clients = new List<TcpClient>();
 
         static void Main(string[] args)
         {
@@ -41,36 +41,68 @@ namespace Server
             listener.Start();
             listener.BeginAcceptTcpClient(new AsyncCallback(OnConnect), null);
 
-            Console.ReadLine();
+            while (true)
+            {
+                Console.WriteLine("Press 'q' to quit.");
+                if (Console.ReadLine() == "q") break;
+            }
         }
 
         private static void OnConnect(IAsyncResult ar)
         {
-            var tcpClient = listener.EndAcceptTcpClient(ar);
-            Console.WriteLine($"Client connected from {tcpClient.Client.RemoteEndPoint}");
-            clients.Add(new ClientHandler(tcpClient));
+            TcpClient tcpClient = listener.EndAcceptTcpClient(ar);
+
+            clients.Add(tcpClient);
+
+            // tijdelijk: pak clientIP en port (moet ID worden of naam oid)
+            string clientEndpoint = tcpClient.Client.RemoteEndPoint.ToString();
+
+            Console.WriteLine($"Client connected: {clientEndpoint}");
+
+            Console.WriteLine($"Total clients connected: {clients.Count}");
+
             listener.BeginAcceptTcpClient(new AsyncCallback(OnConnect), null);
         }
 
         internal static void Broadcast(string packet)
         {
+            byte[] data = Encoding.ASCII.GetBytes(packet);
+
             foreach (var client in clients)
             {
-                client.Write(packet);
+                try
+                {
+                    NetworkStream stream = client.GetStream();
+                    stream.Write(data, 0, data.Length); 
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to send to client: {ex.Message}");
+                }
             }
         }
 
-        internal static void Disconnect(ClientHandler client)
+        internal static void Disconnect(TcpClient client)
         {
-            clients.Remove(client);
-            Console.WriteLine("Client disconnected");
+            clients.Remove(client); 
+            string clientEndpoint = client.Client.RemoteEndPoint.ToString();
+            Console.WriteLine($"Client disconnected: {clientEndpoint}");
         }
 
         internal static void SendToUser(string user, string packet)
         {
-            foreach (var client in clients.Where(c => c.UserName == user))
+            byte[] data = Encoding.ASCII.GetBytes(packet);
+            foreach (var client in clients.Where(c => c.Client.RemoteEndPoint.ToString() == user))
             {
-                client.Write(packet);
+                try
+                {
+                    NetworkStream stream = client.GetStream();
+                    stream.Write(data, 0, data.Length); 
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to send to client: {ex.Message}");
+                }
             }
         }
 
