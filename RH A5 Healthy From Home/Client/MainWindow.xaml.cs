@@ -142,6 +142,9 @@ namespace Client
             // Show Bike/ Simulator data (Debug)
             if (DebugScrolling)
                 TxtBikeData.ScrollToEnd();
+            // Keep only the recent data availible to scroll through
+            if (TxtBikeData.LineCount > 300)
+                TxtBikeData.Text = TxtBikeData.Text.Substring(TxtBikeData.LineCount - 100);
         }
 
         private void ReadChat_TextChanged(object sender, TextChangedEventArgs e)
