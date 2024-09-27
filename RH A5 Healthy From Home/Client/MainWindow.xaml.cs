@@ -65,6 +65,7 @@ namespace Client
             #region Connecting via Simulator
             // Start Simulator on a new Thread
             Simulating = true;
+            ToggleSimulator();
             #endregion
         }
 
@@ -135,6 +136,19 @@ namespace Client
             }
         }
 
+        private static void ToggleSimulator()
+        {
+            if (Simulating)
+            {
+                Thread NewThread = new Thread(() => {
+                    UsingSimulator();
+                });
+                // Threads running in the background close if the application closes
+                NewThread.IsBackground = true;
+                NewThread.Start();
+            }
+        }
+
         // Generated Events:
         private void TxtBikeData_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -172,15 +186,7 @@ namespace Client
         private void BtnSimulate_Click(object sender, RoutedEventArgs e)
         {
             Simulating = !Simulating;
-            if (Simulating)
-            {
-                Thread NewThread = new Thread(() => {
-                    UsingSimulator();
-                });
-                // Threads running in the background close if the application closes
-                NewThread.IsBackground = true;
-                NewThread.Start();
-            }
+            ToggleSimulator();
         }
 
 

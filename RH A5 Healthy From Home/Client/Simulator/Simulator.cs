@@ -31,25 +31,25 @@ namespace Client
             randomHexPart16 = GenerateDataPage16(rand);
             string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
             string result16 = $"{simulatedMessage16}";
-            MainWindow.Client.DebugText = $"{result16}\n";
+            MainWindow.Client.DebugText = $"\n{result16}\n";
             DataDecoder.Decode(result16);
 
 
             randomHexPart25 = GenerateDataPage25(rand);
             string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
             string result25 = $"{simulatedMessage25}";
-            MainWindow.Client.DebugText = $"{result25}\n";
+            MainWindow.Client.DebugText = $"\n{result25}\n";
             DataDecoder.Decode(result25);
 
-                
-            //if (dataPagePrintCount == 2)
-            //{
-            //    string heartRateString = GenerateHeartRateString(rand);
-            //    MainWindow.Client.DebugText = $"Received from 00002a37 - 0000 - 1000 - 8000 - 00805f9b34fb: {heartRateString}\n";
-            //    dataPagePrintCount = 0;
-            //}
 
-            //dataPagePrintCount++;
+            if (dataPagePrintCount == 2)
+            {
+                string heartRateString = GenerateHeartRateString(rand);
+                MainWindow.Client.DebugText = $"\nReceived from 00002a37 - 0000 - 1000 - 8000 - 00805f9b34fb: {heartRateString}\n";
+                dataPagePrintCount = 0;
+            }
+
+            dataPagePrintCount++;
             Thread.Sleep(500);
         }
 
@@ -127,45 +127,45 @@ namespace Client
             return sb.ToString();
         }
 
-        //private string GenerateHeartRateString(Random rand)
-        //{
-        //    // Gradual change
-        //    heartRate += rand.Next(-1, 2);
+        private string GenerateHeartRateString(Random rand)
+        {
+            // Gradual change
+            heartRate += rand.Next(-1, 2);
 
-        //    heartRate = Clamp(heartRate, 60, 180);
+            heartRate = Clamp(heartRate, 60, 180);
 
-        //    // Increase energy expended over time
-        //    energyExpended += rand.Next(1, 5);
+            // Increase energy expended over time
+            energyExpended += rand.Next(1, 5);
 
-        //    // Generate 1 or 2 RR intervals
-        //    int rrInterval1 = rand.Next(600, 1000);
-        //    int rrInterval2 = rand.Next(600, 1000);
+            // Generate 1 or 2 RR intervals
+            int rrInterval1 = rand.Next(600, 1000);
+            int rrInterval2 = rand.Next(600, 1000);
 
-        //    StringBuilder sb = new StringBuilder();
-        //    sb.Append("16 ");
-        //    sb.Append(heartRate.ToString("X2")).Append(" ");
+            StringBuilder sb = new StringBuilder();
+            sb.Append("16 ");
+            sb.Append(heartRate.ToString("X2")).Append(" ");
 
-        //    // Add Energy Expended (2 bytes)
-        //    sb.Append((energyExpended & 0xFF).ToString("X2")).Append(" ");
-        //    sb.Append(((energyExpended >> 8) & 0xFF).ToString("X2")).Append(" ");
+            // Add Energy Expended (2 bytes)
+            sb.Append((energyExpended & 0xFF).ToString("X2")).Append(" ");
+            sb.Append(((energyExpended >> 8) & 0xFF).ToString("X2")).Append(" ");
 
-        //    // Add RR-Interval 1 (2 bytes)
-        //    sb.Append((rrInterval1 & 0xFF).ToString("X2")).Append(" ");
-        //    sb.Append(((rrInterval1 >> 8) & 0xFF).ToString("X2")).Append(" ");
+            // Add RR-Interval 1 (2 bytes)
+            sb.Append((rrInterval1 & 0xFF).ToString("X2")).Append(" ");
+            sb.Append(((rrInterval1 >> 8) & 0xFF).ToString("X2")).Append(" ");
 
-        //    // Add RR-Interval 2 (2 bytes)
-        //    sb.Append((rrInterval2 & 0xFF).ToString("X2")).Append(" ");
-        //    sb.Append(((rrInterval2 >> 8) & 0xFF).ToString("X2"));
+            // Add RR-Interval 2 (2 bytes)
+            sb.Append((rrInterval2 & 0xFF).ToString("X2")).Append(" ");
+            sb.Append(((rrInterval2 >> 8) & 0xFF).ToString("X2"));
 
-        //    return sb.ToString();
-        //}
+            return sb.ToString();
+        }
 
-        //// Custom Clamp method, because Math.Clamp doesn't work
-        //public static int Clamp(int value, int min, int max)
-        //{
-        //    if (value < min) return min;
-        //    if (value > max) return max;
-        //    return value;
-        //}
+        // Custom Clamp method, because Math.Clamp doesn't work
+        public static int Clamp(int value, int min, int max)
+        {
+            if (value < min) return min;
+            if (value > max) return max;
+            return value;
+        }
     }
 }
