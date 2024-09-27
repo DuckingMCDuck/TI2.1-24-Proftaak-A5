@@ -20,40 +20,37 @@ namespace Client
         private int dataPagePrintCount = 0;
         private int energyExpended = 0;
 
-        public void StartSimulation()
+        public void SimulateData()
         {
             Random rand = new Random();
 
-            while (true)
-            {
-                string fixedPrefix = "A4 09 4E 05";
-                string randomHexPart16;
-                string randomHexPart25;
+            string fixedPrefix = "A4 09 4E 05";
+            string randomHexPart16;
+            string randomHexPart25;
 
-                randomHexPart16 = GenerateDataPage16(rand);
-                string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
-                string result16 = $"{simulatedMessage16}";
-                MainWindow.Client.DebugText = $"{result16}\n";
-                DataDecoder.Decode(result16);
+            randomHexPart16 = GenerateDataPage16(rand);
+            string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
+            string result16 = $"{simulatedMessage16}";
+            MainWindow.Client.DebugText = $"{result16}\n";
+            DataDecoder.Decode(result16);
 
 
-                randomHexPart25 = GenerateDataPage25(rand);
-                string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
-                string result25 = $"{simulatedMessage25}";
-                MainWindow.Client.DebugText = $"{result25}\n";
-                DataDecoder.Decode(result25);
+            randomHexPart25 = GenerateDataPage25(rand);
+            string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
+            string result25 = $"{simulatedMessage25}";
+            MainWindow.Client.DebugText = $"{result25}\n";
+            DataDecoder.Decode(result25);
 
                 
-                //if (dataPagePrintCount == 2)
-                //{
-                //    string heartRateString = GenerateHeartRateString(rand);
-                //    MainWindow.Client.DebugText = $"Received from 00002a37 - 0000 - 1000 - 8000 - 00805f9b34fb: {heartRateString}\n";
-                //    dataPagePrintCount = 0;
-                //}
+            //if (dataPagePrintCount == 2)
+            //{
+            //    string heartRateString = GenerateHeartRateString(rand);
+            //    MainWindow.Client.DebugText = $"Received from 00002a37 - 0000 - 1000 - 8000 - 00805f9b34fb: {heartRateString}\n";
+            //    dataPagePrintCount = 0;
+            //}
 
-                //dataPagePrintCount++;
-                Thread.Sleep(500);
-            }
+            //dataPagePrintCount++;
+            Thread.Sleep(500);
         }
 
         private string GenerateDataPage16(Random rand)

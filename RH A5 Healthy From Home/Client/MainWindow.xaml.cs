@@ -34,6 +34,7 @@ namespace Client
         // Publics:
         public static TcpClient TcpClientConnection = new TcpClient();
         public static List<Tuple<string, byte[]>> SessionData = new List<Tuple<string, byte[]>>();
+        public static Simulator Simulator = new Simulator();
 
         // Toolbox-Items:
         public static TextBox TextBoxBikeData;
@@ -41,6 +42,7 @@ namespace Client
         // Privates:
         private static bool SessionRunning = false;
         private static bool DebugScrolling = true;
+        private static bool Simulating = false;
 
         public MainWindow()
         {
@@ -62,12 +64,7 @@ namespace Client
 
             #region Connecting via Simulator
             // Start Simulator on a new Thread
-            Thread NewThread = new Thread(() =>{
-                UsingSimulator();
-            });
-            // Threads running in the background close if the application closes
-            NewThread.IsBackground = true;
-            NewThread.Start();
+            Simulating = true;
             #endregion
         }
 
@@ -120,8 +117,10 @@ namespace Client
         private static void UsingSimulator()
         {
             // Simulating bike data
-            Simulator Simulator = new Simulator();
-            Simulator.StartSimulation();
+            while (Simulating)
+            {
+                Simulator.SimulateData();
+            }
         }
 
         private static void BleBike_SubscriptionValueChanged(object sender, BLESubscriptionValueChangedEventArgs e)
@@ -168,6 +167,20 @@ namespace Client
         {
             // Change state of showing debug messaging
             DebugScrolling = !DebugScrolling;
+        }
+
+        private void BtnSimulate_Click(object sender, RoutedEventArgs e)
+        {
+            Simulating = !Simulating;
+            if (Simulating)
+            {
+                Thread NewThread = new Thread(() => {
+                    UsingSimulator();
+                });
+                // Threads running in the background close if the application closes
+                NewThread.IsBackground = true;
+                NewThread.Start();
+            }
         }
 
 

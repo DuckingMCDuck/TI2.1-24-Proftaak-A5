@@ -12,9 +12,11 @@
             <RowDefinition Height="45*"/>
         </Grid.RowDefinitions>
         <TextBox x:Name="ReadChat" Margin="0,0,413,111" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Height="279" TextChanged="ReadChat_TextChanged" IsReadOnly="True" Grid.RowSpan="2" HorizontalAlignment="Right" Width="377"/>
-        <TextBox x:Name="TxtBikeData" Margin="405,0,0,111" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Height="279" TextChanged="TxtBikeData_TextChanged"  PreviewMouseDown="TxtBikeData_PreviewMouseDown" IsReadOnly="True" VerticalScrollBarVisibility="Visible" ScrollViewer.CanContentScroll="True" Grid.RowSpan="2" HorizontalAlignment="Left" Width="360"/>
+        <TextBox x:Name="TxtBikeData" Margin="405,0,0,136" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Height="254" TextChanged="TxtBikeData_TextChanged"  PreviewMouseDown="TxtBikeData_PreviewMouseDown" IsReadOnly="True" VerticalScrollBarVisibility="Visible" ScrollViewer.CanContentScroll="True" Grid.RowSpan="2" HorizontalAlignment="Left" Width="360"/>
         <TextBox x:Name="TypeBar" HorizontalAlignment="Right" Margin="0,219,23,53" TextWrapping="Wrap" Text="" Width="754" Grid.Row="1"/>
         <Button x:Name="SendMessage" Content="Send" Margin="0,281,180,0" Click="SendMessage_Click" Grid.Row="1" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Width="430"/>
+        <Button Content="Button" HorizontalAlignment="Left" Height="0" Margin="405,193,0,0" Grid.Row="1" VerticalAlignment="Top" Width="18"/>
+        <Button x:Name="BtnSimulate" Content="Start/ Stop Simulating" HorizontalAlignment="Left" Margin="405,184,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360" Click="BtnSimulate_Click"/>
 
     </Grid>
 </Window>
