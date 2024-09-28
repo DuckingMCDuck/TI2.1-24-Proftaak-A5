@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Client
+namespace TestCode
 {
     internal class VRServer
     {
@@ -16,6 +16,7 @@ namespace Client
             //IPAddress address = IPAddress.Parse("85.145.62.130");
             //IPEndPoint endPoint = new IPEndPoint(address, 6666);
             TcpClient vrServer = new TcpClient("85.145.62.130", 6666);
+
 
         }
     }

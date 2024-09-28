@@ -40,7 +40,7 @@ namespace Client
         public static TcpClient tcpClient = new TcpClient();
         public static List<Tuple<string, byte[]>> sessionData = new List<Tuple<string, byte[]>>();
         public static Simulator simulator = new Simulator();
-        //private static VRServer vRServer = new VRServer();
+        private static VRServer vrServer;
 
         // Privates:
         private static bool sessionRunning = false;
@@ -61,6 +61,7 @@ namespace Client
         {
             // Connect to the server
             tcpClient.Connect("localhost", 15243);
+            vrServer = new VRServer();
 
             // Create public variables for items in the Toolbox (Schrijf volledig uit: Txt -> TextBox, Btn -> Button etc.)
             TextBoxBikeData = TxtBikeData;
@@ -141,7 +142,9 @@ namespace Client
             TextChat.AppendText("Simulator turned " + (simulating ? "ON" : "OFF") + "!\n");
             if (simulating)
             {
-                Thread simulatorThread = new Thread(() => {
+                //Task.Run(() => { StartSimulator(); } );
+                Thread simulatorThread = new Thread(() =>
+                {
                     StartSimulator();
                 });
                 // Threads running in the background close if the application closes
@@ -167,7 +170,7 @@ namespace Client
             using (NetworkStream stream = tcpClient.GetStream())
             {
                 byte[] buffer = new byte[1024];
-                buffer = Encoding.UTF8.GetBytes(debugText);
+                buffer = Encoding.ASCII.GetBytes(debugText);
                 stream.Write(buffer, 0, buffer.Length);
             }
         }
