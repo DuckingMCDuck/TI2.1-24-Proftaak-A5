@@ -31,6 +31,7 @@ namespace Server
 
         private static TcpListener listener;
         private static List<TcpClient> clients = new List<TcpClient>();
+        private static List<TcpClient> doctors = new List<TcpClient>();
 
         static void Main(string[] args)
         {
@@ -50,7 +51,6 @@ namespace Server
         private static void OnConnect(IAsyncResult ar)
         {
             TcpClient tcpClient = listener.EndAcceptTcpClient(ar);
-
             clients.Add(tcpClient);
 
             // tijdelijk: pak clientIP en port (moet ID worden of naam oid)
@@ -60,23 +60,82 @@ namespace Server
 
             Console.WriteLine($"Total clients connected: {clients.Count}");
 
+            Task.Run(() => { ListenForMessages(tcpClient); });
+
+            NotifyDoctorsOfClients();
+
             listener.BeginAcceptTcpClient(new AsyncCallback(OnConnect), null);
         }
 
-        internal static void Broadcast(string packet)
+        private static void NotifyDoctorsOfClients()
         {
-            byte[] data = Encoding.ASCII.GetBytes(packet);
+            string clientsList = string.Join(",", clients.Select(c => c.Client.RemoteEndPoint.ToString()));
+            byte[] data = Encoding.ASCII.GetBytes("clients_update:" + clientsList);
 
-            foreach (var client in clients)
+            foreach (var doctor in doctors)
             {
                 try
                 {
-                    NetworkStream stream = client.GetStream();
+                    NetworkStream stream = doctor.GetStream();
                     stream.Write(data, 0, data.Length);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to send to client: {ex.Message}");
+                    Console.WriteLine(ex.ToString());
+                }
+            }
+        }
+
+        private static void ListenForMessages(TcpClient tcpClient) 
+        { 
+            NetworkStream stream = tcpClient.GetStream();
+            byte[] buffer = new byte[1500];
+            while (true) 
+            {
+                try
+                {
+                    int byteCount = stream.Read(buffer, 0, buffer.Length);
+                    if (byteCount == 0) return; // Client disconnected
+
+                    string message = Encoding.ASCII.GetString(buffer, 0, byteCount);
+                    Console.WriteLine($"Received message: {message}");
+
+                    Broadcast(message, tcpClient);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    break;
+                }
+            }
+        }
+
+        internal static void Broadcast(string packet, TcpClient senderClient)
+        {
+            string[] splitPacket = packet.Split(':');
+
+            if (splitPacket[0] == "send_to")
+            {
+                string targetClient = splitPacket[1];
+                string message = string.Join(":", splitPacket[2]);
+
+                SendToUser(targetClient, message);
+            } 
+            else
+            {
+                byte[] data = Encoding.ASCII.GetBytes(packet);
+
+                foreach (var client in clients)
+                {
+                    try
+                    {
+                        NetworkStream stream = client.GetStream();
+                        stream.Write(data, 0, data.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to send to client: {ex.Message}");
+                    }
                 }
             }
         }

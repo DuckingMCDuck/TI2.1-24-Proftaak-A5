@@ -25,10 +25,11 @@ namespace Client
     {
         internal static MainWindow client; // MainWindow property to store the main window instance to access it from other classes
 
-        // Properties to update TextBoxes (From another class)
-        internal string debugText {
+        //Properties to update TextBoxes(From another class)
+        internal string debugText
+        {
             get { return TextBoxBikeData.Text.ToString(); }
-            set { Dispatcher.Invoke(new Action(() => { TextBoxBikeData.AppendText(value); })); } 
+            set { Dispatcher.Invoke(new Action(() => { TextBoxBikeData.AppendText(value); })); }
         }
         internal string chatText
         {
@@ -157,18 +158,53 @@ namespace Client
             {
                 simulator.SimulateData();
                 // Send DebugText to simulator
-                SendToSimulator(client.debugText);
+                client.Dispatcher.Invoke(() => {
+                    SendToSimulator(client.debugText);
+                });
             }
         }
 
         private static void SendToSimulator(string debugText)
         {
-            // Send debugText to simulator via TCP/IP
-            using (NetworkStream stream = tcpClient.GetStream())
+            try
             {
-                byte[] buffer = new byte[1024];
-                buffer = Encoding.UTF8.GetBytes(debugText);
-                stream.Write(buffer, 0, buffer.Length);
+                // Check if the TcpClient is connected before trying to send data
+                if (tcpClient == null || !tcpClient.Connected)
+                {
+                    // Attempt to reconnect if not connected
+                    client.Dispatcher.Invoke(() => {
+                        TextChat.AppendText("Attempting to reconnect to the server...\n");
+                    });
+
+                    // You may want to make this a proper async method with retries
+                    tcpClient = new TcpClient();
+                    tcpClient.Connect("localhost", 15243); // Use your appropriate IP and port
+                    client.Dispatcher.Invoke(() => {
+                        TextChat.AppendText("Reconnected successfully.\n");
+                    });
+                }
+
+                // Now that we're sure the client is connected, get the network stream and send data
+                using (NetworkStream stream = tcpClient.GetStream())
+                {
+                    byte[] buffer = Encoding.UTF8.GetBytes(debugText);
+                    stream.Write(buffer, 0, buffer.Length);
+                    stream.Flush(); // Ensure the data is sent
+                }
+            }
+            catch (SocketException ex)
+            {
+                // Handle socket exception, possibly logging and attempting a reconnect
+                client.Dispatcher.Invoke(() => {
+                    TextChat.AppendText($"Socket error: {ex.Message}\n");
+                });
+            }
+            catch (Exception ex)
+            {
+                // Handle other exceptions
+                client.Dispatcher.Invoke(() => {
+                    TextChat.AppendText($"Error: {ex.Message}\n");
+                });
             }
         }
 
@@ -177,7 +213,11 @@ namespace Client
             if (sessionRunning == true)
             {
                 // Print incoming data from bike
-                TextBoxBikeData.AppendText($"Received from {e.ServiceName}: {BitConverter.ToString(e.Data).Replace("-", " ")}, {Encoding.UTF8.GetString(e.Data)}");
+                client.Dispatcher.Invoke(() => {
+                    TextBoxBikeData.AppendText($"Received from {e.ServiceName}: {BitConverter.ToString(e.Data).Replace("-", " ")}, {Encoding.UTF8.GetString(e.Data)}");
+                });
+
+                //TextBoxBikeData.AppendText($"Received from {e.ServiceName}: {BitConverter.ToString(e.Data).Replace("-", " ")}, {Encoding.UTF8.GetString(e.Data)}");
 
                 // Add data to session
                 sessionData.Add(new Tuple<string, byte[]>(e.ServiceName, e.Data));
@@ -208,11 +248,32 @@ namespace Client
         private void BtnSendMessage_Click(object sender, RoutedEventArgs e)
         {
             // Get written message and send it to the chat (server)
-            string Message = TxtTypeBar.Text;
-            if (!string.IsNullOrEmpty(Message))
+            string message = TxtTypeBar.Text;
+            if (!string.IsNullOrEmpty(message))
             {
-                TxtChat.AppendText(Message + "\n");// Exchange this for sending message logic
+                SendMessageToServer(message);
                 TxtTypeBar.Clear();
+            }
+        }
+
+        private async void SendMessageToServer(string message)
+        {
+            using (NetworkStream stream = tcpClient.GetStream())
+            {
+                byte[] data = Encoding.ASCII.GetBytes("chat:" + message);
+                await stream.WriteAsync(data, 0, data.Length);
+            }
+        }
+
+        private void ListenForMessages()
+        {
+            NetworkStream stream = tcpClient.GetStream();
+            byte[] buffer = new byte[1500];
+            while (true)
+            { 
+                int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                Dispatcher.Invoke(() => TxtChat.AppendText(message + "\n"));
             }
         }
 
