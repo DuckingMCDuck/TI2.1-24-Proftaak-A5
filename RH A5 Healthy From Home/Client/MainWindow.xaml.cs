@@ -23,40 +23,48 @@ namespace Client
     /// </summary>
     public partial class MainWindow : Window
     {
-        internal static MainWindow Client; // Main property to store the main window instance for accessing it from other classes
+        internal static MainWindow client; // MainWindow property to store the main window instance to access it from other classes
 
-        // Properties to get text from another class
-        internal string DebugText {
+        // Properties to update TextBoxes (From another class)
+        internal string debugText {
             get { return TextBoxBikeData.Text.ToString(); }
             set { Dispatcher.Invoke(new Action(() => { TextBoxBikeData.AppendText(value); })); } 
         }
+        internal string chatText
+        {
+            get { return TextChat.Text.ToString(); }
+            set { Dispatcher.Invoke(new Action(() => { TextChat.AppendText(value); })); }
+        }
 
         // Publics:
-        public static TcpClient TcpClientConnection = new TcpClient();
-        public static List<Tuple<string, byte[]>> SessionData = new List<Tuple<string, byte[]>>();
-        public static Simulator Simulator = new Simulator();
+        public static TcpClient tcpClient = new TcpClient();
+        public static List<Tuple<string, byte[]>> sessionData = new List<Tuple<string, byte[]>>();
+        public static Simulator simulator = new Simulator();
+        //private static VRServer vRServer = new VRServer();
+
+        // Privates:
+        private static bool sessionRunning = false;
+        private static bool debugScrolling = true;
+        private static bool simulating = true;
 
         // Toolbox-Items:
         public static TextBox TextBoxBikeData;
-
-        // Privates:
-        private static bool SessionRunning = false;
-        private static bool DebugScrolling = true;
-        private static bool Simulating = false;
+        public static TextBox TextChat;
 
         public MainWindow()
         {
             InitializeComponent();
-            Client = this; // Innitialize class 'Client' property
+            client = this; // Initialize class 'Client' property
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // Connect to the server
-            TcpClientConnection.Connect("localhost", 15243);
+            tcpClient.Connect("localhost", 15243);
 
-            // Create public variables for items in the Toolbox
+            // Create public variables for items in the Toolbox (Schrijf volledig uit: Txt -> TextBox, Btn -> Button etc.)
             TextBoxBikeData = TxtBikeData;
+            TextChat = TxtChat;
 
             #region Connecting via bike (FietsDemo code)
             //UsingBicycle();
@@ -64,135 +72,166 @@ namespace Client
 
             #region Connecting via Simulator
             // Start Simulator on a new Thread
-            Simulating = true;
-            ToggleSimulator();
+            UsingSimulator();
             #endregion
         }
 
-        // Self-written code:
+        /// <summary>
+        /// Self-written Events:
+        /// </summary>
         private static async void UsingBicycle()
         {
-            int ErrorCode = 0;
-            BLE BleBike = new BLE();
-            BLE BleHeart = new BLE();
+            int errorCode = 0;
+            BLE bleBike = new BLE();
+            BLE bleHeart = new BLE();
             Thread.Sleep(1000); // We need some time to list available devices
 
             // List available devices
-            List<String> BleBikeList = BleBike.ListDevices();
+            List<String> bleBikeList = bleBike.ListDevices();
             TextBoxBikeData.AppendText("Devices found: ");
-            foreach (var Name in BleBikeList)
+            //TextBoxBikeData.AppendText("Devices found: ");
+            foreach (var name in bleBikeList)
             {
-                TextBoxBikeData.AppendText($"Device: {Name}");
+                TextBoxBikeData.AppendText($"Device: {name}");
             }
 
             // Connect to bike using the last 5 digits of the serial number:
-            ErrorCode = await BleBike.OpenDevice("Tacx Flux 00438");
+            errorCode = await bleBike.OpenDevice("Tacx Flux 00438");
             // __TODO__ Error check
 
             // Print availible services
-            var Services = BleBike.GetServices;
-            foreach (var Service in Services)
+            var services = bleBike.GetServices;
+            foreach (var service in services)
             {
-                TextBoxBikeData.AppendText($"Service: {Service}");
+                TextBoxBikeData.AppendText($"Service: {service}");
             }
 
             // Set service
-            ErrorCode = await BleBike.SetService("6e40fec1-b5a3-f393-e0a9-e50e24dcca9e");
+            errorCode = await bleBike.SetService("6e40fec1-b5a3-f393-e0a9-e50e24dcca9e");
             // __TODO__ error check
 
             // Subscribe
-            BleBike.SubscriptionValueChanged += BleBike_SubscriptionValueChanged;
-            ErrorCode = await BleBike.SubscribeToCharacteristic("6e40fec2-b5a3-f393-e0a9-e50e24dcca9e");
+            bleBike.SubscriptionValueChanged += BleBike_SubscriptionValueChanged;
+            errorCode = await bleBike.SubscribeToCharacteristic("6e40fec2-b5a3-f393-e0a9-e50e24dcca9e");
             // __TODO__ error check
 
             // Heart rate
-            ErrorCode = await BleHeart.OpenDevice("Decathlon Dual HR");
+            errorCode = await bleHeart.OpenDevice("Decathlon Dual HR");
             // __TODO__ error check
 
-            await BleHeart.SetService("HeartRate");
+            await bleHeart.SetService("HeartRate");
 
-            BleHeart.SubscriptionValueChanged += BleBike_SubscriptionValueChanged;
-            await BleHeart.SubscribeToCharacteristic("HeartRateMeasurement");
+            bleHeart.SubscriptionValueChanged += BleBike_SubscriptionValueChanged;
+            await bleHeart.SubscribeToCharacteristic("HeartRateMeasurement");
+
+            TextChat.AppendText("Connected to Bike!");
         }
 
         private static void UsingSimulator()
         {
-            // Simulating bike data
-            while (Simulating)
+            // Update chat
+            TextChat.AppendText("Using Simulator!\n");
+            // Use Simulator
+            simulating = true;
+            ToggleSimulator();
+        }
+
+        private static void ToggleSimulator()
+        {
+            TextChat.AppendText("Simulator turned " + (simulating ? "ON" : "OFF") + "!\n");
+            if (simulating)
             {
-                Simulator.SimulateData();
+                Thread simulatorThread = new Thread(() => {
+                    StartSimulator();
+                });
+                // Threads running in the background close if the application closes
+                simulatorThread.IsBackground = true;
+                simulatorThread.Start();
+            }
+        }
+
+        private static void StartSimulator()
+        {
+            // Simulating bike data
+            while (simulating)
+            {
+                simulator.SimulateData();
+                // Send DebugText to simulator
+                SendToSimulator(client.debugText);
+            }
+        }
+
+        private static void SendToSimulator(string debugText)
+        {
+            // Send debugText to simulator via TCP/IP
+            using (NetworkStream stream = tcpClient.GetStream())
+            {
+                byte[] buffer = new byte[1024];
+                buffer = Encoding.UTF8.GetBytes(debugText);
+                stream.Write(buffer, 0, buffer.Length);
             }
         }
 
         private static void BleBike_SubscriptionValueChanged(object sender, BLESubscriptionValueChangedEventArgs e)
         {
-            if (SessionRunning == true)
+            if (sessionRunning == true)
             {
                 // Print incoming data from bike
                 TextBoxBikeData.AppendText($"Received from {e.ServiceName}: {BitConverter.ToString(e.Data).Replace("-", " ")}, {Encoding.UTF8.GetString(e.Data)}");
 
                 // Add data to session
-                SessionData.Add(new Tuple<string, byte[]>(e.ServiceName, e.Data));
+                sessionData.Add(new Tuple<string, byte[]>(e.ServiceName, e.Data));
             }
         }
 
-        private static void ToggleSimulator()
-        {
-            if (Simulating)
-            {
-                Thread NewThread = new Thread(() => {
-                    UsingSimulator();
-                });
-                // Threads running in the background close if the application closes
-                NewThread.IsBackground = true;
-                NewThread.Start();
-            }
-        }
-
-        // Generated Events:
+        /// <summary>
+        /// Generated Events:
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TxtBikeData_TextChanged(object sender, TextChangedEventArgs e)
         {
             // Show Bike/ Simulator data (Debug)
-            if (DebugScrolling)
+            if (debugScrolling)
                 TxtBikeData.ScrollToEnd();
             // Keep only the recent data availible to scroll through
             if (TxtBikeData.LineCount > 300)
                 TxtBikeData.Text = TxtBikeData.Text.Substring(TxtBikeData.LineCount - 100);
         }
 
-        private void ReadChat_TextChanged(object sender, TextChangedEventArgs e)
+        private void TxtChat_TextChanged(object sender, TextChangedEventArgs e)
         {
             // Always scroll to end of chat
-            ReadChat.ScrollToEnd();
+            TxtChat.ScrollToEnd();
         }
 
-        private void SendMessage_Click(object sender, RoutedEventArgs e)
+        private void BtnSendMessage_Click(object sender, RoutedEventArgs e)
         {
             // Get written message and send it to the chat (server)
-            string Message = TypeBar.Text;
+            string Message = TxtTypeBar.Text;
             if (!string.IsNullOrEmpty(Message))
             {
-                ReadChat.AppendText(Message + "\n");// Exchange this for sending message logic
-                TypeBar.Clear();
+                TxtChat.AppendText(Message + "\n");// Exchange this for sending message logic
+                TxtTypeBar.Clear();
             }
         }
 
         private void TxtBikeData_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             // Change state of showing debug messaging
-            DebugScrolling = !DebugScrolling;
+            debugScrolling = !debugScrolling;
         }
 
         private void BtnSimulate_Click(object sender, RoutedEventArgs e)
         {
-            Simulating = !Simulating;
+            simulating = !simulating;
             ToggleSimulator();
         }
 
 
         // EXAMPLE CODE:
 
-        //// LET OP: username moet gelijk zijn aan password om correct te werken=
+        //// LET OP: username moet gelijk zijn aan password om correct te werken
         //private static string password;
         //private static TcpClient client;
         //private static NetworkStream stream;

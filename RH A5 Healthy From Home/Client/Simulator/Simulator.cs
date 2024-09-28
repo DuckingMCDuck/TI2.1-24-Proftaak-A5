@@ -31,21 +31,19 @@ namespace Client
             randomHexPart16 = GenerateDataPage16(rand);
             string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
             string result16 = $"{simulatedMessage16}";
-            MainWindow.Client.DebugText = $"\n{result16}\n";
+            MainWindow.client.debugText = $"\n{result16}\n";
             DataDecoder.Decode(result16);
-
 
             randomHexPart25 = GenerateDataPage25(rand);
             string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
             string result25 = $"{simulatedMessage25}";
-            MainWindow.Client.DebugText = $"\n{result25}\n";
+            MainWindow.client.debugText = $"\n{result25}\n";
             DataDecoder.Decode(result25);
-
 
             if (dataPagePrintCount == 2)
             {
                 string heartRateString = GenerateHeartRateString(rand);
-                MainWindow.Client.DebugText = $"\nReceived from 00002a37 - 0000 - 1000 - 8000 - 00805f9b34fb: {heartRateString}\n";
+                MainWindow.client.debugText = $"\nReceived from 00002a37 - 0000 - 1000 - 8000 - 00805f9b34fb: {heartRateString}\n";
                 dataPagePrintCount = 0;
             }
 
@@ -160,7 +158,13 @@ namespace Client
             return sb.ToString();
         }
 
-        // Custom Clamp method, because Math.Clamp doesn't work
+        /// <summary>
+        /// Custom Clamp method, because Math.Clamp doesn't work
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
         public static int Clamp(int value, int min, int max)
         {
             if (value < min) return min;

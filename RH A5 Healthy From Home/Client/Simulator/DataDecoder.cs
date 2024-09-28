@@ -48,12 +48,12 @@ namespace Client
                     dataWithNames.Add(tuple);
                 }
                 listForToString = dataWithNames;
-                MainWindow.Client.DebugText = MakeString(dataWithNames);
+                MainWindow.client.debugText = MakeString(dataWithNames);
                 return dataWithNames;
             }
             catch (Exception e)
             {
-                MainWindow.Client.DebugText = "Not able to decode data\n";
+                MainWindow.client.debugText = "Not able to decode data\n";
                 return null;
             }
         }
