@@ -45,5 +45,10 @@ namespace DokterClient
                 chatBar.Clear();
             }
         }
+
+        private void CmbClientsForDoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            
+        }
     }
 }
