@@ -27,12 +27,20 @@ namespace Client
 
         // Properties to update TextBoxes (From another class)
         internal string debugText {
-            get { return TextBoxBikeData.Text.ToString(); }
+            get {
+                string stringReturn = "";
+                Dispatcher.Invoke(new Action(() => { stringReturn = TextBoxBikeData.Text.ToString(); }));
+                return stringReturn;
+            }
             set { Dispatcher.Invoke(new Action(() => { TextBoxBikeData.AppendText(value); })); } 
         }
         internal string chatText
         {
-            get { return TextChat.Text.ToString(); }
+            get {
+                string stringReturn = "";
+                Dispatcher.Invoke(new Action(() => { stringReturn = TextChat.Text.ToString(); }));
+                return stringReturn;
+            }
             set { Dispatcher.Invoke(new Action(() => { TextChat.AppendText(value); })); }
         }
 
@@ -61,11 +69,13 @@ namespace Client
         {
             // Connect to the server
             tcpClient.Connect("localhost", 15243);
-            vrServer = new VRServer();
-
+           
             // Create public variables for items in the Toolbox (Schrijf volledig uit: Txt -> TextBox, Btn -> Button etc.)
             TextBoxBikeData = TxtBikeData;
             TextChat = TxtChat;
+
+            // Initialize VR Server
+            vrServer = new VRServer();
 
             #region Connecting via bike (FietsDemo code)
             //UsingBicycle();
@@ -159,19 +169,6 @@ namespace Client
             while (simulating)
             {
                 simulator.SimulateData();
-                // Send DebugText to simulator
-                SendToSimulator(client.debugText);
-            }
-        }
-
-        private static void SendToSimulator(string debugText)
-        {
-            // Send debugText to simulator via TCP/IP
-            using (NetworkStream stream = tcpClient.GetStream())
-            {
-                byte[] buffer = new byte[1024];
-                buffer = Encoding.ASCII.GetBytes(debugText);
-                stream.Write(buffer, 0, buffer.Length);
             }
         }
 

@@ -44,6 +44,7 @@ namespace Client
             {
                 string heartRateString = GenerateHeartRateString(rand);
                 MainWindow.client.debugText = $"\nReceived from 00002a37 - 0000 - 1000 - 8000 - 00805f9b34fb: {heartRateString}\n";
+                DataDecoder.Decode(heartRateString);
                 dataPagePrintCount = 0;
             }
 

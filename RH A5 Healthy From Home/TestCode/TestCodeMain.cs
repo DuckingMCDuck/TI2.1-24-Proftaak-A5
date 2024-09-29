@@ -23,7 +23,7 @@ namespace TestCode
 
             //}
 
-            VRServer vRServer = new VRServer();
+            VRServer vrServer = new VRServer();
         }
     }
 }
