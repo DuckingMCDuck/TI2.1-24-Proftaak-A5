@@ -1,4 +1,4 @@
-﻿using Avans.TI.BLE;
+using Avans.TI.BLE;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,9 +28,12 @@ namespace Client
         //Properties to update TextBoxes(From another class)
         internal string debugText
         {
-            get { string stringReturn = "";
+            get
+            {
+                string stringReturn = "";
                 Dispatcher.Invoke(new Action(() => { stringReturn = TextBoxBikeData.Text.ToString(); }));
-                return stringReturn; }
+                return stringReturn;
+            }
             set { Dispatcher.Invoke(new Action(() => { TextBoxBikeData.AppendText(value); })); }
         }
         internal string chatText

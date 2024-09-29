@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DokterClient"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800" Loaded="MainWindow_Loaded">
     <Grid>
         <TextBox x:Name="chatReadOnly" HorizontalAlignment="Left" Margin="10,23,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="311" RenderTransformOrigin="2.781,7.57" Height="283" TextChanged="TextBox_TextChanged"/>
         <TextBox x:Name="chatBar" HorizontalAlignment="Left" Margin="10,311,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="311" RenderTransformOrigin="0.502,0.535" Height="41" TextChanged="TextBox_TextChanged_1"/>
