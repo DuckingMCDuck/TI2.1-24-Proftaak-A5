@@ -50,8 +50,8 @@ namespace Client
         public static TcpClient tcpClient = new TcpClient();
         public static List<Tuple<string, byte[]>> sessionData = new List<Tuple<string, byte[]>>();
         public static Simulator simulator = new Simulator();
+        private static VRServer vrServer;
         public static NetworkStream stream;
-        //private static VRServer vRServer = new VRServer();
 
         // Privates:
         private static bool sessionRunning = false;
