@@ -28,12 +28,16 @@ namespace Client
         //Properties to update TextBoxes(From another class)
         internal string debugText
         {
-            get { return TextBoxBikeData.Text.ToString(); }
+            get { string stringReturn = "";
+                Dispatcher.Invoke(new Action(() => { stringReturn = TextBoxBikeData.Text.ToString(); }));
+                return stringReturn; }
             set { Dispatcher.Invoke(new Action(() => { TextBoxBikeData.AppendText(value); })); }
         }
         internal string chatText
         {
-            get { return TextChat.Text.ToString(); }
+            get { string stringReturn = "";
+                Dispatcher.Invoke(new Action(() => { stringReturn = TextChat.Text.ToString(); }));
+                return stringReturn; }
             set { Dispatcher.Invoke(new Action(() => { TextChat.AppendText(value); })); }
         }
 
@@ -41,6 +45,7 @@ namespace Client
         public static TcpClient tcpClient = new TcpClient();
         public static List<Tuple<string, byte[]>> sessionData = new List<Tuple<string, byte[]>>();
         public static Simulator simulator = new Simulator();
+        public static NetworkStream stream;
         //private static VRServer vRServer = new VRServer();
 
         // Privates:
@@ -62,6 +67,7 @@ namespace Client
         {
             // Connect to the server
             tcpClient.Connect("localhost", 15243);
+            stream = tcpClient.GetStream();
 
             // Create public variables for items in the Toolbox (Schrijf volledig uit: Txt -> TextBox, Btn -> Button etc.)
             TextBoxBikeData = TxtBikeData;
@@ -185,7 +191,7 @@ namespace Client
                 }
 
                 // Now that we're sure the client is connected, get the network stream and send data
-                using (NetworkStream stream = tcpClient.GetStream())
+                if (stream.CanWrite)
                 {
                     byte[] buffer = Encoding.UTF8.GetBytes(debugText);
                     stream.Write(buffer, 0, buffer.Length);
@@ -258,7 +264,8 @@ namespace Client
 
         private async void SendMessageToServer(string message)
         {
-            using (NetworkStream stream = tcpClient.GetStream())
+            if (stream.CanWrite)
+            //using (NetworkStream stream = tcpClient.GetStream())
             {
                 byte[] data = Encoding.ASCII.GetBytes("chat:" + message);
                 await stream.WriteAsync(data, 0, data.Length);
@@ -267,7 +274,7 @@ namespace Client
 
         private void ListenForMessages()
         {
-            NetworkStream stream = tcpClient.GetStream();
+            //NetworkStream stream = tcpClient.GetStream();
             byte[] buffer = new byte[1500];
             while (true)
             { 
