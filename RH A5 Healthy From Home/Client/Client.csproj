@@ -58,7 +58,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Simulator.cs" />
+    <Compile Include="Simulator\Simulator.cs" />
+    <Compile Include="Virtual Reality\VRServer.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -67,9 +68,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Client.cs" />
-    <Compile Include="DataDecoder\DataDecoder.cs" />
-    <Compile Include="DataDecoder\DataNames.cs" />
+    <Compile Include="Simulator\DataDecoder.cs" />
+    <Compile Include="Simulator\DataNames.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

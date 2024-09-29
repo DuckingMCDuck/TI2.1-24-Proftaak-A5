@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace Client
 {
@@ -15,35 +17,39 @@ namespace Client
         private int heartRate = 80;
         private int instantaneousPower = 150;
         private int cadence = 80;
+        private int dataPagePrintCount = 0;
+        private int energyExpended = 0;
 
-        public void StartSimulation()
+        public void SimulateData()
         {
             Random rand = new Random();
 
-            while (true)
+            string fixedPrefix = "A4 09 4E 05";
+            string randomHexPart16;
+            string randomHexPart25;
+
+            randomHexPart16 = GenerateDataPage16(rand);
+            string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
+            string result16 = $"{simulatedMessage16}";
+            MainWindow.client.debugText = $"\n{result16}\n";
+            DataDecoder.Decode(result16);
+
+            randomHexPart25 = GenerateDataPage25(rand);
+            string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
+            string result25 = $"{simulatedMessage25}";
+            MainWindow.client.debugText = $"\n{result25}\n";
+            DataDecoder.Decode(result25);
+
+            if (dataPagePrintCount == 2)
             {
-                string fixedPrefix = "A4 09 4E 05";
-                string randomHexPart16;
-                string randomHexPart25;
-
-                randomHexPart16 = GenerateDataPage16(rand);
-
-                string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
-                Console.Clear();
-                string result16 = $"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}";
-                //Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage16}");
-                DataDecode.Decode(result16);
-
-
-                randomHexPart25 = GenerateDataPage25(rand);
-
-                string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
-                string result25 = $"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}";
-                //Console.WriteLine($"Value changed for 6e40fec2-b5a3-f393-e0a9-e50e24dcca9e: {simulatedMessage25}");
-                DataDecode.Decode(result25);
-
-                Thread.Sleep(1000);
+                string heartRateString = GenerateHeartRateString(rand);
+                MainWindow.client.debugText = $"\nReceived from 00002a37 - 0000 - 1000 - 8000 - 00805f9b34fb: {heartRateString}\n";
+                DataDecoder.Decode(heartRateString);
+                dataPagePrintCount = 0;
             }
+
+            dataPagePrintCount++;
+            Thread.Sleep(500);
         }
 
         private string GenerateDataPage16(Random rand)
@@ -118,6 +124,53 @@ namespace Client
             sb.Append(flagsAndStatus.ToString("X2"));
 
             return sb.ToString();
+        }
+
+        private string GenerateHeartRateString(Random rand)
+        {
+            // Gradual change
+            heartRate += rand.Next(-1, 2);
+
+            heartRate = Clamp(heartRate, 60, 180);
+
+            // Increase energy expended over time
+            energyExpended += rand.Next(1, 5);
+
+            // Generate 1 or 2 RR intervals
+            int rrInterval1 = rand.Next(600, 1000);
+            int rrInterval2 = rand.Next(600, 1000);
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append("16 ");
+            sb.Append(heartRate.ToString("X2")).Append(" ");
+
+            // Add Energy Expended (2 bytes)
+            sb.Append((energyExpended & 0xFF).ToString("X2")).Append(" ");
+            sb.Append(((energyExpended >> 8) & 0xFF).ToString("X2")).Append(" ");
+
+            // Add RR-Interval 1 (2 bytes)
+            sb.Append((rrInterval1 & 0xFF).ToString("X2")).Append(" ");
+            sb.Append(((rrInterval1 >> 8) & 0xFF).ToString("X2")).Append(" ");
+
+            // Add RR-Interval 2 (2 bytes)
+            sb.Append((rrInterval2 & 0xFF).ToString("X2")).Append(" ");
+            sb.Append(((rrInterval2 >> 8) & 0xFF).ToString("X2"));
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Custom Clamp method, because Math.Clamp doesn't work
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
+        public static int Clamp(int value, int min, int max)
+        {
+            if (value < min) return min;
+            if (value > max) return max;
+            return value;
         }
     }
 }

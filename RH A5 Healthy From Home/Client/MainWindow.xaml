@@ -6,12 +6,16 @@
         xmlns:local="clr-namespace:Client"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Loaded="MainWindow_Loaded">
-    <Grid Background="Black" OpacityMask="#FF001FFF">
-        <TextBox x:Name="ChatReadOnly" HorizontalAlignment="Center" Margin="0,10,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="780" Height="323" TextChanged="TextBox_TextChanged" IsReadOnly="True"/>
-        <TextBox x:Name="ChatBar" HorizontalAlignment="Center" Margin="0,338,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="780" Height="43" TextChanged="TextBox_TextChanged_1"/>
-        <Button x:Name="sendButton" Content="Send" HorizontalAlignment="Left" Margin="190,400,0,0" VerticalAlignment="Top" Width="430" Click="sendButton_Click"/>
-
-
+    <Grid Background="White" OpacityMask="#FF001FFF" Height="434" VerticalAlignment="Center" HorizontalAlignment="Right" Width="800">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="17*"/>
+            <RowDefinition Height="45*"/>
+        </Grid.RowDefinitions>
+        <TextBox x:Name="TxtChat" Margin="0,0,413,111" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Height="279" TextChanged="TxtChat_TextChanged" IsReadOnly="True" Grid.RowSpan="2" HorizontalAlignment="Right" Width="377"/>
+        <TextBox x:Name="TxtBikeData" Margin="405,0,0,136" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Height="254" TextChanged="TxtBikeData_TextChanged"  PreviewMouseDown="TxtBikeData_PreviewMouseDown" IsReadOnly="True" VerticalScrollBarVisibility="Visible" ScrollViewer.CanContentScroll="True" Grid.RowSpan="2" HorizontalAlignment="Left" Width="360"/>
+        <TextBox x:Name="TxtTypeBar" HorizontalAlignment="Right" Margin="0,219,23,53" TextWrapping="Wrap" Text="" Width="754" Grid.Row="1"/>
+        <Button x:Name="BtnSendMessage" Content="Send" Margin="0,281,180,0" Click="BtnSendMessage_Click" Grid.Row="1" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Width="430"/>
+        <Button x:Name="BtnSimulate" Content="Start/ Stop Simulating" HorizontalAlignment="Left" Margin="405,184,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360" Click="BtnSimulate_Click"/>
 
     </Grid>
 </Window>
