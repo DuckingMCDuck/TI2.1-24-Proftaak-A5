@@ -57,6 +57,7 @@ namespace Client
         private static bool sessionRunning = false;
         private static bool debugScrolling = true;
         private static bool simulating = true;
+        private static string clientName;
 
         // Toolbox-Items:
         public static TextBox TextBoxBikeData;
@@ -64,6 +65,7 @@ namespace Client
 
         public MainWindow()
         {
+            Thread.Sleep(1000);
             InitializeComponent();
             client = this; // Initialize class 'Client' property
         }
@@ -71,7 +73,7 @@ namespace Client
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // Connect to the server
-            tcpClient.Connect("localhost", 15243);
+            tcpClient.Connect("localhost", 12345);
             stream = tcpClient.GetStream();
 
             // Create public variables for items in the Toolbox (Schrijf volledig uit: Txt -> TextBox, Btn -> Button etc.)
@@ -79,7 +81,7 @@ namespace Client
             TextChat = TxtChat;
 
             // Initialize VR Server
-            vrServer = new VRServer();
+            //vrServer = new VRServer();
 
             #region Connecting via bike (FietsDemo code)
             //UsingBicycle();
@@ -147,7 +149,7 @@ namespace Client
             // Update chat
             TextChat.AppendText("Using Simulator!\n");
             // Use Simulator
-            simulating = true;
+            simulating = false;
             ToggleSimulator();
         }
 
@@ -194,7 +196,7 @@ namespace Client
 
                     // You may want to make this a proper async method with retries
                     tcpClient = new TcpClient();
-                    tcpClient.Connect("localhost", 15243); // Use your appropriate IP and port
+                    tcpClient.Connect("localhost", 12345); // Use your appropriate IP and port
                     client.Dispatcher.Invoke(() => {
                         TextChat.AppendText("Reconnected successfully.\n");
                     });
@@ -264,10 +266,13 @@ namespace Client
         private void BtnSendMessage_Click(object sender, RoutedEventArgs e)
         {
             // Get written message and send it to the chat (server)
-            string message = TxtTypeBar.Text;
+            string message = "send_to:Doctor:"+TxtTypeBar.Text;
+            string rawMessage = TxtTypeBar.Text;
+            string rawClient = clientName.Substring("client:".Length);
             if (!string.IsNullOrEmpty(message))
             {
                 SendMessageToServer(message);
+                TxtChat.AppendText($"{rawClient}:{rawMessage}\n");
                 TxtTypeBar.Clear();
             }
         }
@@ -275,22 +280,34 @@ namespace Client
         private async void SendMessageToServer(string message)
         {
             if (stream.CanWrite)
-            //using (NetworkStream stream = tcpClient.GetStream())
             {
                 byte[] data = Encoding.ASCII.GetBytes("chat:" + message);
                 await stream.WriteAsync(data, 0, data.Length);
+                stream.Flush(); 
             }
         }
 
-        private void ListenForMessages()
+        private async void ListenForMessages()
         {
-            //NetworkStream stream = tcpClient.GetStream();
             byte[] buffer = new byte[1500];
-            while (true)
-            { 
-                int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                Dispatcher.Invoke(() => TxtChat.AppendText(message + "\n"));
+            try
+            {
+                while (true)
+                {
+                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    if (bytesRead == 0)
+                    {
+                        TxtChat.AppendText("Disconnected from the server.\n");
+                        break;
+                    }
+
+                    string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                    Dispatcher.Invoke(() => TxtChat.AppendText(message + "\n"));
+                }
+            }
+            catch (Exception ex)
+            {
+                TxtChat.AppendText($"Error: {ex.Message}\n");
             }
         }
 
@@ -306,6 +323,22 @@ namespace Client
             ToggleSimulator();
         }
 
+        private void BtnConnect_Click(object sender, RoutedEventArgs e)
+        {
+            clientName = "client:" + TxtName.Text; 
+            if (!string.IsNullOrEmpty(clientName))
+            {
+                byte[] nameData = Encoding.ASCII.GetBytes(clientName);
+                stream.Write(nameData, 0, nameData.Length);
+                TxtChat.AppendText("Connected as: " + clientName + "\n");
+
+                Task.Run(() => ListenForMessages());
+            }
+            else
+            {
+                TxtChat.AppendText("Please enter a valid name before connecting.\n");
+            }
+        }
 
         // EXAMPLE CODE:
 
