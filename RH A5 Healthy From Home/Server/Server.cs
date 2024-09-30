@@ -7,37 +7,20 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Net.Http;
+
 namespace Server
 {
     internal class Server
     {
-        // EXAMPLE CODE:
-        //dit is example is door Daan gemaakt. Misschien moeten we gaan werken met Async. 
-
-        //methodes die moeten komen van de klassendiagram zijn: 
-        //-Update(string ConvertedData) en WriteToFile(String ConvertedData)
-
-        // wat willen we gebruiken qua threadsafety iets makelijks zoals ConcurrentBag dan hoef je alleen de lijst zo te maken:
-        // ConcurrentBag<ClientHandler> clients = new ConcurrentBag<ClientHandler>(); en in de Disconnect methode dit: clients = new ConcurrentBag<ClientHandler>(clients.Except(new[] { client })); 
-        //voor de clients.remove(...) statement
-        //of we kunnen lock gebruiken, dan moeten we alles in een lock gooien zoals dit:
-        //private static readonly object clientsLock = new object();
-        //  lock (clientsLock)
-        //{
-        //    clients.Add(new ClientHandler(tcpClient));
-        //}
-
-
-
         private static TcpListener listener;
-        private static List<TcpClient> clients = new List<TcpClient>();
-        private static List<TcpClient> doctors = new List<TcpClient>();
+        private static Dictionary<string, TcpClient> clients = new Dictionary<string, TcpClient>();
+        private static TcpClient doctorClient = null;
 
         static void Main(string[] args)
         {
             Console.WriteLine("Hello Server!");
 
-            listener = new TcpListener(IPAddress.Any, 15243);
+            listener = new TcpListener(IPAddress.Any, 12345);
             listener.Start();
             listener.BeginAcceptTcpClient(new AsyncCallback(OnConnect), null);
 
@@ -48,138 +31,183 @@ namespace Server
             }
         }
 
-        private static void OnConnect(IAsyncResult ar)
+        private static async void OnConnect(IAsyncResult ar)
         {
             TcpClient tcpClient = listener.EndAcceptTcpClient(ar);
-            clients.Add(tcpClient);
 
-            // tijdelijk: pak clientIP en port (moet ID worden of naam oid)
-            string clientEndpoint = tcpClient.Client.RemoteEndPoint.ToString();
+            if (doctorClient == null)
+            {
+                doctorClient = tcpClient;
+                Console.WriteLine("Doctor connected.");
 
-            Console.WriteLine($"Client connected: {clientEndpoint}");
-
-            Console.WriteLine($"Total clients connected: {clients.Count}");
-
-            Task.Run(() => { ListenForMessages(tcpClient); });
-
-            NotifyDoctorsOfClients();
+                Task.Run(() => ListenForMessages(doctorClient, "Doctor", isDoctor: true));
+            }
+            else
+            {
+                await RegisterClient(tcpClient);
+            }
 
             listener.BeginAcceptTcpClient(new AsyncCallback(OnConnect), null);
         }
 
-        private static void NotifyDoctorsOfClients()
+        private static async Task RegisterClient(TcpClient tcpClient)
         {
-            string clientsList = string.Join(",", clients.Select(c => c.Client.RemoteEndPoint.ToString()));
-            byte[] data = Encoding.ASCII.GetBytes("clients_update:" + clientsList);
+            string roleMessage = await ReceiveMessage(tcpClient);
 
-            foreach (var doctor in doctors)
+            if (roleMessage.StartsWith("client:"))
             {
-                try
+                string clientName = roleMessage.Substring("client:".Length);
+
+                if (!clients.ContainsKey(clientName))
                 {
-                    NetworkStream stream = doctor.GetStream();
-                    stream.Write(data, 0, data.Length);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
+                    clients.Add(clientName, tcpClient);
+                    Console.WriteLine($"Client registered: {clientName}");
+
+                    NotifyDoctorOfClients();
+
+                    Task.Run(() => ListenForMessages(tcpClient, clientName));
                 }
             }
         }
 
-        private static void ListenForMessages(TcpClient tcpClient) 
-        { 
+        private static void NotifyDoctorOfClients()
+        {
+            if (doctorClient == null) return;
+
+            string clientsList = string.Join(",", clients.Keys);
+            SendMessage(doctorClient, $"clients_update:{clientsList}");
+        }
+
+        private static void ListenForMessages(TcpClient tcpClient, string senderName, bool isDoctor = false)
+        {
+            try
+            {
+                while (true)
+                {
+                    string message = ReceiveMessage(tcpClient).Result;
+
+                    if (message == null) return; // Client disconnected
+
+                    Console.WriteLine($"Received message from {senderName}: {message}");
+
+                    if (isDoctor)
+                    {
+                        ProcessDoctorMessage(message);
+                    }
+                    else
+                    {
+                        ProcessClientMessage(senderName, message);
+                    }
+                }
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"{senderName} connection error: {ex.Message}");
+                DisconnectClient(tcpClient, senderName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error with {senderName}: {ex.Message}");
+                DisconnectClient(tcpClient, senderName);
+            }
+        }
+
+        private static async Task<string> ReceiveMessage(TcpClient tcpClient)
+        {
             NetworkStream stream = tcpClient.GetStream();
             byte[] buffer = new byte[1500];
-            while (true) 
+
+            int byteCount = await stream.ReadAsync(buffer, 0, buffer.Length);
+            if (byteCount == 0) return null; // Connection closed
+
+            return Encoding.ASCII.GetString(buffer, 0, byteCount).Trim();
+        }
+
+        private static void ProcessDoctorMessage(string message)
+        {
+            string[] splitMessage = message.Split(':');
+            if (splitMessage[0] == "send_to")
             {
-                try
-                {
-                    int byteCount = stream.Read(buffer, 0, buffer.Length);
-                    if (byteCount == 0) return; // Client disconnected
-
-                    string message = Encoding.ASCII.GetString(buffer, 0, byteCount);
-                    Console.WriteLine($"Received message: {message}");
-
-                    Broadcast(message, tcpClient);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    break;
-                }
+                string targetClient = splitMessage[1];
+                string doctorMessage = string.Join(":", splitMessage.Skip(2));
+                SendToClient(targetClient, $"Doctor: {doctorMessage}");
             }
         }
 
-        internal static void Broadcast(string packet, TcpClient senderClient)
+        private static void ProcessClientMessage(string clientName, string message)
+        {
+            if (message.StartsWith("chat:send_to:Doctor:"))
+            {
+                string clientMessage = message.Substring("chat:send_to:Doctor:".Length);
+                if (doctorClient != null)
+                {
+                    SendMessage(doctorClient, $"{clientName}: {clientMessage}");
+                }
+            }
+            else if (message.StartsWith("send_to:"))
+            {
+                Broadcast(message, clientName);
+            }
+        }
+
+        internal static void Broadcast(string packet, string senderName)
         {
             string[] splitPacket = packet.Split(':');
-
             if (splitPacket[0] == "send_to")
             {
                 string targetClient = splitPacket[1];
-                string message = string.Join(":", splitPacket[2]);
+                string message = $"{senderName}: {string.Join(":", splitPacket.Skip(2))}";
 
-                SendToUser(targetClient, message);
-            } 
-            else
-            {
-                byte[] data = Encoding.ASCII.GetBytes(packet);
-
-                foreach (var client in clients)
-                {
-                    try
-                    {
-                        NetworkStream stream = client.GetStream();
-                        stream.Write(data, 0, data.Length);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to send to client: {ex.Message}");
-                    }
-                }
+                SendToClient(targetClient, message);
             }
         }
 
-        internal static void Disconnect(TcpClient client)
+        internal static void SendToClient(string clientName, string message)
         {
-            clients.Remove(client);
-            string clientEndpoint = client.Client.RemoteEndPoint.ToString();
-            Console.WriteLine($"Client disconnected: {clientEndpoint}");
+            if (clients.TryGetValue(clientName, out TcpClient targetClient))
+            {
+                SendMessage(targetClient, message);
+            }
         }
 
-        internal static void SendToUser(string user, string packet)
+        private static void SendMessage(TcpClient tcpClient, string message)
         {
-            byte[] data = Encoding.ASCII.GetBytes(packet);
-            foreach (var client in clients.Where(c => c.Client.RemoteEndPoint.ToString() == user))
+            try
             {
-                try
-                {
-                    NetworkStream stream = client.GetStream();
-                    stream.Write(data, 0, data.Length);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to send to client: {ex.Message}");
-                }
+                byte[] data = Encoding.ASCII.GetBytes(message);
+                NetworkStream stream = tcpClient.GetStream();
+                stream.Write(data, 0, data.Length);
+                stream.Flush();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to send message: {ex.Message}");
+            }
+        }
+
+        private static void DisconnectClient(TcpClient tcpClient, string clientName)
+        {
+            if (clients.ContainsKey(clientName))
+            {
+                clients.Remove(clientName);
+                Console.WriteLine($"Client {clientName} disconnected.");
+                NotifyDoctorOfClients();
             }
         }
 
         public void Update(string convertedData)
         {
-
-
+            // Placeholder for future logic
         }
 
         public async void WriteToFile(string convertedData)
         {
-            // is asynchroon, kan ook zonder.
             string documentPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
             using (StreamWriter outputToFile = new StreamWriter(Path.Combine(documentPath, "Async Data of Client")))
             {
                 await outputToFile.WriteAsync(convertedData);
             }
-
         }
     }
 }
