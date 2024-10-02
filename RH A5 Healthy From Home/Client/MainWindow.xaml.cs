@@ -156,14 +156,10 @@ namespace Client
             TextChat.AppendText("Simulator turned " + (simulating ? "ON" : "OFF") + "!\n");
             if (simulating)
             {
-                //Task.Run(() => { StartSimulator(); } );
-                Thread simulatorThread = new Thread(() =>
+                Task.Run(() => 
                 {
                     StartSimulator();
                 });
-                // Threads running in the background close if the application closes
-                simulatorThread.IsBackground = true;
-                simulatorThread.Start();
             }
         }
 
