@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO.IsolatedStorage;
 using System.Linq;
 using System.Net;
@@ -20,6 +21,7 @@ namespace Client
     {
         public static TcpClient vrServer = new TcpClient();
         public static NetworkStream stream;
+        public static string receivedData;
         public static byte[] prepend;
         public static byte[] data;
         public VRServer()
@@ -29,32 +31,43 @@ namespace Client
             stream = vrServer.GetStream();
             MainWindow.client.chatText = "Connected to VR Server!\n";
 
-            string recievedDataPart1 = "";
-            string recievedDataPart2 = "";
-            string combinedData = "";
-            string data = "";
-            string command = "";
-            string commandData = "";
+            receivedData = "";
+            //string recievedDataPart1 = "";
+            //string recievedDataPart2 = "";
+            //string combinedData = "";
+            //string data = "";
+            //string command = "";
+            //string commandData = "";
 
             while (vrServer.Connected)
             {
                 // Send packets to & get data from the server:
                 SendStartingPacket();
 
-                recievedDataPart1 = ReceivePacket(stream);
-                recievedDataPart2 = ReceivePacket(stream);
-                combinedData = recievedDataPart1 + recievedDataPart2;
-                SendSessionIdPacket(combinedData);
+                ReceivePacket();
+                //// Always listen for incoming packets
+                //Task.Run(() =>
+                //{
+                //    while (true)
+                //    {
+                //        ReceivePacket();
+                //    }
+                //});
 
-                data = ReceivePacket(stream);
-                command = "scene/skybox/settime";
-                commandData = "time : 24";
-                SendTunnelCommand(data, command, commandData);
+                //recievedDataPart1 = ReceivePacket();
+                //recievedDataPart2 = ReceivePacket();
+                //combinedData = recievedDataPart1 + recievedDataPart2;
+                //SendSessionIdPacket(combinedData);
 
-                data = ReceivePacket(stream);
-                command = "scene/skybox/update";
-                commandData = "\"type\" : \"static\",\"files\" : {}}";
-                SendSkyboxUpdate(command, commandData);
+                //data = ReceivePacket();
+                //command = "scene/skybox/settime";
+                //commandData = "time : 24";
+                //SendTunnelCommand(data, command, commandData);
+
+                //data = ReceivePacket();
+                //command = "scene/skybox/update";
+                //commandData = "\"type\" : \"static\",\"files\" : {}}";
+                //SendSkyboxUpdate(command, commandData);
 
                 //data = ReceivePacket(stream);
 
@@ -116,15 +129,59 @@ namespace Client
         /// <summary>
         /// Receive packet from the server and print it to the console
         /// </summary>
-        /// <param name="stream"></param>
-        public static string ReceivePacket(NetworkStream stream)
+        public static void ReceivePacket()
         {
-            byte[] buffer = new byte[1500];
-            int bytes = stream.Read(buffer, 0, buffer.Length);
-            string response = Encoding.ASCII.GetString(buffer, 0, bytes);
-            // Print for Debugging
-            Console.WriteLine(response);
-            return response;
+            // Get prepend byte array from server
+            byte[] prependBuffer = new byte[4];
+            int totalBytesRead = 0;
+
+            while (totalBytesRead < 4)
+            {
+                int bytesRead = stream.Read(prependBuffer, totalBytesRead, 4 - totalBytesRead);
+                if (bytesRead == 0)
+                {
+                    Console.WriteLine("Error: Connection closed before reading the full length.");
+                    return;
+                }
+                totalBytesRead += bytesRead;
+            }
+            int dataLength = BitConverter.ToInt32(prependBuffer, 0);
+            Debug.WriteLine("amount " + dataLength.ToString());
+           
+
+            //int bytesRead = 0;
+            //byte[] readBuffer = new byte[1500];
+            //string totalResponse = "";
+
+            //// Continue reading if not all bytes are sent in one packet
+            //while ((bytesRead = stream.Read(readBuffer, 0, readBuffer.Length)) > 0)
+            //{
+            //    int response = await stream.ReadAsync(readBuffer, 0, readBuffer.Length);
+            //    string responseText = Encoding.ASCII.GetString(readBuffer, 0, response);
+            //    totalResponse += responseText;
+            //    bytesToRead += bytesRead;
+            //}
+            //int prependByte = stream.ReadByte();
+            //prependBuffer[0] = prependByte;
+            //int prepend = await stream.ReadAsync(prependBuffer, 0, prependBuffer.Length);
+            //byte[] p = stream.Read(prependBuffer, 0, prependBuffer.Length);
+            //string prependText = Encoding.UTF32.GetString(prependBuffer, 0, prepend);
+
+            //int bytes = await stream.ReadAsync(buffer, 0, buffer.Length);
+            //string response = Encoding.ASCII.GetString(buffer, 0, bytes);
+            //totalResponse = response;
+
+            //while (bytes < buffer.Length)
+            //{
+            //    int addedBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
+            //    response = Encoding.ASCII.GetString(buffer, 0, addedBytes);
+            //    totalResponse += response;
+            //    bytes += addedBytes;
+            //}
+
+            //// Print for Debugging
+            //Console.WriteLine("total response: " + totalResponse);
+            //receivedData = totalResponse;
         }
 
         /// <summary>
