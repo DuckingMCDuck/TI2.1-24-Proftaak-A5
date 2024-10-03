@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RH_A5_Healthy_From_Home
+namespace TestCode
 {
     enum DataNames16
     {
@@ -42,8 +42,7 @@ namespace RH_A5_Healthy_From_Home
         Checksum
 
     }
-
-    enum HeartRate
+    enum Heartrate
     {
         HeartRate
     }

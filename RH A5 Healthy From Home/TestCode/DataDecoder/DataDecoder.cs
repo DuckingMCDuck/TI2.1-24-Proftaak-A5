@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace RH_A5_Healthy_From_Home
+namespace TestCode
 {
     public class DataDecode{
 
@@ -18,14 +19,9 @@ namespace RH_A5_Healthy_From_Home
                 List<(string, int)> dataWithNames = new List<(string, int)>();
                 List<int> difDataInt = new List<int>();
 
-                string[] substrings = data.Split(":" + " ");
-                string chopedData = substrings[1];
-
-                string[] splitData = chopedData.Split(" ");
+                string[] splitData = data.Split(' ');
                 for (int i = 0; i < splitData.Length; i++)
                 {
-                    if (splitData[i].Length == 2)
-                    {
                     int decValue = Convert.ToInt32(splitData[i], 16);
                     difDataInt.Add(decValue);
                     }
@@ -40,7 +36,7 @@ namespace RH_A5_Healthy_From_Home
                     }
 
                 }
-                if (difDataInt[4] == 25)
+                else if (difDataInt[4] == 25)
                 {
                     for (int i = 0; i < difDataInt.Count; i++)
                     {
@@ -49,9 +45,9 @@ namespace RH_A5_Healthy_From_Home
                         dataWithNames.Add(tuple);
                     }
                 }
-                if (difDataInt.Count == 8)
+                else if (difDataInt.Count >= 1 && difDataInt.Count <= 10)
                 {
-                    string name = Enum.GetName(typeof(HeartRate), 0);
+                    string name = "Heartrate";
                     (string, int) tuple = (name, difDataInt[1]);
                     dataWithNames.Add(tuple);
                 }
