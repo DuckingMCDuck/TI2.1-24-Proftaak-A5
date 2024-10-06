@@ -68,7 +68,7 @@ namespace Client
             client = this; // Initialize class 'Client' property
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // Connect to the server
             tcpClient.Connect("localhost", 15243);
@@ -79,7 +79,7 @@ namespace Client
             TextChat = TxtChat;
 
             // Start VR Server
-            VRServer.Start();
+            await VRServer.Start();
 
             #region Connecting via bike (FietsDemo code)
             //UsingBicycle();

@@ -27,6 +27,8 @@ namespace Client
         public static byte[] data;
         public VRServer() { }
 
+        // TODO: Verschil maken tussen commands die een ID terug sturen (sessionId, tunnelId etc.) en commands waarbij dit niet hoeft?
+
         /// <summary>
         /// Starts the VRServer and changes the environment
         /// </summary>
@@ -75,10 +77,31 @@ namespace Client
                     // Send scene configuration commands
                     //while (vrServer.Connected)
                     {
-                        // Sending a tunnel command example:
+                        // Reset scene:
                         //SendTunnelCommand(tunnelId, "scene/reset", "{}");
 
+                        // SkyBox time & update (dynamic works, static doesn't):
                         SendTunnelCommand(tunnelId, "scene/skybox/settime", "{ time : 23 }");
+                        //SendTunnelCommand(tunnelId, "scene/skybox/update", "{\"type\" : \"dynamic\",\"files\" : {}}");
+                        //SendTunnelCommand(tunnelId, "scene/skybox/update", "{\"type\" : \"static\",\"files\" : {\"xpos\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_rt.png\",\"xneg\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_lf.png\",\"ypos\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_up.png\",\"yneg\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_dn.png\",\"zpos\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_bk.png\",\"zneg\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_ft.png\"} }");
+
+                        // Create terrain/ groundplane (W.I.P.):
+                        //int[] heights = new int[65536];
+                        //Random rnd = new Random();
+                        //for (int i = 0; i < heights.Length; i++)
+                        //{
+                        //    heights[i] = rnd.Next(0, 50);
+                        //}
+                        //SendTunnelCommand(tunnelId, "scene/terrain/add", "{\"size\" : [ 256, 256 ],\"heights\" : heights}");
+
+                        // Create route (bug):
+                        //int[,] routePoints = { { 0, 0, 0 }, { 5, 0, -5 }, { 5, 0, 5 }, { -5, 0, 5 }, { -5, 0, -5 } };
+                        //SendTunnelCommand(tunnelId, "route/add", "{\"nodes\" : [{\"pos\" : [ 0, 0, 0  ],\"dir\" : [ 5, 0, -5]},{\"pos\" : [ 50, 0, 0 ],\"dir\" : [ 5, 0, 5]},{\"pos\" : [ 50, 0, 50],\"dir\" : [ -5, 0, 5]},{\"pos\" : [ 0, 0, 50 ],\"dir\" : [ -5, 0, -5]},]}");
+                        //string routeId = await ReceivePacketAsync();
+                        //Console.WriteLine($"Received route ID: {routeId}");
+
+                        // Add roads to route (needs route first):
+                        //SendTunnelCommand(tunnelId, "scene/road/add", "{route : routeId}");
                     }
                 }
             }
