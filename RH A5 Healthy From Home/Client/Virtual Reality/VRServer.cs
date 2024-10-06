@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using System.Windows.Markup;
@@ -19,107 +20,78 @@ namespace Client
 {
     internal class VRServer
     {
-        public static TcpClient vrServer = new TcpClient();
-        public static NetworkStream stream;
+        public static TcpClient vrServer; //TcpClient?
+        public static NetworkStream stream; //NetworkStream?
         public static string receivedData;
         public static byte[] prepend;
         public static byte[] data;
-        public VRServer()
+        public VRServer() { }
+
+        /// <summary>
+        /// Starts the VRServer and changes the environment
+        /// </summary>
+        /// <returns></returns>
+        public static async Task Start()
         {
-            // Establish a connection to the VR server
-            vrServer.Connect("85.145.62.130", 6666);
+            await ConnectToVrServerAsync();
+        }
+
+        /// <summary>
+        /// Connects to the VR Server and initializes Stream
+        /// </summary>
+        /// <returns></returns>
+        public static async Task ConnectToVrServerAsync()
+        {
+            vrServer = new TcpClient("85.145.62.130", 6666);
             stream = vrServer.GetStream();
-            MainWindow.client.chatText = "Connected to VR Server!\n";
+            MainWindow.TextChat.Text = "Connected to VR Server!\n";
 
-            receivedData = "";
-            //string recievedDataPart1 = "";
-            //string recievedDataPart2 = "";
-            //string combinedData = "";
-            //string data = "";
-            //string command = "";
-            //string commandData = "";
+            // Start listening for packets
+            await ListenForPacketsAsync();
+        }
 
-            while (vrServer.Connected)
+        /// <summary>
+        /// Handles data from incoming packets and sent packets
+        /// </summary>
+        /// <returns></returns>
+        public static async Task ListenForPacketsAsync()
+        {
+            // Get the sessionID
+            MainWindow.TextBoxBikeData.Text = "Sending starting packet...";
+            SendStartingPacket();
+            string sessionId = await ReceivePacketAsync();
+            Console.WriteLine($"Received session ID: {sessionId}");
+
+            if (!string.IsNullOrEmpty(sessionId))
             {
-                // Send packets to & get data from the server:
-                SendStartingPacket();
+                // Get the tunnelID
+                MainWindow.TextBoxBikeData.Text = "Sending session ID packet...";
+                SendSessionIdPacket(sessionId);
+                string tunnelId = await ReceivePacketAsync();
+                Console.WriteLine($"Received tunnel ID: {tunnelId}");
 
-                ReceivePacket();
-                //// Always listen for incoming packets
-                //Task.Run(() =>
-                //{
-                //    while (true)
-                //    {
-                //        ReceivePacket();
-                //    }
-                //});
+                if (!string.IsNullOrEmpty(tunnelId))
+                {
+                    // Send scene configuration commands
+                    //while (vrServer.Connected)
+                    {
+                        // Sending a tunnel command example:
+                        //SendTunnelCommand(tunnelId, "scene/reset", "{}");
 
-                //recievedDataPart1 = ReceivePacket();
-                //recievedDataPart2 = ReceivePacket();
-                //combinedData = recievedDataPart1 + recievedDataPart2;
-                //SendSessionIdPacket(combinedData);
-
-                //data = ReceivePacket();
-                //command = "scene/skybox/settime";
-                //commandData = "time : 24";
-                //SendTunnelCommand(data, command, commandData);
-
-                //data = ReceivePacket();
-                //command = "scene/skybox/update";
-                //commandData = "\"type\" : \"static\",\"files\" : {}}";
-                //SendSkyboxUpdate(command, commandData);
-
-                //data = ReceivePacket(stream);
-
-                //try
-                //{
-                //    // Step 3: Parse the JSON
-                //    using (JsonDocument doc = JsonDocument.Parse(jsonString))
-                //    {
-                //        JsonElement root = doc.RootElement;
-                //        // Navigate to the "data" array
-                //        if (root.TryGetProperty("data", out JsonElement dataArray) && dataArray.ValueKind == JsonValueKind.Array)
-                //        {
-                //            // Ensure the array is not empty
-                //            if (dataArray.GetArrayLength() > 0)
-                //            {
-                //                JsonElement firstItem = dataArray[0];
-                //                // Extract the "id" property
-                //                if (firstItem.TryGetProperty("id", out JsonElement idElement))
-                //                {
-                //                    string extractedId = idElement.GetString();
-                //                    Console.WriteLine("Extracted ID: " + extractedId);
-                //                }
-                //                else
-                //                {
-                //                    Console.WriteLine("'id' property not found in the first item of the 'data' array.");
-                //                }
-                //            }
-                //            else
-                //            {
-                //                Console.WriteLine("The 'data' array is empty.");
-                //            }
-                //        }
-                //        else
-                //        {
-                //            Console.WriteLine("'data' array not found in the JSON.");
-                //        }
-                //    }
-                //}
-                //catch (System.Text.Json.JsonException ex)
-                //{
-                //    Console.WriteLine("Error parsing JSON: " + ex.Message);
-                //}
+                        SendTunnelCommand(tunnelId, "scene/skybox/settime", "{ time : 23 }");
+                    }
+                }
             }
         }
 
         /// <summary>
-        /// Send packet to VR server
+        /// Sends the packet to the VR Server
         /// </summary>
         /// <param name="prepend"></param>
         /// <param name="data"></param>
         public static void SendPacket(byte[] prepend, byte[] data)
         {
+            // Add the prepend and data together and send this packet
             byte[] combinedArray = new byte[prepend.Length + data.Length];
             Array.Copy(prepend, 0, combinedArray, 0, prepend.Length);
             Array.Copy(data, 0, combinedArray, prepend.Length, data.Length);
@@ -127,120 +99,169 @@ namespace Client
         }
 
         /// <summary>
-        /// Receive packet from the server and print it to the console
+        /// Listens for incoming packets from the VR Server
         /// </summary>
-        public static void ReceivePacket()
+        /// <returns></returns>
+        public static async Task<string> ReceivePacketAsync()
         {
-            // Get prepend byte array from server
+            // Listen for incoming packets
             byte[] prependBuffer = new byte[4];
             int totalBytesRead = 0;
 
+            // Extract prepend data from the buffer
             while (totalBytesRead < 4)
             {
-                int bytesRead = stream.Read(prependBuffer, totalBytesRead, 4 - totalBytesRead);
+                int bytesRead = await stream.ReadAsync(prependBuffer, totalBytesRead, 4 - totalBytesRead);
                 if (bytesRead == 0)
                 {
                     Console.WriteLine("Error: Connection closed before reading the full length.");
-                    return;
+                    return null;
                 }
                 totalBytesRead += bytesRead;
             }
+            // Get length of incoming data
             int dataLength = BitConverter.ToInt32(prependBuffer, 0);
-            Debug.WriteLine("amount " + dataLength.ToString());
-           
+            byte[] dataBuffer = new byte[dataLength];
+            totalBytesRead = 0;
 
-            //int bytesRead = 0;
-            //byte[] readBuffer = new byte[1500];
-            //string totalResponse = "";
+            // Extract other data from the buffer
+            while (totalBytesRead < dataLength)
+            {
+                int bytesRead = await stream.ReadAsync(dataBuffer, totalBytesRead, dataLength - totalBytesRead);
+                if (bytesRead == 0)
+                {
+                    Console.WriteLine("Error: Connection closed before reading the full packet.");
+                    return null;
+                }
+                totalBytesRead += bytesRead;
+            }
+            // Get string of data
+            string dataString = Encoding.UTF8.GetString(dataBuffer);
+            Debug.WriteLine("Received data: " + dataString);
+            Console.WriteLine("received data: " + dataString);
 
-            //// Continue reading if not all bytes are sent in one packet
-            //while ((bytesRead = stream.Read(readBuffer, 0, readBuffer.Length)) > 0)
-            //{
-            //    int response = await stream.ReadAsync(readBuffer, 0, readBuffer.Length);
-            //    string responseText = Encoding.ASCII.GetString(readBuffer, 0, response);
-            //    totalResponse += responseText;
-            //    bytesToRead += bytesRead;
-            //}
-            //int prependByte = stream.ReadByte();
-            //prependBuffer[0] = prependByte;
-            //int prepend = await stream.ReadAsync(prependBuffer, 0, prependBuffer.Length);
-            //byte[] p = stream.Read(prependBuffer, 0, prependBuffer.Length);
-            //string prependText = Encoding.UTF32.GetString(prependBuffer, 0, prepend);
-
-            //int bytes = await stream.ReadAsync(buffer, 0, buffer.Length);
-            //string response = Encoding.ASCII.GetString(buffer, 0, bytes);
-            //totalResponse = response;
-
-            //while (bytes < buffer.Length)
-            //{
-            //    int addedBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
-            //    response = Encoding.ASCII.GetString(buffer, 0, addedBytes);
-            //    totalResponse += response;
-            //    bytes += addedBytes;
-            //}
-
-            //// Print for Debugging
-            //Console.WriteLine("total response: " + totalResponse);
-            //receivedData = totalResponse;
+            return GetId(dataString);
         }
 
         /// <summary>
-        /// Get the id (value after the second '{' character) from the recieved data
+        /// Gets the id from incoming data (sessionId, tunnelId etc.)
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
         public static string GetId(string data)
         {
-            // Extract sessionId from incoming data
-            int jsonStartIndex = 0;
-            for (int i = 0; i < 2; i++)
+            var jsonDocument = JsonDocument.Parse(data);
+
+            // The id can be inside of an array or object, so we have 2 cases:
+            if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataElement) &&
+                dataElement.ValueKind == JsonValueKind.Array &&
+                dataElement.GetArrayLength() > 0)
             {
-                jsonStartIndex = data.IndexOf('{');
-                if (jsonStartIndex == -1)
-                {
-                    return "";
-                }
-                data = data.Substring(jsonStartIndex + 1);
+                return dataElement[0].GetProperty("id").GetString();
             }
-            string[] arrayToFindSessionId = data.Split('"');
-            string id = data.Substring(6, arrayToFindSessionId[3].Length);
-            return id;
+            if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
+                dataObject.ValueKind == JsonValueKind.Object)
+            {
+                JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
+                return jsonNode["id"].GetValue<string>();
+            }
+            return null;
         }
 
+        /// <summary>
+        /// Initialize starting packet
+        /// </summary>
         public static void SendStartingPacket()
         {
-            // Prepare the JSON packet as a byte array
             string jsonPacket = "{\"id\" : \"session/list\"}";
-            data = Encoding.ASCII.GetBytes(jsonPacket);
-            prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
+            byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
+            byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
             SendPacket(prepend, data);
         }
 
-        public static void SendSessionIdPacket(string theData)
+        /// <summary>
+        /// Initialize session packet
+        /// </summary>
+        /// <param name="sessionId"></param>
+        public static void SendSessionIdPacket(string sessionId)
         {
-            string sessionId = GetId(theData);
-            if (sessionId.Equals(""))
-            {
-                return;
-            }
-            data = Encoding.ASCII.GetBytes($"{{\"id\" : \"tunnel/create\",\"data\" : {{\"session\" : \"{sessionId}\",\"key\" : \"\"}}}}");
-            prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
+            string jsonPacket = $"{{\"id\" : \"tunnel/create\",\"data\" : {{\"session\" : \"{sessionId}\",\"key\" : \"\"}}}}";
+            byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
+            byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
             SendPacket(prepend, data);
         }
 
-        public static void SendTunnelCommand(string theData, string command, string commandData)
+        /// <summary>
+        /// Initialize a tunnel command (Generic command for all tunnel functions)
+        /// </summary>
+        /// <param name="tunnelId"></param>
+        /// <param name="command"></param>
+        /// <param name="commandData"></param>
+        public static void SendTunnelCommand(string tunnelId, string command, string commandData)
         {
-            string tunnelId = GetId(theData);
-            data = Encoding.ASCII.GetBytes($"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {{\"id\" : \"{command}\",\"data\" : {commandData}}}}}}}");
-            prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
+            string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {{\"id\" : \"{command}\",\"data\" : {commandData}}}}}}}";
+            byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
+            byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
             SendPacket(prepend, data);
         }
 
-        public static void SendSkyboxUpdate(string command, string commandData)
-        {
-            data = Encoding.ASCII.GetBytes($"{{\"id\" : \"scene/skybox/update\",\"data\" : {{\"type\" : \"dynamic\"}}");
-            prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
-            SendPacket(prepend, data);
-        }
+
+        // OLD CODE:
+        ///// <summary>
+        ///// Receive packet from the server and print it to the console
+        ///// </summary>
+        //public static void ReceivePacket()
+        //{
+        //    // Get prepend byte array from server
+        //    byte[] prependBuffer = new byte[4];
+        //    int totalBytesRead = 0;
+
+        //    while (totalBytesRead < 4)
+        //    {
+        //        int bytesRead = stream.Read(prependBuffer, totalBytesRead, 4 - totalBytesRead);
+        //        if (bytesRead == 0)
+        //        {
+        //            Console.WriteLine("Error: Connection closed before reading the full length.");
+        //            return;
+        //        }
+        //        totalBytesRead += bytesRead;
+        //    }
+        //    int dataLength = BitConverter.ToInt32(prependBuffer, 0);
+        //    Debug.WriteLine("amount " + dataLength.ToString());
+
+        //    //int bytesRead = 0;
+        //    //byte[] readBuffer = new byte[1500];
+        //    //string totalResponse = "";
+
+        //    //// Continue reading if not all bytes are sent in one packet
+        //    //while ((bytesRead = stream.Read(readBuffer, 0, readBuffer.Length)) > 0)
+        //    //{
+        //    //    int response = await stream.ReadAsync(readBuffer, 0, readBuffer.Length);
+        //    //    string responseText = Encoding.ASCII.GetString(readBuffer, 0, response);
+        //    //    totalResponse += responseText;
+        //    //    bytesToRead += bytesRead;
+        //    //}
+        //    //int prependByte = stream.ReadByte();
+        //    //prependBuffer[0] = prependByte;
+        //    //int prepend = await stream.ReadAsync(prependBuffer, 0, prependBuffer.Length);
+        //    //byte[] p = stream.Read(prependBuffer, 0, prependBuffer.Length);
+        //    //string prependText = Encoding.UTF32.GetString(prependBuffer, 0, prepend);
+
+        //    //int bytes = await stream.ReadAsync(buffer, 0, buffer.Length);
+        //    //string response = Encoding.ASCII.GetString(buffer, 0, bytes);
+        //    //totalResponse = response;
+
+        //    //while (bytes < buffer.Length)
+        //    //{
+        //    //    int addedBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
+        //    //    response = Encoding.ASCII.GetString(buffer, 0, addedBytes);
+        //    //    totalResponse += response;
+        //    //    bytes += addedBytes;
+        //    //}
+
+        //    //// Print for Debugging
+        //    //Console.WriteLine("total response: " + totalResponse);
+        //    //receivedData = totalResponse;
+        //}
     }
 }

@@ -50,7 +50,7 @@ namespace Client
         public static TcpClient tcpClient = new TcpClient();
         public static List<Tuple<string, byte[]>> sessionData = new List<Tuple<string, byte[]>>();
         public static Simulator simulator = new Simulator();
-        private static VRServer vrServer;
+        private static VRServer vrServer = new VRServer();
         public static NetworkStream stream;
 
         // Privates:
@@ -78,8 +78,8 @@ namespace Client
             TextBoxBikeData = TxtBikeData;
             TextChat = TxtChat;
 
-            // Initialize VR Server
-            vrServer = new VRServer();
+            // Start VR Server
+            VRServer.Start();
 
             #region Connecting via bike (FietsDemo code)
             //UsingBicycle();
