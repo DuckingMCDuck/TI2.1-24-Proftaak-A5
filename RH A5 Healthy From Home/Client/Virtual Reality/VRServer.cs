@@ -11,6 +11,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using System.Windows.Markup;
@@ -25,6 +26,9 @@ namespace Client
         public static string receivedData;
         public static byte[] prepend;
         public static byte[] data;
+        public static string hostName = "Laptop-Daan";
+        public static DateTime startDateTime;
+
         public VRServer() { }
 
         // TODO: Verschil maken tussen commands die een ID terug sturen (sessionId, tunnelId etc.) en commands waarbij dit niet hoeft?
@@ -44,6 +48,10 @@ namespace Client
         /// <returns></returns>
         public static async Task ConnectToVrServerAsync()
         {
+            startDateTime = DateTime.Now;
+            // FOR LOCAL RAN SERVER:
+            //vrServer = new TcpClient("127.0.0.1", 6666);
+            // FOR REMOTE SERVER:
             vrServer = new TcpClient("85.145.62.130", 6666);
             stream = vrServer.GetStream();
             MainWindow.TextChat.Text = "Connected to VR Server!\n";
@@ -146,24 +154,56 @@ namespace Client
             // Get length of incoming data
             int dataLength = BitConverter.ToInt32(prependBuffer, 0);
             Console.WriteLine("datalenght: " + dataLength);
-            byte[] dataBuffer = new byte[dataLength];
             totalBytesRead = 0;
 
             // Extract other data from the buffer
-            while (totalBytesRead < dataLength)
+            int maxBufferSize = 1500;
+            string dataString = "";
+            if (dataLength <= maxBufferSize)
             {
-                int bytesRead = await stream.ReadAsync(dataBuffer, totalBytesRead, dataLength - totalBytesRead);
-                if (bytesRead == 0)
+                // dataLength <= buffer size
+                byte[] dataBuffer = new byte[dataLength];
+                while (totalBytesRead < dataLength)
                 {
-                    Console.WriteLine("Error: Connection closed before reading the full packet.");
-                    return null;
+                    int bytesRead = await stream.ReadAsync(dataBuffer, totalBytesRead, dataLength - totalBytesRead);
+                    if (bytesRead == 0)
+                    {
+                        Console.WriteLine("Error: Connection closed before reading the full packet.");
+                        return null;
+                    }
+                    totalBytesRead += bytesRead;
                 }
-                totalBytesRead += bytesRead;
+                // Get string of data
+                dataString = Encoding.UTF8.GetString(dataBuffer);
+                Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
+            } else
+            {
+                // dataLength > buffer size
+                int remainingDataLength = dataLength;
+                while (totalBytesRead < dataLength)
+                {
+                    // Calculate the remaining length of the data
+                    int readAmount = remainingDataLength % maxBufferSize;
+                    if (readAmount == 0)
+                    {
+                        // Modulo could return 0 if the length is exactly the maximum size of the buffer
+                        readAmount = maxBufferSize;
+                    }
+                    byte[] dataBuffer = new byte[readAmount];
+                    int bytesRead = await stream.ReadAsync(dataBuffer, totalBytesRead, totalBytesRead + readAmount);
+                    if (bytesRead == 0)
+                    {
+                        Console.WriteLine("Error: Connection closed before reading the full packet.");
+                        return null;
+                    }
+                    // Create string of data
+                    dataString += Encoding.UTF8.GetString(dataBuffer);
+                    totalBytesRead += bytesRead;
+                    remainingDataLength -= bytesRead;
+                    // Print data to console
+                    Console.WriteLine($"Received data [Length {readAmount}]: " + dataString);
+                }
             }
-            // Get string of data
-            string dataString = Encoding.UTF8.GetString(dataBuffer);
-            Debug.WriteLine("Received data: " + dataString);
-            Console.WriteLine("received data: " + dataString);
 
             return GetId(dataString);
         }
@@ -175,21 +215,40 @@ namespace Client
         /// <returns></returns>
         public static string GetId(string data)
         {
-            //Set the Json in a tree strucrture 
+            //Set the Json in a tree structure 
             var jsonDocument = JsonDocument.Parse(data);
             Console.WriteLine("JsonDoc: " + jsonDocument);
-            // The id can be inside of an array or object, so we have 2 cases:
-            if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataElement) &&
-                dataElement.ValueKind == JsonValueKind.Array &&
-                dataElement.GetArrayLength() > 0)
+
+            // See if we have the host somewhere in the data
+            bool hostInData = data.Contains(hostName);
+            if (hostInData)
             {
-                return dataElement[0].GetProperty("id").GetString();
-            }
-            if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
-                dataObject.ValueKind == JsonValueKind.Object)
+                string[] splitted = Regex.Split(data, "clientinfo");
+                for (int i = 0; i < splitted.Length; i++)
+                {
+                    int l = 0;
+                }
+                
+                // Get the first host
+                int hostIndex = data.IndexOf(hostName);
+                Console.WriteLine("Host index found: " + hostIndex);
+                // We need to get the Id of the host
+
+            } else
             {
-                JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
-                return jsonNode["id"].GetValue<string>(); 
+                // Just search for the Id, which can be inside of an array or object, so we have 2 cases:
+                if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataElement) &&
+                    dataElement.ValueKind == JsonValueKind.Array &&
+                    dataElement.GetArrayLength() > 0)
+                {
+                    return dataElement[0].GetProperty("id").GetString();
+                }
+                if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
+                    dataObject.ValueKind == JsonValueKind.Object)
+                {
+                    JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
+                    return jsonNode["id"].GetValue<string>();
+                }
             }
 
             //if (jsonDocument.RootElement.TryGetProperty("status", out JsonElement statusElement))
