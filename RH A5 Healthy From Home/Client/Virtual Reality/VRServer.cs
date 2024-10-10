@@ -173,6 +173,7 @@ namespace Client
         /// <returns></returns>
         public static string GetId(string data)
         {
+            //Set the Json in a tree strucrture 
             var jsonDocument = JsonDocument.Parse(data);
 
             // The id can be inside of an array or object, so we have 2 cases:
