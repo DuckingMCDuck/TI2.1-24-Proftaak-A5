@@ -118,6 +118,7 @@ namespace Client
             byte[] combinedArray = new byte[prepend.Length + data.Length];
             Array.Copy(prepend, 0, combinedArray, 0, prepend.Length);
             Array.Copy(data, 0, combinedArray, prepend.Length, data.Length);
+            Console.WriteLine(Encoding.ASCII.GetString(combinedArray));
             stream.Write(combinedArray, 0, combinedArray.Length);
         }
 
@@ -144,6 +145,7 @@ namespace Client
             }
             // Get length of incoming data
             int dataLength = BitConverter.ToInt32(prependBuffer, 0);
+            Console.WriteLine("datalenght: " + dataLength);
             byte[] dataBuffer = new byte[dataLength];
             totalBytesRead = 0;
 
@@ -175,7 +177,7 @@ namespace Client
         {
             //Set the Json in a tree strucrture 
             var jsonDocument = JsonDocument.Parse(data);
-
+            Console.WriteLine("JsonDoc: " + jsonDocument);
             // The id can be inside of an array or object, so we have 2 cases:
             if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataElement) &&
                 dataElement.ValueKind == JsonValueKind.Array &&
@@ -187,8 +189,16 @@ namespace Client
                 dataObject.ValueKind == JsonValueKind.Object)
             {
                 JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
-                return jsonNode["id"].GetValue<string>();
+                return jsonNode["id"].GetValue<string>(); 
             }
+
+            //if (jsonDocument.RootElement.TryGetProperty("status", out JsonElement statusElement))
+            //{
+            //    string status = statusElement.GetString();//todo error handling 
+            //    string message = jsonDocument.RootElement.TryGetProperty("msg", out JsonElement msgElement) ? msgElement.GetString() : "Unknown error";
+            //    MainWindow.TextChat.Text = ($"Error: {status} - {message}");
+            //    return null;
+            //}
             return null;
         }
 
