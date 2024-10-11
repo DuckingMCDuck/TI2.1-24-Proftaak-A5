@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCode", "TestCode\TestCo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{065FD96F-9B66-433C-970D-0D9571E8197D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HealthyFromHomeApp", "HealthyFromHomeApp\HealthyFromHomeApp.csproj", "{7398C32F-D121-4E6C-9567-6D7E189EB4CA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{065FD96F-9B66-433C-970D-0D9571E8197D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{065FD96F-9B66-433C-970D-0D9571E8197D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{065FD96F-9B66-433C-970D-0D9571E8197D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7398C32F-D121-4E6C-9567-6D7E189EB4CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7398C32F-D121-4E6C-9567-6D7E189EB4CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7398C32F-D121-4E6C-9567-6D7E189EB4CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7398C32F-D121-4E6C-9567-6D7E189EB4CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

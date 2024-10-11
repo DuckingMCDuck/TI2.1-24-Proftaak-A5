@@ -16,14 +16,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Client
+namespace HealthyFromHomeApp.Clients
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class ClientMainWindow : Window
     {
-        internal static MainWindow client; // MainWindow property to store the main window instance to access it from other classes
+        internal static ClientMainWindow client; // MainWindow property to store the main window instance to access it from other classes
 
         //Properties to update TextBoxes(From another class)
         internal string debugText
@@ -63,7 +63,7 @@ namespace Client
         public static TextBox TextBoxBikeData;
         public static TextBox TextChat;
 
-        public MainWindow()
+        public ClientMainWindow()
         {
             Thread.Sleep(1000);
             InitializeComponent();
@@ -73,6 +73,7 @@ namespace Client
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // Connect to the server
+            tcpClient = new TcpClient();
             tcpClient.Connect("localhost", 12345);
             stream = tcpClient.GetStream();
 
