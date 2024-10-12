@@ -65,13 +65,13 @@ namespace HealthyFromHomeApp.Server
             {
                 string clientName = roleMessage.Substring("client:".Length);
 
-                if (!clients.ContainsKey(clientName))
+                if (!clients.ContainsKey(clientName)) 
                 {
                     clients.Add(clientName, tcpClient);
                     Console.WriteLine($"Client registered: {clientName}");
 
                     NotifyDoctorOfClients();
-
+                    
                     Task.Run(() => ListenForMessages(tcpClient, clientName));
                 }
             }
@@ -89,11 +89,16 @@ namespace HealthyFromHomeApp.Server
         {
             try
             {
-                while (true)
+                while (tcpClient.Connected) 
                 {
                     string message = ReceiveMessage(tcpClient).Result;
 
-                    if (message == null) return; // Client disconnected
+                    if (message == null)
+                    {
+                        Console.WriteLine($"{senderName} disconnected.");
+                        DisconnectClient(tcpClient, senderName); 
+                        return;
+                    }
 
                     Console.WriteLine($"Received message from {senderName}: {message}");
 
@@ -112,6 +117,11 @@ namespace HealthyFromHomeApp.Server
                 Console.WriteLine($"{senderName} connection error: {ex.Message}");
                 DisconnectClient(tcpClient, senderName);
             }
+            catch (SocketException ex)
+            {
+                Console.WriteLine($"Socket error with {senderName}: {ex.Message}");
+                DisconnectClient(tcpClient, senderName);
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"Unexpected error with {senderName}: {ex.Message}");
@@ -122,10 +132,10 @@ namespace HealthyFromHomeApp.Server
         private static async Task<string> ReceiveMessage(TcpClient tcpClient)
         {
             NetworkStream stream = tcpClient.GetStream();
-            byte[] buffer = new byte[1500];
+            byte[] buffer = new byte[4096];
 
             int byteCount = await stream.ReadAsync(buffer, 0, buffer.Length);
-            if (byteCount == 0) return null; // Connection closed
+            if (byteCount == 0) return null; 
 
             return Encoding.ASCII.GetString(buffer, 0, byteCount).Trim();
         }
@@ -173,7 +183,12 @@ namespace HealthyFromHomeApp.Server
         {
             if (clients.TryGetValue(clientName, out TcpClient targetClient))
             {
+                Console.WriteLine($"Sending message to {clientName} via TcpClient: {targetClient.Client.RemoteEndPoint}");
                 SendMessage(targetClient, message);
+            }
+            else
+            {
+                Console.WriteLine($"Client {clientName} not found.");
             }
         }
 

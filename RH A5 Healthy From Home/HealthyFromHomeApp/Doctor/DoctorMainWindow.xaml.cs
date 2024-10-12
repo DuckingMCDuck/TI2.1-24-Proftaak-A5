@@ -38,7 +38,6 @@ namespace HealthyFromHomeApp.Doctor
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            //is de read only box, hierin moet de chats weergegeven worden, chat logica moet nog worden toegevoegd.
             chatReadOnly.ScrollToEnd();
 
         }
@@ -101,18 +100,14 @@ namespace HealthyFromHomeApp.Doctor
         {
             Dispatcher.Invoke(() =>
             {
-                CmbClientsForDoc.Items.Clear();
-                Console.WriteLine("Updating ComboBox with clients: " + string.Join(", ", clients));
-
+                ComboBoxClientsForDoc.Items.Clear();
                 foreach (string client in clients)
                 {
-                    if (!string.IsNullOrEmpty(client)) 
+                    if (!string.IsNullOrEmpty(client))
                     {
-                        CmbClientsForDoc.Items.Add(client);
+                        ComboBoxClientsForDoc.Items.Add(client);
                     }
                 }
-                Console.WriteLine("ComboBox now contains " + CmbClientsForDoc.Items.Count + " clients.");
-
             });
         }
 
@@ -127,7 +122,6 @@ namespace HealthyFromHomeApp.Doctor
             tcpClient.Connect("localhost", 12345);
             stream = tcpClient.GetStream();
 
-            // Create public variables for items in the Toolbox (Schrijf volledig uit: Txt -> TextBox, Btn -> Button etc.)
             Task.Run(() => ListenForUpdates());
 
             ChatReadOnly = chatReadOnly;
