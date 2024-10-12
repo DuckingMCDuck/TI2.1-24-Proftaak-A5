@@ -6,6 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using HealthyFromHomeApp.Common;
 
 namespace HealthyFromHomeApp.Server
 {
@@ -23,7 +24,7 @@ namespace HealthyFromHomeApp.Server
             listener.Start();
             Console.WriteLine("Server started and waiting for connections...");
 
-            listener.BeginAcceptTcpClient(new AsyncCallback(OnConnect), null);
+            listener.BeginAcceptTcpClient(OnConnect, null);
 
             while (true)
             {
@@ -46,7 +47,6 @@ namespace HealthyFromHomeApp.Server
             {
                 doctorClient = tcpClient;
                 Console.WriteLine("Doctor connected.");
-
                 Task.Run(() => ListenForMessages(doctorClient, "Doctor", isDoctor: true));
             }
             else
@@ -54,7 +54,7 @@ namespace HealthyFromHomeApp.Server
                 await RegisterClient(tcpClient);
             }
 
-            listener.BeginAcceptTcpClient(new AsyncCallback(OnConnect), null);
+            listener.BeginAcceptTcpClient(OnConnect, null);
         }
 
         private static async Task RegisterClient(TcpClient tcpClient)
@@ -65,13 +65,12 @@ namespace HealthyFromHomeApp.Server
             {
                 string clientName = roleMessage.Substring("client:".Length);
 
-                if (!clients.ContainsKey(clientName)) 
+                if (!clients.ContainsKey(clientName))
                 {
                     clients.Add(clientName, tcpClient);
                     Console.WriteLine($"Client registered: {clientName}");
 
                     NotifyDoctorOfClients();
-                    
                     Task.Run(() => ListenForMessages(tcpClient, clientName));
                 }
             }
@@ -89,27 +88,20 @@ namespace HealthyFromHomeApp.Server
         {
             try
             {
-                while (tcpClient.Connected) 
+                while (tcpClient.Connected)
                 {
                     string message = ReceiveMessage(tcpClient).Result;
 
                     if (message == null)
                     {
                         Console.WriteLine($"{senderName} disconnected.");
-                        DisconnectClient(tcpClient, senderName); 
+                        DisconnectClient(tcpClient, senderName);
                         return;
                     }
 
                     Console.WriteLine($"Received message from {senderName}: {message}");
 
-                    if (isDoctor)
-                    {
-                        ProcessDoctorMessage(message);
-                    }
-                    else
-                    {
-                        ProcessClientMessage(senderName, message);
-                    }
+                    ProcessMessage(senderName, message, isDoctor);
                 }
             }
             catch (IOException ex)
@@ -135,47 +127,36 @@ namespace HealthyFromHomeApp.Server
             byte[] buffer = new byte[4096];
 
             int byteCount = await stream.ReadAsync(buffer, 0, buffer.Length);
-            if (byteCount == 0) return null; 
+            if (byteCount == 0) return null;
 
-            return Encoding.ASCII.GetString(buffer, 0, byteCount).Trim();
+            string encryptedMessage = Encoding.UTF8.GetString(buffer, 0, byteCount).Trim();
+            string decrypted = EncryptHelper.Decrypt(encryptedMessage);
+            return decrypted;
         }
 
-        private static void ProcessDoctorMessage(string message)
+        private static void ProcessMessage(string senderName, string message, bool isDoctor)
         {
             string[] splitMessage = message.Split(':');
+            if (splitMessage.Length < 2) return;
+
             if (splitMessage[0] == "send_to")
             {
                 string targetClient = splitMessage[1];
-                string doctorMessage = string.Join(":", splitMessage.Skip(2));
-                SendToClient(targetClient, $"Doctor: {doctorMessage}");
+                string actualMessage = string.Join(":", splitMessage.Skip(2));
+                SendToClient(targetClient, $"{(isDoctor ? "Doctor" : senderName)}: {actualMessage}");
             }
-        }
-
-        private static void ProcessClientMessage(string clientName, string message)
-        {
-            if (message.StartsWith("chat:send_to:Doctor:"))
+            else if (!isDoctor && message.StartsWith("chat:send_to:Doctor:"))
             {
                 string clientMessage = message.Substring("chat:send_to:Doctor:".Length);
-                if (doctorClient != null)
-                {
-                    SendMessage(doctorClient, $"{clientName}: {clientMessage}");
-                }
-            }
-            else if (message.StartsWith("send_to:"))
-            {
-                Broadcast(message, clientName);
+                ForwardToDoctor(senderName, clientMessage);
             }
         }
 
-        internal static void Broadcast(string packet, string senderName)
+        private static void ForwardToDoctor(string clientName, string message)
         {
-            string[] splitPacket = packet.Split(':');
-            if (splitPacket[0] == "send_to")
+            if (doctorClient != null)
             {
-                string targetClient = splitPacket[1];
-                string message = $"{senderName}: {string.Join(":", splitPacket.Skip(2))}";
-
-                SendToClient(targetClient, message);
+                SendMessage(doctorClient, $"{clientName}: {message}");
             }
         }
 
@@ -196,7 +177,8 @@ namespace HealthyFromHomeApp.Server
         {
             try
             {
-                byte[] data = Encoding.ASCII.GetBytes(message);
+                string encryptedMessage = EncryptHelper.Encrypt(message);
+                byte[] data = Encoding.UTF8.GetBytes(encryptedMessage);
                 NetworkStream stream = tcpClient.GetStream();
                 stream.Write(data, 0, data.Length);
                 stream.Flush();
@@ -209,24 +191,18 @@ namespace HealthyFromHomeApp.Server
 
         private static void DisconnectClient(TcpClient tcpClient, string clientName)
         {
-            if (clients.ContainsKey(clientName))
+            if (clients.Remove(clientName))
             {
-                clients.Remove(clientName);
                 Console.WriteLine($"Client {clientName} disconnected.");
                 NotifyDoctorOfClients();
             }
-        }
-
-        public void Update(string convertedData)
-        {
-
         }
 
         public async void WriteToFile(string convertedData)
         {
             string documentPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-            using (StreamWriter outputToFile = new StreamWriter(Path.Combine(documentPath, "Async Data of Client")))
+            using (StreamWriter outputToFile = new StreamWriter(Path.Combine(documentPath, "Async Data of Client.txt")))
             {
                 await outputToFile.WriteAsync(convertedData);
             }

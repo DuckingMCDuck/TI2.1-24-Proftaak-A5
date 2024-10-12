@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using HealthyFromHomeApp.Common;
 
 namespace HealthyFromHomeApp.Doctor
 {
@@ -64,7 +65,8 @@ namespace HealthyFromHomeApp.Doctor
             if (tcpClient.Connected)
             {
                 string packet = $"send_to:{client}:{message}";
-                byte[] data = Encoding.ASCII.GetBytes(packet);
+                string encryptedPacket = EncryptHelper.Encrypt(packet);
+                byte[] data = Encoding.ASCII.GetBytes(encryptedPacket);
                 await stream.WriteAsync(data, 0, data.Length);
                 stream.Flush(); 
             }
@@ -77,7 +79,8 @@ namespace HealthyFromHomeApp.Doctor
             while (true)
             {
                 int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-                string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                string encryptedMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                string message = EncryptHelper.Decrypt(encryptedMessage);
 
                 Console.WriteLine("Received message from server: " + message);  
 

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using HealthyFromHomeApp.Common;
 
 namespace HealthyFromHomeApp.Clients
 {
@@ -161,24 +162,16 @@ namespace HealthyFromHomeApp.Clients
                         break;
                     }
 
-                    string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-
-                    Console.WriteLine($"Received raw message: {message}");
+                    string encryptedMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                    string message = EncryptHelper.Decrypt(encryptedMessage); 
 
                     string[] splitMessage = message.Split(':');
                     if (splitMessage.Length > 1)
                     {
-                        string sender = splitMessage[0].Trim();   
+                        string sender = splitMessage[0].Trim();
                         string receivedMessage = message.Substring(sender.Length + 1).Trim();
 
-                        if (sender == "Doctor" || sender == clientName)  
-                        {
-                            await Dispatcher.InvokeAsync(() => TextChat.AppendText($"{sender}: {receivedMessage}\n"));
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Message ignored. Received message from {sender}, but this client is {clientName}.");
-                        }
+                        await Dispatcher.InvokeAsync(() => TextChat.AppendText($"{sender}: {receivedMessage}\n"));
                     }
                 }
             }
@@ -190,15 +183,17 @@ namespace HealthyFromHomeApp.Clients
 
         private void BtnSendMessage_Click(object sender, RoutedEventArgs e)
         {
-            string message = "send_to:Doctor:" + TxtTypeBar.Text;
+            string message = "chat:send_to:Doctor:" + TxtTypeBar.Text;
             string rawMessage = TxtTypeBar.Text;
             string rawClient = clientName.Substring("client:".Length);
 
             if (!string.IsNullOrEmpty(message))
             {
-                SendMessageToServer(message);
+                string encryptedMessage = EncryptHelper.Encrypt(message);
+                byte[] data = Encoding.ASCII.GetBytes(encryptedMessage);
                 TxtChat.AppendText($"{rawClient}: {rawMessage}\n");
                 TxtTypeBar.Clear();
+                SendMessageToServer(encryptedMessage);
             }
         }
 
@@ -206,7 +201,7 @@ namespace HealthyFromHomeApp.Clients
         {
             if (stream.CanWrite)
             {
-                byte[] data = Encoding.ASCII.GetBytes("chat:" + message);
+                byte[] data = Encoding.ASCII.GetBytes(message);
                 await stream.WriteAsync(data, 0, data.Length);
                 await stream.FlushAsync();
             }
@@ -229,7 +224,8 @@ namespace HealthyFromHomeApp.Clients
 
                     if (stream != null && stream.CanWrite)
                     {
-                        byte[] nameData = Encoding.ASCII.GetBytes(clientName);
+                        string encryptedName = EncryptHelper.Encrypt(clientName);
+                        byte[] nameData = Encoding.ASCII.GetBytes(encryptedName);
                         await stream.WriteAsync(nameData, 0, nameData.Length);
                         stream.Flush();
 
