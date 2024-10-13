@@ -7,7 +7,7 @@ namespace HealthyFromHomeApp.Common
 {
     internal class EncryptHelper
     {
-        private static readonly string encryptionKey = "A54Life"; 
+        private static readonly string encryptionKey = "A54Lifepadpadpad"; 
 
         public static string Encrypt(string plainText)
         {
@@ -16,6 +16,7 @@ namespace HealthyFromHomeApp.Common
 
             using (Aes aes = Aes.Create())
             {
+                Console.WriteLine(key);
                 aes.Key = key;
                 aes.GenerateIV();
                 iv = aes.IV; 
