@@ -13,9 +13,11 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
 using System.Xml.Linq;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Client
 {
@@ -186,26 +188,32 @@ namespace Client
                     // Modulo could return 0 if the length is exactly the maximum size of the buffer
                     readAmount = maxBufferSize;
                 }
-                // Loop amount of times dataLength can be divided by maxBufferSize (+1 for modulo value reading
-                int times = (dataLength/maxBufferSize)+1;
-                for (int i = 0; i < times; i++)
+
+                async Task ReadBytes()
                 {
-                    byte[] dataBuffer = new byte[readAmount];
-                    int bytesRead = 0;
-                    int bytes = await stream.ReadAsync(dataBuffer, 0, readAmount);
-                    if (bytes == 0)
+                    // Loop amount of times dataLength can be divided by maxBufferSize (+1 for modulo value reading
+                    int times = (dataLength / maxBufferSize) + 1;
+                    for (int i = 0; i < times; i++)
                     {
-                        Console.WriteLine("Error: Connection closed before reading the full packet.");
-                        return null;
+                        byte[] dataBuffer = new byte[readAmount];
+                        int bytesRead = 0;
+                        int bytes = await stream.ReadAsync(dataBuffer, 0, readAmount);
+                        if (bytes == 0)
+                        {
+                            Console.WriteLine("Error: Connection closed before reading the full packet.");
+                            return;
+                        }
+                        bytesRead += bytes;
+
+                        // Create string of data to store part of the data in
+                        dataString += Encoding.UTF8.GetString(dataBuffer);
+
+                        // After reading the modulo bytes, always set the buffer size to the maximum
+                        readAmount = maxBufferSize;
                     }
-                    bytesRead += bytes;
-
-                    // Create string of data to store part of the data in
-                    dataString += Encoding.UTF8.GetString(dataBuffer);
-
-                    // After reading the modulo bytes, always set the buffer size to the maximum
-                    readAmount = maxBufferSize;
                 }
+                await ReadBytes();
+                
                 // Print data to console
                 Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
             }
@@ -224,17 +232,22 @@ namespace Client
             bool hostInData = data.Contains(hostName);
             if (hostInData)
             {
+                string sessionId = "";
                 // Split data on '{' character
-                string[] splitted = Regex.Split(data, "{");
+                string[] splitted = Regex.Split(data, "clientinfo");
                 for (int i = 0; i < splitted.Length; i++)
                 {
+                    //To print the first ID (which is wrong!):
+                    //string a = splitted[2].Trim();
                     if (splitted[i].Contains(hostName))
                     {
-                        // Split data on ID to find the session id of the user
-                        string[] splitSplitted = Regex.Split(splitted.ToString(), "\"");
-                        Console.WriteLine($"Session ID: {splitSplitted[0].ToString()}");
+                        // Find the session id of the user with Regex (pattern 8-4-4-11)
+                        string pattern = "([a-z]|[0-9]){8}-([a-z]|[0-9]){4}-([a-z]|[0-9]){4}-([a-z]|[0-9]){4}-([a-z]|[0-9]){12}";
+                        sessionId = Regex.Match(splitted[i-1], pattern).Value;
+                        Console.WriteLine($"Session ID: {sessionId}");
                     }
                 }
+                return sessionId;
             } else
             {
                 //Set the Json in a tree structure 
