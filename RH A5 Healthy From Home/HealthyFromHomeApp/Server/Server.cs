@@ -67,6 +67,7 @@ namespace HealthyFromHomeApp.Server
 
                         SendMessage(doctorClient, "login_success");
 
+                        NotifyDoctorOfClients();
                         Task.Run(() => ListenForMessages(doctorClient, "Doctor", isDoctor: true));
                     }
                     else

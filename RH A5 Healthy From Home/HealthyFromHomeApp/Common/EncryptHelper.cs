@@ -7,6 +7,7 @@ namespace HealthyFromHomeApp.Common
 {
     internal class EncryptHelper
     {
+        //hardcoded voor nu
         private static readonly string encryptionKey = "A54Lifepadpadpad"; 
 
         public static string Encrypt(string plainText)
