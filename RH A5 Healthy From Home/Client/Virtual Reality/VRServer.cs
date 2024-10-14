@@ -179,30 +179,35 @@ namespace Client
             } else
             {
                 // dataLength > buffer size
-                int remainingDataLength = dataLength;
-                while (totalBytesRead < dataLength)
+                // Calculate the remaining length of the data
+                int readAmount = dataLength % maxBufferSize;
+                if (readAmount == 0)
                 {
-                    // Calculate the remaining length of the data
-                    int readAmount = remainingDataLength % maxBufferSize;
-                    if (readAmount == 0)
-                    {
-                        // Modulo could return 0 if the length is exactly the maximum size of the buffer
-                        readAmount = maxBufferSize;
-                    }
+                    // Modulo could return 0 if the length is exactly the maximum size of the buffer
+                    readAmount = maxBufferSize;
+                }
+                // Loop amount of times dataLength can be divided by maxBufferSize (+1 for modulo value reading
+                int times = (dataLength/maxBufferSize)+1;
+                for (int i = 0; i < times; i++)
+                {
                     byte[] dataBuffer = new byte[readAmount];
-                    int bytesRead = await stream.ReadAsync(dataBuffer, totalBytesRead, totalBytesRead + readAmount);
-                    if (bytesRead == 0)
+                    int bytesRead = 0;
+                    int bytes = await stream.ReadAsync(dataBuffer, 0, readAmount);
+                    if (bytes == 0)
                     {
                         Console.WriteLine("Error: Connection closed before reading the full packet.");
                         return null;
                     }
-                    // Create string of data
+                    bytesRead += bytes;
+
+                    // Create string of data to store part of the data in
                     dataString += Encoding.UTF8.GetString(dataBuffer);
-                    totalBytesRead += bytesRead;
-                    remainingDataLength -= bytesRead;
-                    // Print data to console
-                    Console.WriteLine($"Received data [Length {readAmount}]: " + dataString);
+
+                    // After reading the modulo bytes, always set the buffer size to the maximum
+                    readAmount = maxBufferSize;
                 }
+                // Print data to console
+                Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
             }
 
             return GetId(dataString);
@@ -215,27 +220,27 @@ namespace Client
         /// <returns></returns>
         public static string GetId(string data)
         {
-            //Set the Json in a tree structure 
-            var jsonDocument = JsonDocument.Parse(data);
-            Console.WriteLine("JsonDoc: " + jsonDocument);
-
             // See if we have the host somewhere in the data
             bool hostInData = data.Contains(hostName);
             if (hostInData)
             {
-                string[] splitted = Regex.Split(data, "clientinfo");
+                // Split data on '{' character
+                string[] splitted = Regex.Split(data, "{");
                 for (int i = 0; i < splitted.Length; i++)
                 {
-                    int l = 0;
+                    if (splitted[i].Contains(hostName))
+                    {
+                        // Split data on ID to find the session id of the user
+                        string[] splitSplitted = Regex.Split(splitted.ToString(), "\"");
+                        Console.WriteLine($"Session ID: {splitSplitted[0].ToString()}");
+                    }
                 }
-                
-                // Get the first host
-                int hostIndex = data.IndexOf(hostName);
-                Console.WriteLine("Host index found: " + hostIndex);
-                // We need to get the Id of the host
-
             } else
             {
+                //Set the Json in a tree structure 
+                var jsonDocument = JsonDocument.Parse(data);
+                Console.WriteLine("JsonDoc: " + jsonDocument);
+
                 // Just search for the Id, which can be inside of an array or object, so we have 2 cases:
                 if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataElement) &&
                     dataElement.ValueKind == JsonValueKind.Array &&
