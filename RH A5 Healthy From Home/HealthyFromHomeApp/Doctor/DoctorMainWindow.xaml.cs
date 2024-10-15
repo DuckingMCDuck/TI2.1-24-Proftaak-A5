@@ -48,17 +48,24 @@ namespace HealthyFromHomeApp.Doctor
         {
             string message = chatBar.Text;
 
-            if (!string.IsNullOrEmpty(message) && selectedClient != null)
+            if (!string.IsNullOrEmpty(message))
             {
-                SendMessageToClient(selectedClient, message); 
-                ChatReadOnly.AppendText($"Doctor:{message}\n");
-                chatBar.Clear();
+                BroadcastMessage(message);  
+                ChatReadOnly.AppendText($"Doctor (Broadcast): {message}\n");
+                chatBar.Clear();  
             }
-            else
+        }
+
+        private async void BroadcastMessage(string message)
+        {
+            if (tcpClient.Connected)
             {
-                ChatReadOnly.AppendText("Please select a client and enter a message.\n");
-            } 
-                
+                string packet = $"broadcast:{message}";
+                string encryptedPacket = EncryptHelper.Encrypt(packet);
+                byte[] data = Encoding.ASCII.GetBytes(encryptedPacket);
+                await stream.WriteAsync(data, 0, data.Length);
+                stream.Flush();
+            }
         }
 
         private async void SendMessageToClient(string client, string message)
