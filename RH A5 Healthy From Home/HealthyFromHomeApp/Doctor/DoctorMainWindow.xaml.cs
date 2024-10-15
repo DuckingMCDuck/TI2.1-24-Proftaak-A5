@@ -106,8 +106,25 @@ namespace HealthyFromHomeApp.Doctor
                     if (openClientWindows.ContainsKey(senderClient))
                     {
                         Dispatcher.Invoke(() => openClientWindows[senderClient].AppendMessage(clientMessage));
+                    } else
+                    {
+                        NotifyDoctorOfNewMessage(senderClient, clientMessage);
                     }
                 }
+            }
+        }
+
+        private void NotifyDoctorOfNewMessage(string clientName, string message)
+        {
+            MessageBoxResult result = MessageBox.Show(
+                $"You have received a message from {clientName}: {message}\n\nWould you like to open the chat window?",
+                "New Message Notification",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                OpenClientChatWindow(clientName);
             }
         }
 
@@ -139,13 +156,19 @@ namespace HealthyFromHomeApp.Doctor
         {
             if (!openClientWindows.ContainsKey(client))
             {
-                ClientChatWindow chatWindow = new ClientChatWindow(client, tcpClient, stream);
-                chatWindow.Show();
-                openClientWindows.Add(client, chatWindow);
+                Dispatcher.Invoke(() =>
+                {
+                    ClientChatWindow chatWindow = new ClientChatWindow(client, tcpClient, stream);
+                    chatWindow.Show();
+                    openClientWindows.Add(client, chatWindow);
+                });
             }
             else
             {
-                openClientWindows[client].Activate();
+                Dispatcher.Invoke(() =>
+                {
+                    openClientWindows[client].Activate();
+                });
             }
         }
 
