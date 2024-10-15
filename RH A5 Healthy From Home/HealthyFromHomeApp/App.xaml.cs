@@ -22,10 +22,10 @@ namespace HealthyFromHomeApp
             });
 
             // dokter
-            var doctorWindow = new Doctor.DoctorMainWindow();
+            var doctorWindow = new Doctor.LoginWindow();
             doctorWindow.Show();
-
-            // client 1
+            
+            //client 1
             var clientWindow1 = new Clients.ClientMainWindow();
             clientWindow1.Title = "Client 1";
             clientWindow1.Show();

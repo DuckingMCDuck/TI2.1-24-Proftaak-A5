@@ -30,11 +30,11 @@ namespace HealthyFromHomeApp.Doctor
         public static ComboBox ComboBoxClientsForDoc;
 
         private string selectedClient = null;
-        public DoctorMainWindow()
+        public DoctorMainWindow(TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
-
-            
+            this.tcpClient = client;
+            stream = networkStream;
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -122,8 +122,8 @@ namespace HealthyFromHomeApp.Doctor
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            tcpClient.Connect("localhost", 12345);
-            stream = tcpClient.GetStream();
+            //tcpClient.Connect("localhost", 12345);
+            //stream = tcpClient.GetStream();
 
             Task.Run(() => ListenForUpdates());
 
