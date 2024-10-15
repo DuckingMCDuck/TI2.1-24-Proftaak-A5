@@ -176,9 +176,13 @@ namespace HealthyFromHomeApp.Server
         private static void ProcessMessage(string senderName, string message, bool isDoctor)
         {
             string[] splitMessage = message.Split(':');
-            if (splitMessage.Length < 2) return;
 
-            if (splitMessage[0] == "send_to")
+            if (splitMessage[0] == "broadcast" && isDoctor)
+            {
+                string broadcastMessage = string.Join(":", splitMessage.Skip(1));
+                BroadcastMessageToAllClients($"Doctor (Broadcast): {broadcastMessage}");
+            }
+            else if (splitMessage[0] == "send_to")
             {
                 string targetClient = splitMessage[1];
                 string actualMessage = string.Join(":", splitMessage.Skip(2));
@@ -188,6 +192,14 @@ namespace HealthyFromHomeApp.Server
             {
                 string clientMessage = message.Substring("chat:send_to:Doctor:".Length);
                 ForwardToDoctor(senderName, clientMessage);
+            }
+        }
+
+        private static void BroadcastMessageToAllClients(string message)
+        {
+            foreach (var client in clients.Values)
+            {
+                SendMessage(client, message);
             }
         }
 

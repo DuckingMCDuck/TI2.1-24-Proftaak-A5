@@ -183,6 +183,13 @@ namespace HealthyFromHomeApp.Clients
 
         private void BtnSendMessage_Click(object sender, RoutedEventArgs e)
         {
+            if (clientName == null)
+            {
+                MessageBox.Show("You are not connected yet. Please connect before sending a message.", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+
             string message = "chat:send_to:Doctor:" + TxtTypeBar.Text;
             string rawMessage = TxtTypeBar.Text;
             string rawClient = clientName.Substring("client:".Length);
