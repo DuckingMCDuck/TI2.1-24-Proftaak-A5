@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -31,12 +32,14 @@ namespace HealthyFromHomeApp.Clients
             randomHexPart16 = GenerateDataPage16(rand);
             string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
             string result16 = $"{simulatedMessage16}";
+            Debug.WriteLine("RESULT 16: " + result16);
             ClientMainWindow.client.debugText = $"\n{result16}\n";
             DataDecoder.Decode(result16);
 
             randomHexPart25 = GenerateDataPage25(rand);
             string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
             string result25 = $"{simulatedMessage25}";
+            Debug.WriteLine("RESULT 25: " + result25);
             ClientMainWindow.client.debugText = $"\n{result25}\n";
             DataDecoder.Decode(result25);
 

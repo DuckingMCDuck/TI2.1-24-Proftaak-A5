@@ -79,7 +79,7 @@ namespace HealthyFromHomeApp.Clients
         {
             Dispatcher.Invoke(() => TextChat.AppendText($"Simulator turned {(simulating ? "ON" : "OFF")}!\n"));
 
-            if (!simulating)
+            if (simulating)
             {
                 Task.Run(() =>
                 {
