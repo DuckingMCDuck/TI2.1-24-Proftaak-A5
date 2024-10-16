@@ -24,16 +24,14 @@ namespace HealthyFromHomeApp
             // dokter
             var doctorWindow = new Doctor.LoginWindow();
             doctorWindow.Show();
-            
-            //client 1
-            var clientWindow1 = new Clients.ClientMainWindow();
-            clientWindow1.Title = "Client 1";
-            clientWindow1.Show();
 
-            // client 2
-            var clientWindow2 = new Clients.ClientMainWindow();
-            clientWindow2.Title = "Client 2";
-            clientWindow2.Show();
+            //client 1
+            var loginWindow1 = new Clients.LoginWindow();
+            loginWindow1.Show();
+
+            //client 2
+            var loginWindow2 = new Clients.LoginWindow();
+            loginWindow2.Show();
         }
     }
 }

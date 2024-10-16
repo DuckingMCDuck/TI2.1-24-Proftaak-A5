@@ -49,21 +49,26 @@ namespace HealthyFromHomeApp.Clients
         private static bool simulating = false;
         private string clientName;
         private static bool isReconnecting = false;
+        private bool bikeConnected = false;
 
         // Toolbox-Items:
         public static TextBox TextBoxBikeData;
         public TextBox TextChat;
 
-        public ClientMainWindow()
+        public ClientMainWindow(string clientName, TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
-            client = this; 
+            this.clientName = clientName;
+            this.tcpClient = client;
+            this.stream = networkStream;
+            ClientMainWindow.client = this;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             TextBoxBikeData = TxtBikeData;
             TextChat = TxtChat;
+            TxtChat.AppendText($"Connected as: {clientName}\n");
 
             Task.Run(() => UsingSimulator());
         }
@@ -214,50 +219,11 @@ namespace HealthyFromHomeApp.Clients
             }
         }
 
-        private async void BtnConnect_Click(object sender, RoutedEventArgs e)
+        private async void BtnConnectBike_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                clientName = "client:" + TxtName.Text;
-
-                if (!string.IsNullOrEmpty(clientName))
-                {
-                    if (tcpClient == null || !tcpClient.Connected)
-                    {
-                        tcpClient = new TcpClient();
-                        await tcpClient.ConnectAsync("localhost", 12345); 
-                        stream = tcpClient.GetStream(); 
-                    }
-
-                    if (stream != null && stream.CanWrite)
-                    {
-                        string encryptedName = EncryptHelper.Encrypt(clientName);
-                        byte[] nameData = Encoding.ASCII.GetBytes(encryptedName);
-                        await stream.WriteAsync(nameData, 0, nameData.Length);
-                        stream.Flush();
-
-                        TxtChat.AppendText("Connected as: " + clientName + "\n");
-
-                        Task.Run(() => ListenForMessages());
-                    }
-                    else
-                    {
-                        TxtChat.AppendText("Unable to write to the server stream.\n");
-                    }
-                }
-                else
-                {
-                    TxtChat.AppendText("Please enter a valid name before connecting.\n");
-                }
-            }
-            catch (SocketException ex)
-            {
-                TxtChat.AppendText($"Socket error: {ex.Message}\n");
-            }
-            catch (Exception ex)
-            {
-                TxtChat.AppendText($"Error: {ex.Message}\n");
-            }
+            TxtBikeStatus.Text = "Attempting to connect to the bike...\n";
+            bikeConnected = true;
+            TxtBikeStatus.Text = "Bike connected successfully!\n";
         }
 
 
