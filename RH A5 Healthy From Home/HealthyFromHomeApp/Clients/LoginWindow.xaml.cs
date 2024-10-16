@@ -35,7 +35,7 @@ namespace HealthyFromHomeApp.Clients
                 await stream.WriteAsync(data, 0, data.Length);
                 stream.Flush();
 
-                ClientMainWindow mainWindow = new ClientMainWindow(clientName, tcpClient, stream);
+                ClientMainWindow mainWindow = new ClientMainWindow(message, tcpClient, stream);
                 mainWindow.Show();
                 this.Close();
             }
