@@ -70,6 +70,7 @@ namespace HealthyFromHomeApp.Clients
             TextChat = TxtChat;
             TxtChat.AppendText($"Connected as: {clientName}\n");
 
+            Task.Run(() => ListenForMessages());
             Task.Run(() => UsingSimulator());
         }
 
