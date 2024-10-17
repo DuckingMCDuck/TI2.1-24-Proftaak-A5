@@ -28,8 +28,9 @@ namespace Client
         public static string receivedData;
         public static byte[] prepend;
         public static byte[] data;
-        public static string hostName = "Laptop-Daan";
-        public static DateTime startDateTime;
+        public static string hostName = Environment.MachineName;
+        public static string sessionId;
+        public static string tunnelId;
 
         public VRServer() { }
 
@@ -50,7 +51,6 @@ namespace Client
         /// <returns></returns>
         public static async Task ConnectToVrServerAsync()
         {
-            startDateTime = DateTime.Now;
             // FOR LOCAL RAN SERVER:
             //vrServer = new TcpClient("127.0.0.1", 6666);
             // FOR REMOTE SERVER:
@@ -59,19 +59,19 @@ namespace Client
             MainWindow.TextChat.Text = "Connected to VR Server!\n";
 
             // Start listening for packets
-            await ListenForPacketsAsync();
+            await PacketHandlerAsync();
         }
 
         /// <summary>
         /// Handles data from incoming packets and sent packets
         /// </summary>
-        /// <returns></returns>
-        public static async Task ListenForPacketsAsync()
+        public static async Task PacketHandlerAsync()
         {
             // Get the sessionID
             MainWindow.TextBoxBikeData.Text = "Sending starting packet...";
             SendStartingPacket();
-            string sessionId = await ReceivePacketAsync();
+            string sessionIdData = await ReceivePacketAsync();
+            sessionId = GetId(sessionIdData);
             Console.WriteLine($"Received session ID: {sessionId}");
 
             if (!string.IsNullOrEmpty(sessionId))
@@ -79,7 +79,8 @@ namespace Client
                 // Get the tunnelID
                 MainWindow.TextBoxBikeData.Text = "Sending session ID packet...";
                 SendSessionIdPacket(sessionId);
-                string tunnelId = await ReceivePacketAsync();
+                string tunnelIdData = await ReceivePacketAsync();
+                tunnelId = GetId(tunnelIdData);
                 Console.WriteLine($"Received tunnel ID: {tunnelId}");
 
                 if (!string.IsNullOrEmpty(tunnelId))
@@ -88,12 +89,26 @@ namespace Client
                     //while (vrServer.Connected)
                     {
                         // Reset scene:
-                        //SendTunnelCommand(tunnelId, "scene/reset", "{}");
+                        SendTunnelCommand("scene/reset", "{}");
 
                         // SkyBox time & update (dynamic works, static doesn't):
-                        SendTunnelCommand(tunnelId, "scene/skybox/settime", "{ time : 23 }");
-                        //SendTunnelCommand(tunnelId, "scene/skybox/update", "{\"type\" : \"dynamic\",\"files\" : {}}");
-                        //SendTunnelCommand(tunnelId, "scene/skybox/update", "{\"type\" : \"static\",\"files\" : {\"xpos\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_rt.png\",\"xneg\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_lf.png\",\"ypos\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_up.png\",\"yneg\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_dn.png\",\"zpos\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_bk.png\",\"zneg\" : \"data/NetworkEngine/textures/SkyBoxes/interstellar/interstellar_ft.png\"} }");
+                        int terrainSize = 5;
+                        int[] heights = new int[terrainSize*terrainSize];
+                        for (int i = 0; i < heights.Length; i++)
+                        {
+                            heights[i] = 50;
+                        }
+                        string jsonCommandTerrain = JsonConvert.SerializeObject(new
+                        {
+                            size = new[] {10, 10},
+                            heights
+                        });
+
+                        SendTunnelCommand("scene/terrain/add", jsonCommandTerrain); //"{ size : [256, 256], heights : []}"
+                        SendTunnelCommand("scene/node/add", "{name : \"goofball\", components : { terrain : { smoothnormals : \"true\"}}}");
+
+                        string test = await ReceivePacketAsync();
+                        SendTunnelCommand("scene/skybox/settime", "{ time : 24 }");
 
                         // Create terrain/ groundplane (W.I.P.):
                         //int[] heights = new int[65536];
@@ -159,66 +174,23 @@ namespace Client
             totalBytesRead = 0;
 
             // Extract other data from the buffer
-            int maxBufferSize = 1500;
             string dataString = "";
-            if (dataLength <= maxBufferSize)
+            byte[] dataBuffer = new byte[dataLength];
+            while (totalBytesRead < dataLength)
             {
-                // dataLength <= buffer size
-                byte[] dataBuffer = new byte[dataLength];
-                while (totalBytesRead < dataLength)
+                int bytesRead = await stream.ReadAsync(dataBuffer, totalBytesRead, dataLength - totalBytesRead);
+                if (bytesRead == 0)
                 {
-                    int bytesRead = await stream.ReadAsync(dataBuffer, totalBytesRead, dataLength - totalBytesRead);
-                    if (bytesRead == 0)
-                    {
-                        Console.WriteLine("Error: Connection closed before reading the full packet.");
-                        return null;
-                    }
-                    totalBytesRead += bytesRead;
+                    Console.WriteLine("Error: Connection closed before reading the full packet.");
+                    return null;
                 }
-                // Get string of data
-                dataString = Encoding.UTF8.GetString(dataBuffer);
-                Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
-            } else
-            {
-                // dataLength > buffer size
-                // Calculate the remaining length of the data
-                int readAmount = dataLength % maxBufferSize;
-                if (readAmount == 0)
-                {
-                    // Modulo could return 0 if the length is exactly the maximum size of the buffer
-                    readAmount = maxBufferSize;
-                }
-
-                async Task ReadBytes()
-                {
-                    // Loop amount of times dataLength can be divided by maxBufferSize (+1 for modulo value reading
-                    int times = (dataLength / maxBufferSize) + 1;
-                    for (int i = 0; i < times; i++)
-                    {
-                        byte[] dataBuffer = new byte[readAmount];
-                        int bytesRead = 0;
-                        int bytes = await stream.ReadAsync(dataBuffer, 0, readAmount);
-                        if (bytes == 0)
-                        {
-                            Console.WriteLine("Error: Connection closed before reading the full packet.");
-                            return;
-                        }
-                        bytesRead += bytes;
-
-                        // Create string of data to store part of the data in
-                        dataString += Encoding.UTF8.GetString(dataBuffer);
-
-                        // After reading the modulo bytes, always set the buffer size to the maximum
-                        readAmount = maxBufferSize;
-                    }
-                }
-                await ReadBytes();
-                
-                // Print data to console
-                Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
+                totalBytesRead += bytesRead;
             }
+            // Get string of data
+            dataString = Encoding.UTF8.GetString(dataBuffer);
+            Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
 
-            return GetId(dataString);
+            return dataString;
         }
 
         /// <summary>
@@ -229,23 +201,29 @@ namespace Client
         public static string GetId(string data)
         {
             // See if we have the host somewhere in the data
-            bool hostInData = data.Contains(hostName);
+            bool hostInData = data.ToLower().Contains(hostName.ToLower());
             if (hostInData)
             {
                 string sessionId = "";
                 // Split data on '{' character
-                string[] splitted = Regex.Split(data, "clientinfo");
+                string[] splitted = Regex.Split(data.ToLower(), "clientinfo");
+                bool sessionFound = false;
                 for (int i = 0; i < splitted.Length; i++)
                 {
                     //To print the first ID (which is wrong!):
                     //string a = splitted[2].Trim();
-                    if (splitted[i].Contains(hostName))
+                    if (splitted[i].Contains(hostName.ToLower()))
                     {
                         // Find the session id of the user with Regex (pattern 8-4-4-11)
                         string pattern = "([a-z]|[0-9]){8}-([a-z]|[0-9]){4}-([a-z]|[0-9]){4}-([a-z]|[0-9]){4}-([a-z]|[0-9]){12}";
                         sessionId = Regex.Match(splitted[i-1], pattern).Value;
+                        sessionFound = true;
                         Console.WriteLine($"Session ID: {sessionId}");
                     }
+                }
+                if (!sessionFound)
+                {
+                    Console.WriteLine("Error: Session Id not found!");
                 }
                 return sessionId;
             } else
@@ -308,7 +286,7 @@ namespace Client
         /// <param name="tunnelId"></param>
         /// <param name="command"></param>
         /// <param name="commandData"></param>
-        public static void SendTunnelCommand(string tunnelId, string command, string commandData)
+        public static void SendTunnelCommand(string command, string commandData)
         {
             string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {{\"id\" : \"{command}\",\"data\" : {commandData}}}}}}}";
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
