@@ -26,8 +26,6 @@ namespace Client
         public static TcpClient vrServer; //TcpClient?
         public static NetworkStream stream; //NetworkStream?
         public static string receivedData;
-        public static byte[] prepend;
-        public static byte[] data;
         public static string hostName = Environment.MachineName;
         public static string sessionId;
         public static string tunnelId;
@@ -89,26 +87,47 @@ namespace Client
                     //while (vrServer.Connected)
                     {
                         // Reset scene:
-                        SendTunnelCommand("scene/reset", "{}");
+                        //SendTunnelCommand("scene/reset", "{}");
 
                         // SkyBox time & update (dynamic works, static doesn't):
-                        int terrainSize = 5;
-                        int[] heights = new int[terrainSize*terrainSize];
-                        for (int i = 0; i < heights.Length; i++)
+                        //int terrainSize = 5;
+                        float[,] heights = new float[32, 32];
+                        for (int x = 0; x < 32; x++)
+                            for (int y = 0; y < 32; y++)
+                                heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
+
+                        //int[] heights = new int[terrainSize*terrainSize];
+                        //for (int i = 0; i < heights.Length; i++)
+                        //{
+                        //    heights[i] = 50;
+                        //}
+                     
+                        SendTunnelCommand("scene/skybox/settime", "{ time : 24 }", null); 
+                        
+                        SendTunnelCommand("scene/node/add", "", new //todo eerst terrein daarna de node
                         {
-                            heights[i] = 50;
-                        }
-                        string jsonCommandTerrain = JsonConvert.SerializeObject(new
-                        {
-                            size = new[] {10, 10},
-                            heights
+                            name = "floor",
+                            components = new
+                            {
+                                transform = new
+                                {
+                                    position = new[] { -16, 0, -16 },
+                                    scale = 1
+                                },
+                                terrain = new
+                                {
+
+                                }
+                            }
                         });
+                        SendTunnelCommand("scene/terrain/add", "", new
+                        {
+                            size = new[] { 32, 32 },
+                            heights = heights.Cast<float>().ToArray()
+                        });
+                      
+                        //"{ size : [256, 256], heights : []}"
 
-                        SendTunnelCommand("scene/terrain/add", jsonCommandTerrain); //"{ size : [256, 256], heights : []}"
-                        SendTunnelCommand("scene/node/add", "{name : \"goofball\", components : { terrain : { smoothnormals : \"true\"}}}");
-
-                        string test = await ReceivePacketAsync();
-                        SendTunnelCommand("scene/skybox/settime", "{ time : 24 }");
 
                         // Create terrain/ groundplane (W.I.P.):
                         //int[] heights = new int[65536];
@@ -264,7 +283,9 @@ namespace Client
         {
             string jsonPacket = "{\"id\" : \"session/list\"}";
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
-            byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
+            //byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
+            byte[] prepend = BitConverter.GetBytes(data.Length);
+
             SendPacket(prepend, data);
         }
 
@@ -276,7 +297,9 @@ namespace Client
         {
             string jsonPacket = $"{{\"id\" : \"tunnel/create\",\"data\" : {{\"session\" : \"{sessionId}\",\"key\" : \"\"}}}}";
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
-            byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
+            byte[] prepend = BitConverter.GetBytes(data.Length);
+
+            //byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
             SendPacket(prepend, data);
         }
 
@@ -286,11 +309,24 @@ namespace Client
         /// <param name="tunnelId"></param>
         /// <param name="command"></param>
         /// <param name="commandData"></param>
-        public static void SendTunnelCommand(string command, string commandData)
+        public static void SendTunnelCommand(string command, string commandData, Object jsonCommandData)
         {
-            string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {{\"id\" : \"{command}\",\"data\" : {commandData}}}}}}}";
-            byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
-            byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
+            byte[] data;
+            if (jsonCommandData == null)
+            {
+                string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {{\"id\" : \"{command}\",\"data\" : {commandData}}}}}}}";
+                data = Encoding.ASCII.GetBytes(jsonPacket);
+            }
+            else 
+            {
+                //string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {jsonCommandData}}}}}}}";
+                //TODO probeer in je code vooral met (anonieme) objecten te werken, en dan pas helemaal aan het einde als je gaat sturen serializen, want nu ga je jsonstrings in strings plakken, dat wil je niet 
+
+                string jsonCommand = JsonConvert.SerializeObject(jsonCommandData);
+                data = Encoding.ASCII.GetBytes(jsonCommand);
+            }
+
+            byte[] prepend = BitConverter.GetBytes(data.Length);
             SendPacket(prepend, data);
         }
 
