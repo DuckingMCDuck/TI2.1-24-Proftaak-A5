@@ -12,6 +12,7 @@ namespace HealthyFromHomeApp.Clients
 {
     public class Simulator
     {
+        private ClientMainWindow clientWindow;
         private int elapsedTime = 0;
         private int distanceTraveled = 0;
         private int updateEventCount = 0;
@@ -20,6 +21,11 @@ namespace HealthyFromHomeApp.Clients
         private int cadence = 80;
         private int dataPagePrintCount = 0;
         private int energyExpended = 0;
+
+        public Simulator(ClientMainWindow clientWindow)
+        {
+            this.clientWindow = clientWindow;
+        }
 
         public void SimulateData()
         {
@@ -33,25 +39,37 @@ namespace HealthyFromHomeApp.Clients
             string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
             string result16 = $"{simulatedMessage16}";
             Debug.WriteLine("RESULT 16: " + result16);
-            ClientMainWindow.client.debugText = $"\n{result16}\n";
-            DataDecoder.Decode(result16);
+            clientWindow.debugText = $"\n{result16}\n";
+            DataDecoder.DecodeAndSend(simulatedMessage16, clientWindow);
 
             randomHexPart25 = GenerateDataPage25(rand);
             string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
             string result25 = $"{simulatedMessage25}";
             Debug.WriteLine("RESULT 25: " + result25);
-            ClientMainWindow.client.debugText = $"\n{result25}\n";
-            DataDecoder.Decode(result25);
+            clientWindow.debugText = $"\n{result25}\n";
+            DataDecoder.DecodeAndSend(simulatedMessage25, clientWindow);
 
             if (dataPagePrintCount == 2)
             {
                 string heartRateString = GenerateHeartRateString(rand);
-                ClientMainWindow.client.debugText = $"\nReceived from 00002a37 - 0000 - 1000 - 8000 - 00805f9b34fb: {heartRateString}\n";
-                DataDecoder.Decode(heartRateString);
+                DataDecoder.DecodeAndSend(heartRateString, clientWindow);
                 dataPagePrintCount = 0;
             }
 
             dataPagePrintCount++;
+        }
+
+        public string GenerateDataPage()
+        {
+            Random rand = new Random();
+            StringBuilder sb = new StringBuilder();
+
+            string fixedPrefix = "A4 09 4E 05";
+            string randomHexPart = dataPagePrintCount % 2 == 0 ? GenerateDataPage16(rand) : GenerateDataPage25(rand);
+            string simulatedMessage = $"{fixedPrefix} {randomHexPart}";
+
+            dataPagePrintCount++;
+            return simulatedMessage;
         }
 
         private string GenerateDataPage16(Random rand)

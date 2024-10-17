@@ -14,6 +14,8 @@ namespace HealthyFromHomeApp.Clients
 {
     public partial class ClientMainWindow : Window
     {
+        private bool isSessionActive = false;
+
         internal static ClientMainWindow client; 
 
         internal string debugText
@@ -40,19 +42,19 @@ namespace HealthyFromHomeApp.Clients
         // Publics:
         public TcpClient tcpClient;
         public static List<Tuple<string, byte[]>> sessionData = new List<Tuple<string, byte[]>>();
-        public static Simulator simulator = new Simulator();
+        public Simulator simulator;
         public NetworkStream stream;
 
         // Privates:
         private static bool sessionRunning = false;
         private static bool debugScrolling = true;
-        private static bool simulating = false;
+        private bool simulating = false;
         private string clientName;
         private static bool isReconnecting = false;
         private bool bikeConnected = false;
 
         // Toolbox-Items:
-        public static TextBox TextBoxBikeData;
+        public TextBox TextBoxBikeData;
         public TextBox TextChat;
 
         public ClientMainWindow(string clientName, TcpClient client, NetworkStream networkStream)
@@ -61,7 +63,7 @@ namespace HealthyFromHomeApp.Clients
             this.clientName = clientName;
             this.tcpClient = client;
             this.stream = networkStream;
-            ClientMainWindow.client = this;
+            this.simulator = new Simulator(this);
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -175,9 +177,24 @@ namespace HealthyFromHomeApp.Clients
 
         private async void BtnConnectBike_Click(object sender, RoutedEventArgs e)
         {
+            if (isSessionActive)
+            {
+                MessageBox.Show("A session is already running. Please stop the current session before starting a new one.", "Session Already Running", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             TxtBikeStatus.Text = "Attempting to connect to the bike...\n";
             bikeConnected = true;
             TxtBikeStatus.Text = "Bike connected successfully!\n";
+
+            BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(simulator);
+            bikeSessionWindow.Closed += (s, args) =>
+            {
+                isSessionActive = false;  
+            };
+            bikeSessionWindow.Show();
+
+            isSessionActive = true;  
         }
 
 

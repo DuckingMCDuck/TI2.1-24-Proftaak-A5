@@ -48,15 +48,72 @@ namespace HealthyFromHomeApp.Clients
                     dataWithNames.Add(tuple);
                 }
                 listForToString = dataWithNames;
-                ClientMainWindow.client.debugText = MakeString(dataWithNames);
+                return dataWithNames;
+            }
+            catch (Exception ex) 
+            {
+                return null;
+            }
+        }
+
+        public static List<(string, int)> DecodeAndSend(string data, ClientMainWindow clientInstance)
+        {
+            try
+            {
+                List<(string, int)> dataWithNames = new List<(string, int)>();
+                List<int> difDataInt = new List<int>();
+
+                string[] splitData = data.Split(' ');
+                for (int i = 0; i < splitData.Length; i++)
+                {
+                    int decValue = Convert.ToInt32(splitData[i], 16);
+                    difDataInt.Add(decValue);
+                }
+
+                if (difDataInt.Count > 4 && difDataInt[4] == 16)
+                {
+                    for (int i = 0; i < difDataInt.Count; i++)
+                    {
+                        string name = Enum.GetName(typeof(DataNames16), i);
+                        (string, int) tuple = (name, difDataInt[i]);
+                        dataWithNames.Add(tuple);
+                    }
+                }
+                else if (difDataInt.Count > 4 && difDataInt[4] == 25)
+                {
+                    for (int i = 0; i < difDataInt.Count; i++)
+                    {
+                        string name = Enum.GetName(typeof(DataNames25), i);
+                        (string, int) tuple = (name, difDataInt[i]);
+                        dataWithNames.Add(tuple);
+                    }
+                }
+                else if (difDataInt.Count >= 1 && difDataInt.Count <= 10)
+                {
+                    string name = "Heartrate";
+                    (string, int) tuple = (name, difDataInt[1]);
+                    dataWithNames.Add(tuple);
+                }
+
+                listForToString = dataWithNames;
+
+                if (clientInstance != null)
+                {
+                    clientInstance.debugText = MakeString(dataWithNames);
+                }
+
                 return dataWithNames;
             }
             catch (Exception e)
             {
-                ClientMainWindow.client.debugText = "Not able to decode data\n";
+                if (clientInstance != null)
+                {
+                    clientInstance.debugText = "Not able to decode data\n";
+                }
                 return null;
             }
         }
+
 
         public static string MakeString(List<(string, int)> list)
         {
