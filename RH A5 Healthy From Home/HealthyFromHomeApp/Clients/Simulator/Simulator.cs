@@ -52,7 +52,6 @@ namespace HealthyFromHomeApp.Clients
             }
 
             dataPagePrintCount++;
-            Thread.Sleep(500);
         }
 
         private string GenerateDataPage16(Random rand)

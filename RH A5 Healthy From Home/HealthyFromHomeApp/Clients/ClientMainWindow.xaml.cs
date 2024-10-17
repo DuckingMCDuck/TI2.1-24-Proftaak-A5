@@ -99,57 +99,7 @@ namespace HealthyFromHomeApp.Clients
             while (simulating)
             {
                 simulator.SimulateData();
-                client.Dispatcher.Invoke(() => SendToSimulator(client.debugText));
-                Thread.Sleep(100); 
-            }
-        }
-
-        private async void SendToSimulator(string debugText)
-        {
-            try
-            {
-                if (tcpClient == null || !tcpClient.Connected)
-                {
-                    await Dispatcher.InvokeAsync(() => TextChat.AppendText("Attempting to reconnect to the server...\n"));
-                    await ReconnectToServerAsync();
-                }
-
-                if (stream.CanWrite)
-                {
-                    byte[] buffer = Encoding.UTF8.GetBytes(debugText);
-                    await stream.WriteAsync(buffer, 0, buffer.Length);
-                    await stream.FlushAsync();
-                }
-            }
-            catch (SocketException ex)
-            {
-                await Dispatcher.InvokeAsync(() => TextChat.AppendText($"Socket error: {ex.Message}\n"));
-            }
-            catch (Exception ex)
-            {
-                await Dispatcher.InvokeAsync(() => TextChat.AppendText($"Error: {ex.Message}\n"));
-            }
-        }
-
-        private async Task ReconnectToServerAsync()
-        {
-            try
-            {
-                if (isReconnecting) return; 
-                isReconnecting = true;
-
-                tcpClient?.Close();
-                tcpClient = new TcpClient();
-
-                await tcpClient.ConnectAsync("localhost", 12345);
-                stream = tcpClient.GetStream();
-
-                await Dispatcher.InvokeAsync(() => TextChat.AppendText("Reconnected successfully.\n"));
-                isReconnecting = false;
-            }
-            catch (Exception ex)
-            {
-                await Dispatcher.InvokeAsync(() => TextChat.AppendText($"Reconnection failed: {ex.Message}\n"));
+                Thread.Sleep(500); 
             }
         }
 
@@ -195,19 +145,22 @@ namespace HealthyFromHomeApp.Clients
                 return;
             }
 
+            if (String.IsNullOrEmpty(TxtTypeBar.Text))
+            {
+                MessageBox.Show("Please enter a message before sending it.", "Message Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             string message = "chat:send_to:Doctor:" + TxtTypeBar.Text;
             string rawMessage = TxtTypeBar.Text;
             string rawClient = clientName.Substring("client:".Length);
 
-            if (!string.IsNullOrEmpty(message))
-            {
-                string encryptedMessage = EncryptHelper.Encrypt(message);
-                byte[] data = Encoding.ASCII.GetBytes(encryptedMessage);
-                TxtChat.AppendText($"{rawClient}: {rawMessage}\n");
-                TxtTypeBar.Clear();
-                SendMessageToServer(encryptedMessage);
-            }
+            string encryptedMessage = EncryptHelper.Encrypt(message);
+            byte[] data = Encoding.ASCII.GetBytes(encryptedMessage);
+            TxtChat.AppendText($"{rawClient}: {rawMessage}\n");
+            TxtTypeBar.Clear();
+            SendMessageToServer(encryptedMessage);
+            
         }
 
         private async void SendMessageToServer(string message)
