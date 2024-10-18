@@ -31,6 +31,8 @@ namespace HealthyFromHomeApp.Doctor
 
         private string selectedClient = null;
         private Dictionary<string, ClientChatWindow> openClientWindows = new Dictionary<string, ClientChatWindow>();
+
+        public int resistance = 0;
         public DoctorMainWindow(TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
@@ -183,6 +185,30 @@ namespace HealthyFromHomeApp.Doctor
         private void chatBar_TextChanged(object sender, TextChangedEventArgs e)
         {
 
+        }
+
+        private void Button_Click_ResistanceMin(object sender, RoutedEventArgs e)
+        {
+            resistance--;
+            resistanceInputField.Text = resistance.ToString();
+            SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
+        }
+
+        private void Button_Click_ResistancePlus(object sender, RoutedEventArgs e)
+        {
+            resistance++;
+            resistanceInputField.Text = resistance.ToString();
+            SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
+
+        }
+
+        private void Key_Down_ResistanceInputField(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                resistance = Int32.Parse(resistanceInputField.Text);
+                SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
+            }
         }
     }
 }
