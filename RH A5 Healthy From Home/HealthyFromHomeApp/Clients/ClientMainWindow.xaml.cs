@@ -14,6 +14,8 @@ namespace HealthyFromHomeApp.Clients
 {
     public partial class ClientMainWindow : Window
     {
+        private bool isSessionActive = false;
+
         internal static ClientMainWindow client; 
 
         internal string debugText
@@ -40,31 +42,37 @@ namespace HealthyFromHomeApp.Clients
         // Publics:
         public TcpClient tcpClient;
         public static List<Tuple<string, byte[]>> sessionData = new List<Tuple<string, byte[]>>();
-        public static Simulator simulator = new Simulator();
+        public Simulator simulator;
         public NetworkStream stream;
 
         // Privates:
         private static bool sessionRunning = false;
         private static bool debugScrolling = true;
-        private static bool simulating = false;
+        private bool simulating = false;
         private string clientName;
         private static bool isReconnecting = false;
+        private bool bikeConnected = false;
 
         // Toolbox-Items:
-        public static TextBox TextBoxBikeData;
+        public TextBox TextBoxBikeData;
         public TextBox TextChat;
 
-        public ClientMainWindow()
+        public ClientMainWindow(string clientName, TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
-            client = this; 
+            this.clientName = clientName;
+            this.tcpClient = client;
+            this.stream = networkStream;
+            this.simulator = new Simulator(this);
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             TextBoxBikeData = TxtBikeData;
             TextChat = TxtChat;
+            TxtChat.AppendText($"Connected as: {clientName}\n");
 
+            Task.Run(() => ListenForMessages());
             Task.Run(() => UsingSimulator());
         }
 
@@ -79,7 +87,7 @@ namespace HealthyFromHomeApp.Clients
         {
             Dispatcher.Invoke(() => TextChat.AppendText($"Simulator turned {(simulating ? "ON" : "OFF")}!\n"));
 
-            if (!simulating)
+            if (simulating)
             {
                 Task.Run(() =>
                 {
@@ -93,57 +101,7 @@ namespace HealthyFromHomeApp.Clients
             while (simulating)
             {
                 simulator.SimulateData();
-                client.Dispatcher.Invoke(() => SendToSimulator(client.debugText));
-                Thread.Sleep(100); 
-            }
-        }
-
-        private async void SendToSimulator(string debugText)
-        {
-            try
-            {
-                if (tcpClient == null || !tcpClient.Connected)
-                {
-                    await Dispatcher.InvokeAsync(() => TextChat.AppendText("Attempting to reconnect to the server...\n"));
-                    await ReconnectToServerAsync();
-                }
-
-                if (stream.CanWrite)
-                {
-                    byte[] buffer = Encoding.UTF8.GetBytes(debugText);
-                    await stream.WriteAsync(buffer, 0, buffer.Length);
-                    await stream.FlushAsync();
-                }
-            }
-            catch (SocketException ex)
-            {
-                await Dispatcher.InvokeAsync(() => TextChat.AppendText($"Socket error: {ex.Message}\n"));
-            }
-            catch (Exception ex)
-            {
-                await Dispatcher.InvokeAsync(() => TextChat.AppendText($"Error: {ex.Message}\n"));
-            }
-        }
-
-        private async Task ReconnectToServerAsync()
-        {
-            try
-            {
-                if (isReconnecting) return; 
-                isReconnecting = true;
-
-                tcpClient?.Close();
-                tcpClient = new TcpClient();
-
-                await tcpClient.ConnectAsync("localhost", 12345);
-                stream = tcpClient.GetStream();
-
-                await Dispatcher.InvokeAsync(() => TextChat.AppendText("Reconnected successfully.\n"));
-                isReconnecting = false;
-            }
-            catch (Exception ex)
-            {
-                await Dispatcher.InvokeAsync(() => TextChat.AppendText($"Reconnection failed: {ex.Message}\n"));
+                Thread.Sleep(500); 
             }
         }
 
@@ -183,18 +141,28 @@ namespace HealthyFromHomeApp.Clients
 
         private void BtnSendMessage_Click(object sender, RoutedEventArgs e)
         {
+            if (clientName == null)
+            {
+                MessageBox.Show("You are not connected yet. Please connect before sending a message.", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (String.IsNullOrEmpty(TxtTypeBar.Text))
+            {
+                MessageBox.Show("Please enter a message before sending it.", "Message Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             string message = "chat:send_to:Doctor:" + TxtTypeBar.Text;
             string rawMessage = TxtTypeBar.Text;
             string rawClient = clientName.Substring("client:".Length);
 
-            if (!string.IsNullOrEmpty(message))
-            {
-                string encryptedMessage = EncryptHelper.Encrypt(message);
-                byte[] data = Encoding.ASCII.GetBytes(encryptedMessage);
-                TxtChat.AppendText($"{rawClient}: {rawMessage}\n");
-                TxtTypeBar.Clear();
-                SendMessageToServer(encryptedMessage);
-            }
+            string encryptedMessage = EncryptHelper.Encrypt(message);
+            byte[] data = Encoding.ASCII.GetBytes(encryptedMessage);
+            TxtChat.AppendText($"{rawClient}: {rawMessage}\n");
+            TxtTypeBar.Clear();
+            SendMessageToServer(encryptedMessage);
+            
         }
 
         private async void SendMessageToServer(string message)
@@ -207,50 +175,26 @@ namespace HealthyFromHomeApp.Clients
             }
         }
 
-        private async void BtnConnect_Click(object sender, RoutedEventArgs e)
+        private async void BtnConnectBike_Click(object sender, RoutedEventArgs e)
         {
-            try
+            if (isSessionActive)
             {
-                clientName = "client:" + TxtName.Text;
-
-                if (!string.IsNullOrEmpty(clientName))
-                {
-                    if (tcpClient == null || !tcpClient.Connected)
-                    {
-                        tcpClient = new TcpClient();
-                        await tcpClient.ConnectAsync("localhost", 12345); 
-                        stream = tcpClient.GetStream(); 
-                    }
-
-                    if (stream != null && stream.CanWrite)
-                    {
-                        string encryptedName = EncryptHelper.Encrypt(clientName);
-                        byte[] nameData = Encoding.ASCII.GetBytes(encryptedName);
-                        await stream.WriteAsync(nameData, 0, nameData.Length);
-                        stream.Flush();
-
-                        TxtChat.AppendText("Connected as: " + clientName + "\n");
-
-                        Task.Run(() => ListenForMessages());
-                    }
-                    else
-                    {
-                        TxtChat.AppendText("Unable to write to the server stream.\n");
-                    }
-                }
-                else
-                {
-                    TxtChat.AppendText("Please enter a valid name before connecting.\n");
-                }
+                MessageBox.Show("A session is already running. Please stop the current session before starting a new one.", "Session Already Running", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
-            catch (SocketException ex)
+
+            TxtBikeStatus.Text = "Attempting to connect to the bike...\n";
+            bikeConnected = true;
+            TxtBikeStatus.Text = "Bike connected successfully!\n";
+
+            BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(simulator);
+            bikeSessionWindow.Closed += (s, args) =>
             {
-                TxtChat.AppendText($"Socket error: {ex.Message}\n");
-            }
-            catch (Exception ex)
-            {
-                TxtChat.AppendText($"Error: {ex.Message}\n");
-            }
+                isSessionActive = false;  
+            };
+            bikeSessionWindow.Show();
+
+            isSessionActive = true;  
         }
 
 

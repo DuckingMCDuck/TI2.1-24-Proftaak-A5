@@ -30,11 +30,12 @@ namespace HealthyFromHomeApp.Doctor
         public static ComboBox ComboBoxClientsForDoc;
 
         private string selectedClient = null;
-        public DoctorMainWindow()
+        private Dictionary<string, ClientChatWindow> openClientWindows = new Dictionary<string, ClientChatWindow>();
+        public DoctorMainWindow(TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
-
-            
+            this.tcpClient = client;
+            stream = networkStream;
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -47,17 +48,24 @@ namespace HealthyFromHomeApp.Doctor
         {
             string message = chatBar.Text;
 
-            if (!string.IsNullOrEmpty(message) && selectedClient != null)
+            if (!string.IsNullOrEmpty(message))
             {
-                SendMessageToClient(selectedClient, message); 
-                ChatReadOnly.AppendText($"Doctor:{message}\n");
-                chatBar.Clear();
+                BroadcastMessage(message);  
+                ChatReadOnly.AppendText($"Doctor (Broadcast): {message}\n");
+                chatBar.Clear();  
             }
-            else
+        }
+
+        private async void BroadcastMessage(string message)
+        {
+            if (tcpClient.Connected)
             {
-                ChatReadOnly.AppendText("Please select a client and enter a message.\n");
-            } 
-                
+                string packet = $"broadcast:{message}";
+                string encryptedPacket = EncryptHelper.Encrypt(packet);
+                byte[] data = Encoding.ASCII.GetBytes(encryptedPacket);
+                await stream.WriteAsync(data, 0, data.Length);
+                stream.Flush();
+            }
         }
 
         private async void SendMessageToClient(string client, string message)
@@ -82,20 +90,41 @@ namespace HealthyFromHomeApp.Doctor
                 string encryptedMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
                 string message = EncryptHelper.Decrypt(encryptedMessage);
 
-                Console.WriteLine("Received message from server: " + message);  
+                Console.WriteLine("Received message from server: " + message);
 
                 if (message.StartsWith("clients_update:"))
                 {
                     string clientsList = message.Replace("clients_update:", "");
-                    UpdateClientList(clientsList.Split(','));  
+                    UpdateClientList(clientsList.Split(','));
                 }
                 else
                 {
-                    if (selectedClient != null && message.StartsWith($"{selectedClient}:"))
+                    string[] messageParts = message.Split(':');
+                    string senderClient = messageParts[0];
+                    string clientMessage = string.Join(":", messageParts.Skip(1));
+
+                    if (openClientWindows.ContainsKey(senderClient))
                     {
-                        Dispatcher.Invoke(() => ChatReadOnly.AppendText(message + "\n"));
+                        Dispatcher.Invoke(() => openClientWindows[senderClient].AppendMessage(clientMessage));
+                    } else
+                    {
+                        NotifyDoctorOfNewMessage(senderClient, clientMessage);
                     }
                 }
+            }
+        }
+
+        private void NotifyDoctorOfNewMessage(string clientName, string message)
+        {
+            MessageBoxResult result = MessageBox.Show(
+                $"You have received a message from {clientName}: {message}\n\nWould you like to open the chat window?",
+                "New Message Notification",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                OpenClientChatWindow(clientName);
             }
         }
 
@@ -117,14 +146,34 @@ namespace HealthyFromHomeApp.Doctor
         private void CmbClientsForDoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             selectedClient = (string)CmbClientsForDoc.SelectedItem;
-            ChatReadOnly.AppendText($"You are now talking to: {selectedClient}\n");
+            if (selectedClient != null)
+            {
+                OpenClientChatWindow(selectedClient);
+            }
+        }
+
+        private void OpenClientChatWindow(string client)
+        {
+            if (!openClientWindows.ContainsKey(client))
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    ClientChatWindow chatWindow = new ClientChatWindow(client, tcpClient, stream);
+                    chatWindow.Show();
+                    openClientWindows.Add(client, chatWindow);
+                });
+            }
+            else
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    openClientWindows[client].Activate();
+                });
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            tcpClient.Connect("localhost", 12345);
-            stream = tcpClient.GetStream();
-
             Task.Run(() => ListenForUpdates());
 
             ChatReadOnly = chatReadOnly;

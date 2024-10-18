@@ -43,27 +43,49 @@ namespace HealthyFromHomeApp.Server
         {
             TcpClient tcpClient = listener.EndAcceptTcpClient(ar);
 
-            if (doctorClient == null)
-            {
-                doctorClient = tcpClient;
-                Console.WriteLine("Doctor connected.");
-                Task.Run(() => ListenForMessages(doctorClient, "Doctor", isDoctor: true));
-            }
-            else
-            {
-                await RegisterClient(tcpClient);
-            }
-
             listener.BeginAcceptTcpClient(OnConnect, null);
+
+            await Task.Run(() => RegisterClient(tcpClient));
         }
 
         private static async Task RegisterClient(TcpClient tcpClient)
         {
-            string roleMessage = await ReceiveMessage(tcpClient);
+            string message = await ReceiveMessage(tcpClient);
 
-            if (roleMessage.StartsWith("client:"))
+            if (message.StartsWith("login:"))
             {
-                string clientName = roleMessage.Substring("client:".Length);
+                string[] credentials = message.Substring("login:".Length).Split(':');
+                string username = credentials[0];
+                string password = credentials[1];
+
+                if (ValidateDoctorCredentials(username, password))
+                {
+                    if (doctorClient == null)  
+                    {
+                        doctorClient = tcpClient;
+                        Console.WriteLine("Doctor logged in successfully.");
+
+                        SendMessage(doctorClient, "login_success");
+
+                        NotifyDoctorOfClients();
+                        Task.Run(() => ListenForMessages(doctorClient, "Doctor", isDoctor: true));
+                    }
+                    else
+                    {
+                        SendMessage(tcpClient, "login_failure");
+                        tcpClient.Close(); 
+                        Console.WriteLine("Doctor login attempt rejected: another doctor is already connected.");
+                    }
+                }
+                else
+                {
+                    SendMessage(tcpClient, "login_failure"); 
+                    tcpClient.Close();
+                }
+            }
+            else if (message.StartsWith("client:"))
+            {
+                string clientName = message.Substring("client:".Length);
 
                 if (!clients.ContainsKey(clientName))
                 {
@@ -71,9 +93,26 @@ namespace HealthyFromHomeApp.Server
                     Console.WriteLine($"Client registered: {clientName}");
 
                     NotifyDoctorOfClients();
+
                     Task.Run(() => ListenForMessages(tcpClient, clientName));
                 }
+                else
+                {
+                    SendMessage(tcpClient, "client_registration_failed");
+                    tcpClient.Close();
+                }
             }
+            else
+            {
+                Console.WriteLine("Invalid connection message received, closing the connection.");
+                tcpClient.Close();
+            }
+        }
+
+        private static bool ValidateDoctorCredentials(string username, string password)
+        {
+            // hardcoded voor nu
+            return username == "doc" && password == "lol";
         }
 
         private static void NotifyDoctorOfClients()
@@ -137,9 +176,13 @@ namespace HealthyFromHomeApp.Server
         private static void ProcessMessage(string senderName, string message, bool isDoctor)
         {
             string[] splitMessage = message.Split(':');
-            if (splitMessage.Length < 2) return;
 
-            if (splitMessage[0] == "send_to")
+            if (splitMessage[0] == "broadcast" && isDoctor)
+            {
+                string broadcastMessage = string.Join(":", splitMessage.Skip(1));
+                BroadcastMessageToAllClients($"Doctor (Broadcast): {broadcastMessage}");
+            }
+            else if (splitMessage[0] == "send_to")
             {
                 string targetClient = splitMessage[1];
                 string actualMessage = string.Join(":", splitMessage.Skip(2));
@@ -149,6 +192,14 @@ namespace HealthyFromHomeApp.Server
             {
                 string clientMessage = message.Substring("chat:send_to:Doctor:".Length);
                 ForwardToDoctor(senderName, clientMessage);
+            }
+        }
+
+        private static void BroadcastMessageToAllClients(string message)
+        {
+            foreach (var client in clients.Values)
+            {
+                SendMessage(client, message);
             }
         }
 
