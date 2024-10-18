@@ -27,18 +27,15 @@ namespace Client
         public static TcpClient vrServer; //TcpClient?
         public static NetworkStream stream; //NetworkStream?
         public static string receivedData;
-        public static string hostName = "Laptop-Daan";
+        public static string hostName = Environment.MachineName;
         public static string sessionId;
         public static string tunnelId;
 
         public VRServer() { }
 
-        // TODO: Verschil maken tussen commands die een ID terug sturen (sessionId, tunnelId etc.) en commands waarbij dit niet hoeft?
-
         /// <summary>
         /// Starts the VRServer and changes the environment
         /// </summary>
-        /// <returns></returns>
         public static async Task Start()
         {
             await ConnectToVrServerAsync();
@@ -47,13 +44,20 @@ namespace Client
         /// <summary>
         /// Connects to the VR Server and initializes Stream
         /// </summary>
-        /// <returns></returns>
         public static async Task ConnectToVrServerAsync()
         {
-            // FOR LOCAL RAN SERVER:
-            //vrServer = new TcpClient("127.0.0.1", 6666);
-            // FOR REMOTE SERVER:
-            vrServer = new TcpClient("85.145.62.130", 6666);
+            try
+            {
+                // FOR LOCAL RAN SERVER:
+                vrServer = new TcpClient("127.0.0.1", 6666);
+                // FOR REMOTE SERVER:
+                //vrServer = new TcpClient("85.145.62.130", 6666);
+            }
+            catch (SocketException)
+            {
+                MainWindow.TextChat.Text = "Error connection to the VRServer!\n";
+                return;
+            }
             stream = vrServer.GetStream();
             MainWindow.TextChat.Text = "Connected to VR Server!\n";
 
@@ -65,14 +69,12 @@ namespace Client
         /// Disconnect from the VR Server (Shutdown). 
         /// This method should not be async, because the connection should be terminated instantly!
         /// </summary>
-        /// <returns></returns>
         public static void ShutdownServer()
         {
-            Console.WriteLine("An error has occured, shutting down VRServer...");
             stream.Close();
             vrServer.Close();
             vrServer.Dispose();
-            MainWindow.TextChat.Text = "Disconnected from the VR Server!\n";
+            MainWindow.TextChat.Text = "An error has occured, shutting down VRServer...\n";
         }
 
         /// <summary>
@@ -96,11 +98,13 @@ namespace Client
                 tunnelId = GetId(tunnelIdData);
                 Console.WriteLine($"Received tunnel ID: {tunnelId}");
 
-                if (!string.IsNullOrEmpty(tunnelId) && tunnelId != "No ID was found inside of the JsonObject!")
+                if (!string.IsNullOrEmpty(tunnelId))
                 {
                     // Send scene configuration commands
                     //while (vrServer.Connected)
                     {
+                        MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
+
                         // Reset scene:
                         //SendTunnelCommand("scene/reset", "{}");
 
@@ -177,7 +181,6 @@ namespace Client
         /// <summary>
         /// Listens for incoming packets from the VR Server
         /// </summary>
-        /// <returns></returns>
         public static async Task<string> ReceivePacketAsync()
         {
             // Listen for incoming packets
@@ -221,10 +224,10 @@ namespace Client
         }
 
         /// <summary>
-        /// Gets the id from incoming data (sessionId, tunnelId etc.)
+        /// Filters out the id from incoming data 
+        /// Current id's: session-id, tunnel-id
         /// </summary>
         /// <param name="data"></param>
-        /// <returns></returns>
         public static string GetId(string data)
         {
             // See if we have the host somewhere in the data
@@ -269,11 +272,11 @@ namespace Client
                     dataObject.ValueKind == JsonValueKind.Object)
                 {
                     JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
+                    // Check if the incoming object's message is valid
                     string errorMessage = jsonNode.ToString();
                     if (errorMessage.Contains("does not support tunnel"))
                     {
-                        return "No ID was found inside of the JsonObject!";
-
+                        return null;
                     }
                     return jsonNode["id"].GetValue<string>();
                 }
@@ -282,7 +285,7 @@ namespace Client
         }
 
         /// <summary>
-        /// Initialize starting packet
+        /// Initialize starting packet (server response: all current sessions)
         /// </summary>
         public static void SendStartingPacket()
         {
@@ -301,7 +304,7 @@ namespace Client
         }
 
         /// <summary>
-        /// Initialize session packet
+        /// Initialize session packet (server response: tunnel-id)
         /// </summary>
         /// <param name="sessionId"></param>
         public static void SendSessionIdPacket(string sessionId)
@@ -321,6 +324,11 @@ namespace Client
             SendPacket(prepend, data);
         }
 
+        /// <summary>
+        /// Create specific tunnel commands (server response: variable)
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="jsonCommandData"></param>
         public static void SendTunnelCommand(string command, object jsonCommandData)
         {
             var alJsonData = new
