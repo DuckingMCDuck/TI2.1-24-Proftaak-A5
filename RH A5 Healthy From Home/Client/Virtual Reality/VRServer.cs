@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO.IsolatedStorage;
 using System.Linq;
 using System.Net;
+using System.Net.Mail;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -26,7 +27,7 @@ namespace Client
         public static TcpClient vrServer; //TcpClient?
         public static NetworkStream stream; //NetworkStream?
         public static string receivedData;
-        public static string hostName = "Laptop-Daan";
+        public static string hostName = Environment.MachineName;
         public static string sessionId;
         public static string tunnelId;
 
@@ -89,34 +90,46 @@ namespace Client
                         // Reset scene:
                         //SendTunnelCommand("scene/reset", "{}");
 
-                        // SkyBox time & update (dynamic works, static doesn't):
-                        //int terrainSize = 5;
-                        float[,] heights = new float[32, 32];
-                        for (int x = 0; x < 32; x++)
-                            for (int y = 0; y < 32; y++)
-                                heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
 
-                        //int[] heights = new int[terrainSize*terrainSize];
-                        //for (int i = 0; i < heights.Length; i++)
-                        //{
-                        //    heights[i] = 50;
-                        //}
+                        //float[,] heights = new float[32, 32];
+                        //for (int x = 0; x < 32; x++)
+                        //    for (int y = 0; y < 32; y++)
+                        //        heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
+                        int width = 256;
+                        int height = 256;
+                        float[,] heights = new float[width, height];
+
+                        for (int x = 0; x < width; x++)
+                        {
+                            for (int y = 0; y < height; y++)
+                            {
+                                heights[x, y] = 2 + (float)(Math.Sin(x / 10.0) + Math.Cos(y / 10.0));
+                            }
+                        }
+
+
+                        var terrainData = new
+                        {
+                            size = new[] { width, height },
+                            heights = heights.Cast<float>().ToArray()
+                        };
+
+                    
+
+
+                        SendTunnelCommand("scene/terrain/add", terrainData);
+
 
                         SendTunnelCommand("scene/skybox/settime", new
                         {
-                            time = 24
+                            time = 12
                         });
-                        //SendTunnelCommand($"scene/skybox/settime","{ time :24 }", null);
-                        //SendTunnelCommand("scene/terrain/add", " ", new
+                 
+                        //SendTunnelCommand("scene/terrain/add", new
                         //{
                         //    size = new[] { 32, 32 },
                         //    heights = heights.Cast<float>().ToArray()
                         //});
-                        SendTunnelCommand("scene/terrain/add", new
-                        {
-                            size = new[] { 32, 32 },
-                            heights = heights.Cast<float>().ToArray()
-                        });
                         SendTunnelCommand("scene/node/add", new
                         {
                             name = "floor",
@@ -133,23 +146,7 @@ namespace Client
                                 }
                             }
                         });
-                        //SendTunnelCommand("scene/node/add", "", new
-                        //{
-                        //    name = "floor",
-                        //    components = new
-                        //    {
-                        //        transform = new
-                        //        {
-                        //            position = new[] { -16, 0, -16 },
-                        //            scale = 1
-                        //        },
-                        //        terrain = new
-                        //        {
-
-                        //        }
-                        //    }
-                        //});
-                        //"{ size : [256, 256], heights : []}"
+          
 
 
                         // Create terrain/ groundplane (W.I.P.):
