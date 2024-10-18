@@ -26,7 +26,7 @@ namespace Client
         public static TcpClient vrServer; //TcpClient?
         public static NetworkStream stream; //NetworkStream?
         public static string receivedData;
-        public static string hostName = Environment.MachineName;
+        public static string hostName = "Laptop-Daan";
         public static string sessionId;
         public static string tunnelId;
 
@@ -101,10 +101,23 @@ namespace Client
                         //{
                         //    heights[i] = 50;
                         //}
-                     
-                        SendTunnelCommand("scene/skybox/settime", "{ time : 24 }", null); 
-                        
-                        SendTunnelCommand("scene/node/add", "", new //todo eerst terrein daarna de node
+
+                        SendTunnelCommand("scene/skybox/settime", new
+                        {
+                            time = 24
+                        });
+                        //SendTunnelCommand($"scene/skybox/settime","{ time :24 }", null);
+                        //SendTunnelCommand("scene/terrain/add", " ", new
+                        //{
+                        //    size = new[] { 32, 32 },
+                        //    heights = heights.Cast<float>().ToArray()
+                        //});
+                        SendTunnelCommand("scene/terrain/add", new
+                        {
+                            size = new[] { 32, 32 },
+                            heights = heights.Cast<float>().ToArray()
+                        });
+                        SendTunnelCommand("scene/node/add", new
                         {
                             name = "floor",
                             components = new
@@ -120,12 +133,22 @@ namespace Client
                                 }
                             }
                         });
-                        SendTunnelCommand("scene/terrain/add", "", new
-                        {
-                            size = new[] { 32, 32 },
-                            heights = heights.Cast<float>().ToArray()
-                        });
-                      
+                        //SendTunnelCommand("scene/node/add", "", new
+                        //{
+                        //    name = "floor",
+                        //    components = new
+                        //    {
+                        //        transform = new
+                        //        {
+                        //            position = new[] { -16, 0, -16 },
+                        //            scale = 1
+                        //        },
+                        //        terrain = new
+                        //        {
+
+                        //        }
+                        //    }
+                        //});
                         //"{ size : [256, 256], heights : []}"
 
 
@@ -219,6 +242,7 @@ namespace Client
         /// <returns></returns>
         public static string GetId(string data)
         {
+            
             // See if we have the host somewhere in the data
             bool hostInData = data.ToLower().Contains(hostName.ToLower());
             if (hostInData)
@@ -235,7 +259,7 @@ namespace Client
                     {
                         // Find the session id of the user with Regex (pattern 8-4-4-11)
                         string pattern = "([a-z]|[0-9]){8}-([a-z]|[0-9]){4}-([a-z]|[0-9]){4}-([a-z]|[0-9]){4}-([a-z]|[0-9]){12}";
-                        sessionId = Regex.Match(splitted[i-1], pattern).Value;
+                        sessionId = Regex.Match(splitted[i - 1], pattern).Value;
                         sessionFound = true;
                         Console.WriteLine($"Session ID: {sessionId}");
                     }
@@ -258,21 +282,20 @@ namespace Client
                 {
                     return dataElement[0].GetProperty("id").GetString();
                 }
-                if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
-                    dataObject.ValueKind == JsonValueKind.Object)
+                try
                 {
-                    JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
-                    return jsonNode["id"].GetValue<string>();
+                    if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
+                        dataObject.ValueKind == JsonValueKind.Object)
+                    {
+                        JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
+                        return jsonNode["id"].GetValue<string>();
+                    }
+                }
+                catch (NullReferenceException ex)
+                {
+                    Console.WriteLine("No Value Returned, So VR might be inactive");
                 }
             }
-
-            //if (jsonDocument.RootElement.TryGetProperty("status", out JsonElement statusElement))
-            //{
-            //    string status = statusElement.GetString();//todo error handling 
-            //    string message = jsonDocument.RootElement.TryGetProperty("msg", out JsonElement msgElement) ? msgElement.GetString() : "Unknown error";
-            //    MainWindow.TextChat.Text = ($"Error: {status} - {message}");
-            //    return null;
-            //}
             return null;
         }
 
@@ -281,7 +304,16 @@ namespace Client
         /// </summary>
         public static void SendStartingPacket()
         {
-            string jsonPacket = "{\"id\" : \"session/list\"}";
+            //string jsonPacket = "{\"id\" : \"session/list\"}";
+            var alJsonData = new
+            {
+                id = "session/list",
+                data = new
+                {
+                    
+                }
+            };
+            string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             //byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
             byte[] prepend = BitConverter.GetBytes(data.Length);
@@ -295,7 +327,17 @@ namespace Client
         /// <param name="sessionId"></param>
         public static void SendSessionIdPacket(string sessionId)
         {
-            string jsonPacket = $"{{\"id\" : \"tunnel/create\",\"data\" : {{\"session\" : \"{sessionId}\",\"key\" : \"\"}}}}";
+            var alJsonData = new
+            {
+                id = "tunnel/create",
+                data = new
+                {
+                    session = sessionId,
+                    key = ""
+                }
+            };
+            //string jsonPacket = $"{{\"id\" : \"tunnel/create\",\"data\" : {{\"session\" : \"{sessionId}\",\"key\" : \"\"}}}}";
+            string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
 
@@ -309,84 +351,51 @@ namespace Client
         /// <param name="tunnelId"></param>
         /// <param name="command"></param>
         /// <param name="commandData"></param>
-        public static void SendTunnelCommand(string command, string commandData, Object jsonCommandData)
+        //public static void SendTunnelCommand(string command, string commandData, Object jsonCommandData)
+        //{
+        //    byte[] data;
+        //    if (jsonCommandData == null)
+        //    {
+        //        string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {{\"id\" : \"{command}\",\"data\" : {commandData}}}}}}}";
+        //        data = Encoding.ASCII.GetBytes(jsonPacket);
+        //    }
+        //    else
+        //    {
+        //        //string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {jsonCommandData}}}}}}}";
+        //        //TODO probeer in je code vooral met (anonieme) objecten te werken, en dan pas helemaal aan het einde als je gaat sturen serializen, want nu ga je jsonstrings in strings plakken, dat wil je niet 
+
+        //        string jsonCommand = JsonConvert.SerializeObject(jsonCommandData);
+        //        string totalString = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {{\"id\" : \"{command}\",\"data\" : {jsonCommand}}}}}}}";
+        //        data = Encoding.ASCII.GetBytes(totalString);
+        //    }
+
+        //    byte[] prepend = BitConverter.GetBytes(data.Length);
+        //    SendPacket(prepend, data);
+        //}
+
+        public static void SendTunnelCommand(string command, object jsonCommandData)
         {
-            byte[] data;
-            if (jsonCommandData == null)
-            {
-                string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {{\"id\" : \"{command}\",\"data\" : {commandData}}}}}}}";
-                data = Encoding.ASCII.GetBytes(jsonPacket);
-            }
-            else 
-            {
-                //string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {jsonCommandData}}}}}}}";
-                //TODO probeer in je code vooral met (anonieme) objecten te werken, en dan pas helemaal aan het einde als je gaat sturen serializen, want nu ga je jsonstrings in strings plakken, dat wil je niet 
 
-                string jsonCommand = JsonConvert.SerializeObject(jsonCommandData);
-                data = Encoding.ASCII.GetBytes(jsonCommand);
-            }
+            var alJsonData = new
+            {
+                id = "tunnel/send",
+                data = new
+                {
+                    dest = tunnelId,
+                    data = new
+                    {
+                        id = command,
+                        data = jsonCommandData
+                    }
+                }
+            };
+            string jsonPacket = JsonConvert.SerializeObject(alJsonData);
 
+            byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
             SendPacket(prepend, data);
         }
 
-
-        // OLD CODE:
-        ///// <summary>
-        ///// Receive packet from the server and print it to the console
-        ///// </summary>
-        //public static void ReceivePacket()
-        //{
-        //    // Get prepend byte array from server
-        //    byte[] prependBuffer = new byte[4];
-        //    int totalBytesRead = 0;
-
-        //    while (totalBytesRead < 4)
-        //    {
-        //        int bytesRead = stream.Read(prependBuffer, totalBytesRead, 4 - totalBytesRead);
-        //        if (bytesRead == 0)
-        //        {
-        //            Console.WriteLine("Error: Connection closed before reading the full length.");
-        //            return;
-        //        }
-        //        totalBytesRead += bytesRead;
-        //    }
-        //    int dataLength = BitConverter.ToInt32(prependBuffer, 0);
-        //    Debug.WriteLine("amount " + dataLength.ToString());
-
-        //    //int bytesRead = 0;
-        //    //byte[] readBuffer = new byte[1500];
-        //    //string totalResponse = "";
-
-        //    //// Continue reading if not all bytes are sent in one packet
-        //    //while ((bytesRead = stream.Read(readBuffer, 0, readBuffer.Length)) > 0)
-        //    //{
-        //    //    int response = await stream.ReadAsync(readBuffer, 0, readBuffer.Length);
-        //    //    string responseText = Encoding.ASCII.GetString(readBuffer, 0, response);
-        //    //    totalResponse += responseText;
-        //    //    bytesToRead += bytesRead;
-        //    //}
-        //    //int prependByte = stream.ReadByte();
-        //    //prependBuffer[0] = prependByte;
-        //    //int prepend = await stream.ReadAsync(prependBuffer, 0, prependBuffer.Length);
-        //    //byte[] p = stream.Read(prependBuffer, 0, prependBuffer.Length);
-        //    //string prependText = Encoding.UTF32.GetString(prependBuffer, 0, prepend);
-
-        //    //int bytes = await stream.ReadAsync(buffer, 0, buffer.Length);
-        //    //string response = Encoding.ASCII.GetString(buffer, 0, bytes);
-        //    //totalResponse = response;
-
-        //    //while (bytes < buffer.Length)
-        //    //{
-        //    //    int addedBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
-        //    //    response = Encoding.ASCII.GetString(buffer, 0, addedBytes);
-        //    //    totalResponse += response;
-        //    //    bytes += addedBytes;
-        //    //}
-
-        //    //// Print for Debugging
-        //    //Console.WriteLine("total response: " + totalResponse);
-        //    //receivedData = totalResponse;
-        //}
+      
     }
 }
