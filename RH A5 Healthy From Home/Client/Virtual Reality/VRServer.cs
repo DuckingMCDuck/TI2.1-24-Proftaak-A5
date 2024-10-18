@@ -103,7 +103,7 @@ namespace Client
                         {
                             for (int y = 0; y < height; y++)
                             {
-                                heights[x, y] = 2 + (float)(Math.Sin(x / 10.0) + Math.Cos(y / 10.0));
+                                heights[x, y] = 2 + (float)(Math.Sin(x / 10.0) + Math.Cos(y / 10.0)) * 2 + (float)(new Random().NextDouble() * 2 - 1);
                             }
                         }
 
