@@ -110,6 +110,8 @@ namespace Client
                         {
 
                         });
+                        // Get server response to previous command:
+                        await ReceivePacketAsync();
 
                         // SkyBox set time:
                         SendTunnelCommand("scene/skyboxdsa/settime", new
@@ -128,6 +130,8 @@ namespace Client
                             size = new[] { terrainSize, terrainSize },
                             heights = heights.Cast<float>().ToArray()
                         });
+                        // Get server response to previous command:
+                        await ReceivePacketAsync();
 
                         // Create terrain node:
                         SendTunnelCommand("scene/node/add", new
@@ -146,6 +150,8 @@ namespace Client
                                 }
                             }
                         });
+                        // Get server response to previous command:
+                        await ReceivePacketAsync();
 
                         // Create route (bug):
                         //int[,] routePoints = { { 0, 0, 0 }, { 5, 0, -5 }, { 5, 0, 5 }, { -5, 0, 5 }, { -5, 0, -5 } };
