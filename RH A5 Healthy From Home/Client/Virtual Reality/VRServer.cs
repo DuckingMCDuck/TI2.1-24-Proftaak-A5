@@ -49,9 +49,9 @@ namespace Client
             try
             {
                 // FOR LOCAL RAN SERVER:
-                vrServer = new TcpClient("127.0.0.1", 6666);
+                //vrServer = new TcpClient("127.0.0.1", 6666);
                 // FOR REMOTE SERVER:
-                //vrServer = new TcpClient("85.145.62.130", 6666);
+                vrServer = new TcpClient("85.145.62.130", 6666);
             }
             catch (SocketException)
             {
@@ -106,23 +106,26 @@ namespace Client
                         MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
 
                         // Reset scene:
-                        //SendTunnelCommand("scene/reset", "{}");
+                        SendTunnelCommand("scene/reset", new
+                        {
+
+                        });
 
                         // SkyBox set time:
-                        SendTunnelCommand("scene/skybox/settime", new
+                        SendTunnelCommand("scene/skyboxdsa/settime", new
                         {
                             time = 24
                         });
 
                         // Create terrain:
-                        //int terrainSize = 5;
-                        float[,] heights = new float[32, 32];
-                        for (int x = 0; x < 32; x++)
-                            for (int y = 0; y < 32; y++)
+                        int terrainSize = 256;
+                        float[,] heights = new float[terrainSize, terrainSize];
+                        for (int x = 0; x < terrainSize; x++)
+                            for (int y = 0; y < terrainSize; y++)
                                 heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
                         SendTunnelCommand("scene/terrain/add", new
                         {
-                            size = new[] { 32, 32 },
+                            size = new[] { terrainSize, terrainSize },
                             heights = heights.Cast<float>().ToArray()
                         });
 
@@ -153,11 +156,13 @@ namespace Client
                         // Add roads to route (needs route first):
                         //SendTunnelCommand(tunnelId, "scene/road/add", "{route : routeId}");
                     }
-                } else
+                }
+                else
                 {
                     ShutdownServer();
                 }
-            } else
+            }
+            else
             {
                 ShutdownServer();
             }
@@ -183,7 +188,7 @@ namespace Client
         /// </summary>
         public static async Task<string> ReceivePacketAsync()
         {
-            // Listen for incoming packets
+            // Listen for incoming packets from the VR Server
             byte[] prependBuffer = new byte[4];
             int totalBytesRead = 0;
 
@@ -194,11 +199,12 @@ namespace Client
                 if (bytesRead == 0)
                 {
                     Console.WriteLine("Error: Connection closed before reading the full length.");
-                    return null;
+                    return null; //Error: Return null
                 }
                 totalBytesRead += bytesRead;
             }
-            // Get length of incoming data
+
+            // Get length of incoming data (decrypt prepend)
             int dataLength = BitConverter.ToInt32(prependBuffer, 0);
             Console.WriteLine("datalenght: " + dataLength);
             totalBytesRead = 0;
@@ -212,11 +218,12 @@ namespace Client
                 if (bytesRead == 0)
                 {
                     Console.WriteLine("Error: Connection closed before reading the full packet.");
-                    return null;
+                    return null; //Error: Return null
                 }
                 totalBytesRead += bytesRead;
             }
-            // Get string of data
+
+            // Get string of data (decrypt data)
             dataString = Encoding.UTF8.GetString(dataBuffer);
             Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
 
@@ -244,6 +251,7 @@ namespace Client
                     {
                         // Find the session id of the user with Regex (pattern: 8-4-4-11)
                         string pattern = "([a-z]|[0-9]){8}-([a-z]|[0-9]){4}-([a-z]|[0-9]){4}-([a-z]|[0-9]){4}-([a-z]|[0-9]){12}";
+
                         // SessionID of current client is in the previous clientinfo data!
                         sessionId = Regex.Match(splitted[i - 1], pattern).Value;
                         sessionFound = true;
@@ -253,9 +261,11 @@ namespace Client
                 if (!sessionFound)
                 {
                     Console.WriteLine("Error: Session Id not found!");
+                    return null; //Error: Return null
                 }
                 return sessionId;
-            } else
+            }
+            else
             {
                 //Set the Json in a tree structure 
                 var jsonDocument = JsonDocument.Parse(data);
@@ -272,16 +282,19 @@ namespace Client
                     dataObject.ValueKind == JsonValueKind.Object)
                 {
                     JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
+
                     // Check if the incoming object's message is valid
                     string errorMessage = jsonNode.ToString();
                     if (errorMessage.Contains("does not support tunnel"))
                     {
-                        return null;
+                        Console.WriteLine("Error: JsonObject does not contain an Id!");
+                        return null; //Error: Return null
                     }
+
                     return jsonNode["id"].GetValue<string>();
                 }
             }
-            return null;
+            return null; //If we even get here -> Error: Return null
         }
 
         /// <summary>
@@ -294,9 +307,10 @@ namespace Client
                 id = "session/list",
                 data = new
                 {
-                    
+
                 }
             };
+
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
@@ -318,6 +332,7 @@ namespace Client
                     key = ""
                 }
             };
+
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
@@ -344,6 +359,7 @@ namespace Client
                     }
                 }
             };
+
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
