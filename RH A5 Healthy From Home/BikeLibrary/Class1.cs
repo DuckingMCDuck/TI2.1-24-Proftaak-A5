@@ -4,6 +4,6 @@ namespace BikeLibrary
 {
     public class Class1
     {
-
+        
     }
 }
