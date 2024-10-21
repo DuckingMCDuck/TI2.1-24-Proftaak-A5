@@ -55,6 +55,7 @@ namespace HealthyFromHomeApp.Doctor
             }
         }
 
+        // Public method to add received messages to chat history
         public void AppendMessage(string message)
         {
             chatHistory.AppendText($"{clientName}:{message}\n");

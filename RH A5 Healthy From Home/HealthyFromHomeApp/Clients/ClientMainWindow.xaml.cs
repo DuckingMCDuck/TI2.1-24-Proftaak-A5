@@ -15,10 +15,11 @@ namespace HealthyFromHomeApp.Clients
 {
     public partial class ClientMainWindow : Window
     {
-        private bool isSessionActive = false;
+        private bool isSessionActive = false; // Track if a bike session is active
 
         internal static ClientMainWindow client; 
 
+        // Properties for getting and setting text to debug or chat textboxes
         internal string debugText
         {
             get
@@ -58,8 +59,10 @@ namespace HealthyFromHomeApp.Clients
         public TextBox TextBoxBikeData;
         public TextBox TextChat;
 
+        // Reference to bikehelper class
         private BikeHelper bikeHelper;
 
+        // Constructor
         public ClientMainWindow(string clientName, TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
@@ -77,16 +80,9 @@ namespace HealthyFromHomeApp.Clients
             TxtChat.AppendText($"Connected as: {clientName}\n");
 
             Task.Run(() => ListenForMessages());
-            Task.Run(() => UsingSimulator());
         }
 
-        private async Task UsingSimulator()
-        {
-            await Dispatcher.InvokeAsync(() => TextChat.AppendText("Using Simulator!\n"));
-
-            ToggleSimulator();
-        }
-
+        // Toggle the simulator on/off, Turning it on and off
         private void ToggleSimulator()
         {
             Dispatcher.Invoke(() => TextChat.AppendText($"Simulator turned {(simulating ? "ON" : "OFF")}!\n"));
@@ -100,15 +96,24 @@ namespace HealthyFromHomeApp.Clients
             }
         }
 
+        // Toggle simulator
+        private void BtnSimulate_Click(object sender, RoutedEventArgs e)
+        {
+            simulating = !simulating;
+            ToggleSimulator();
+        }
+
+        // Start generating data, solely responsible for making data
         private void StartSimulator()
         {
             while (simulating)
             {
                 simulator.SimulateData();
-                Thread.Sleep(500); 
+                Thread.Sleep(500);
             }
         }
 
+        // Constant messagelistener
         private async void ListenForMessages()
         {
             byte[] buffer = new byte[1500];
@@ -143,6 +148,7 @@ namespace HealthyFromHomeApp.Clients
             }
         }
 
+        // Event handler for sending messages
         private void BtnSendMessage_Click(object sender, RoutedEventArgs e)
         {
             if (clientName == null)
@@ -157,6 +163,7 @@ namespace HealthyFromHomeApp.Clients
                 return;
             }
 
+            // Prepare message
             string message = "chat:send_to:Doctor:" + TxtTypeBar.Text;
             string rawMessage = TxtTypeBar.Text;
             string rawClient = clientName.Substring("client:".Length);
@@ -165,10 +172,11 @@ namespace HealthyFromHomeApp.Clients
             byte[] data = Encoding.ASCII.GetBytes(encryptedMessage);
             TxtChat.AppendText($"{rawClient}: {rawMessage}\n");
             TxtTypeBar.Clear();
-            SendMessageToServer(encryptedMessage);
+            SendMessageToServer(encryptedMessage); // Send to server
             
         }
 
+        // Helper method to send it to the server
         private async void SendMessageToServer(string message)
         {
             if (stream.CanWrite)
@@ -179,6 +187,7 @@ namespace HealthyFromHomeApp.Clients
             }
         }
 
+        // Event handler to connect to the bike
         private async void BtnConnectBike_Click(object sender, RoutedEventArgs e)
         {
             if (isSessionActive)
@@ -189,6 +198,7 @@ namespace HealthyFromHomeApp.Clients
 
             TxtBikeStatus.Text = "Attempting to connect to the bike...\n";
 
+            // List all available devices
             List<string> availableDevices = bikeHelper.GetAvailableDevices();
             TxtBikeStatus.Text += "Devices found:\n";
             foreach (var device in availableDevices)
@@ -196,12 +206,14 @@ namespace HealthyFromHomeApp.Clients
                 TxtBikeStatus.Text += $"Device: {device}\n";
             }
 
+            // Try to connect to specified bike (Todo: grab and use specified serialcode)
             bool bikeConnected = await bikeHelper.ConnectToBike("Tacx Flux 01249");
             if (bikeConnected)
             {
                 TxtBikeStatus.Text += "Bike connected successfully!\n";
                 this.bikeConnected = true;
 
+                // Open new bike session window
                 BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(simulator);
                 bikeSessionWindow.Closed += (s, args) =>
                 {
@@ -215,13 +227,6 @@ namespace HealthyFromHomeApp.Clients
             {
                 TxtBikeStatus.Text += "Failed to connect to the bike.\n";
             }
-        }
-
-
-        private void BtnSimulate_Click(object sender, RoutedEventArgs e)
-        {
-            simulating = !simulating;
-            ToggleSimulator();
         }
 
         private void TxtChat_TextChanged(object sender, TextChangedEventArgs e)
