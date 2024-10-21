@@ -110,7 +110,6 @@ namespace Client
                         {
 
                         });
-                        // Get server response to previous command:
                         await ReceivePacketAsync();
 
                         // SkyBox set time:
@@ -130,7 +129,6 @@ namespace Client
                             size = new[] { terrainSize, terrainSize },
                             heights = heights.Cast<float>().ToArray()
                         });
-                        // Get server response to previous command:
                         await ReceivePacketAsync();
 
                         // Create terrain node:
@@ -150,17 +148,43 @@ namespace Client
                                 }
                             }
                         });
-                        // Get server response to previous command:
                         await ReceivePacketAsync();
 
-                        // Create route (bug):
-                        //int[,] routePoints = { { 0, 0, 0 }, { 5, 0, -5 }, { 5, 0, 5 }, { -5, 0, 5 }, { -5, 0, -5 } };
-                        //SendTunnelCommand(tunnelId, "route/add", "{\"nodes\" : [{\"pos\" : [ 0, 0, 0  ],\"dir\" : [ 5, 0, -5]},{\"pos\" : [ 50, 0, 0 ],\"dir\" : [ 5, 0, 5]},{\"pos\" : [ 50, 0, 50],\"dir\" : [ -5, 0, 5]},{\"pos\" : [ 0, 0, 50 ],\"dir\" : [ -5, 0, -5]},]}");
-                        //string routeId = await ReceivePacketAsync();
-                        //Console.WriteLine($"Received route ID: {routeId}");
+                        // Create route:
+                        SendTunnelCommand("route/add", new
+                        {
+                            nodes = new[]
+                            {
+                                new { 
+                                    pos = new[] { 0, 0, 0},
+                                    dir = new[] { 5, 0, -5} 
+                                },
+                                new
+                                {
+                                    pos = new[] { 50, 0, 0},
+                                    dir = new[] { 5, 0, 5}
+                                },
+                                new
+                                {
+                                    pos = new[] { 50, 0, 50},
+                                    dir = new[] { -5, 0, 5}
+                                },
+                                 new
+                                {
+                                    pos = new[] { 0, 0, 50},
+                                    dir = new[] { -5, 0, -5}
+                                }
+                            }
+                        });
+                        string routeData = await ReceivePacketAsync();
+                        string routeUUID = GetRouteUUID(routeData);
 
-                        // Add roads to route (needs route first):
-                        //SendTunnelCommand(tunnelId, "scene/road/add", "{route : routeId}");
+                        // Add roads to the route
+                        SendTunnelCommand("scene/road/add", new
+                        {
+                            route = routeUUID,
+                        });
+                        await ReceivePacketAsync();
                     }
                 }
                 else
@@ -370,6 +394,45 @@ namespace Client
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
             SendPacket(prepend, data);
+        }
+
+        /// <summary>
+        /// Retrieves the UUID of a route object specifically
+        /// </summary>
+        /// <param name="routeData"></param>
+        /// <returns></returns>
+        private static string GetRouteUUID(string routeData)
+        {
+            //Set the Json in a tree structure 
+            var jsonDocument = JsonDocument.Parse(routeData);
+            Console.WriteLine("JsonDoc: " + jsonDocument);
+
+            // Just search for the UUID of the route:
+            if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
+                dataObject.ValueKind == JsonValueKind.Object)
+            {
+                JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
+
+                // Check if the incoming object's message is valid
+                string errorMessage = jsonNode.ToString();
+                if (errorMessage.Contains("does not support tunnel"))
+                {
+                    Console.WriteLine("Error: JsonObject does not contain a UUID!");
+                    return null; //Error: Return null
+                }
+
+                // Get the data object in the data
+                if (jsonNode.AsObject().TryGetPropertyValue("data", out JsonNode dataDataObject))
+                {
+                    // Get the data object in the data object in the data
+                    if (dataDataObject.AsObject().TryGetPropertyValue("data", out JsonNode dataDataDataObject))
+                    {
+                        // Get the UUID from the data object in the data object in the data
+                        return dataDataDataObject["uuid"].GetValue<string>();
+                    }
+                }
+            }
+            return null;
         }
 
     }
