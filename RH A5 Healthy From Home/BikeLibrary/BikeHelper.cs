@@ -115,6 +115,9 @@ namespace BikeLibrary
             Console.WriteLine($"Bike data received: {BitConverter.ToString(e.Data).Replace("-", " ")}");
         }
 
+        // Event to notify subscribers when data is received
+        public event Action<string> OnBikeDataReceived;
+
         private void BleHeart_SubscriptionValueChanged(object sender, BLESubscriptionValueChangedEventArgs e)
         {
             Console.WriteLine($"Heart rate data received: {BitConverter.ToString(e.Data).Replace("-", " ")}");
