@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using HealthyFromHomeApp.Common;
+using BikeLibrary;
 
 namespace HealthyFromHomeApp.Clients
 {
@@ -57,6 +58,8 @@ namespace HealthyFromHomeApp.Clients
         public TextBox TextBoxBikeData;
         public TextBox TextChat;
 
+        private BikeHelper bikeHelper;
+
         public ClientMainWindow(string clientName, TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
@@ -64,6 +67,7 @@ namespace HealthyFromHomeApp.Clients
             this.tcpClient = client;
             this.stream = networkStream;
             this.simulator = new Simulator(this);
+            this.bikeHelper = new BikeHelper();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -184,17 +188,25 @@ namespace HealthyFromHomeApp.Clients
             }
 
             TxtBikeStatus.Text = "Attempting to connect to the bike...\n";
-            bikeConnected = true;
-            TxtBikeStatus.Text = "Bike connected successfully!\n";
-
-            BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(simulator);
-            bikeSessionWindow.Closed += (s, args) =>
+            bool bikeConnected = await bikeHelper.ConnectToBike("Tacx Flux 01249");
+            if (bikeConnected)
             {
-                isSessionActive = false;  
-            };
-            bikeSessionWindow.Show();
+                TxtBikeStatus.Text += "Bike connected successfully!\n";
+                this.bikeConnected = true;
 
-            isSessionActive = true;  
+                BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(simulator);
+                bikeSessionWindow.Closed += (s, args) =>
+                {
+                    isSessionActive = false;
+                };
+                bikeSessionWindow.Show();
+
+                isSessionActive = true;
+            }
+            else
+            {
+                TxtBikeStatus.Text += "Failed to connect to the bike.\n";
+            }
         }
 
 
