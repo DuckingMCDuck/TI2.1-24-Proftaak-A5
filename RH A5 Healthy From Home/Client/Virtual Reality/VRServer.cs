@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.IsolatedStorage;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -26,18 +27,15 @@ namespace Client
         public static TcpClient vrServer; //TcpClient?
         public static NetworkStream stream; //NetworkStream?
         public static string receivedData;
-        public static string hostName = "Laptop-Daan";
+        public static string hostName = Environment.MachineName;
         public static string sessionId;
         public static string tunnelId;
 
         public VRServer() { }
 
-        // TODO: Verschil maken tussen commands die een ID terug sturen (sessionId, tunnelId etc.) en commands waarbij dit niet hoeft?
-
         /// <summary>
         /// Starts the VRServer and changes the environment
         /// </summary>
-        /// <returns></returns>
         public static async Task Start()
         {
             await ConnectToVrServerAsync();
@@ -46,18 +44,37 @@ namespace Client
         /// <summary>
         /// Connects to the VR Server and initializes Stream
         /// </summary>
-        /// <returns></returns>
         public static async Task ConnectToVrServerAsync()
         {
-            // FOR LOCAL RAN SERVER:
-            //vrServer = new TcpClient("127.0.0.1", 6666);
-            // FOR REMOTE SERVER:
-            vrServer = new TcpClient("85.145.62.130", 6666);
+            try
+            {
+                // FOR LOCAL RAN SERVER:
+                //vrServer = new TcpClient("127.0.0.1", 6666);
+                // FOR REMOTE SERVER:
+                vrServer = new TcpClient("85.145.62.130", 6666);
+            }
+            catch (SocketException)
+            {
+                MainWindow.TextChat.Text = "Error connection to the VRServer!\n";
+                return;
+            }
             stream = vrServer.GetStream();
             MainWindow.TextChat.Text = "Connected to VR Server!\n";
 
             // Start listening for packets
             await PacketHandlerAsync();
+        }
+
+        /// <summary>
+        /// Disconnect from the VR Server (Shutdown). 
+        /// This method should not be async, because the connection should be terminated instantly!
+        /// </summary>
+        public static void ShutdownServer()
+        {
+            stream.Close();
+            vrServer.Close();
+            vrServer.Dispose();
+            MainWindow.TextChat.Text = "An error has occured, shutting down VRServer...\n";
         }
 
         /// <summary>
@@ -86,37 +103,35 @@ namespace Client
                     // Send scene configuration commands
                     //while (vrServer.Connected)
                     {
+                        MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
+
                         // Reset scene:
-                        //SendTunnelCommand("scene/reset", "{}");
+                        SendTunnelCommand("scene/reset", new
+                        {
 
-                        // SkyBox time & update (dynamic works, static doesn't):
-                        //int terrainSize = 5;
-                        float[,] heights = new float[32, 32];
-                        for (int x = 0; x < 32; x++)
-                            for (int y = 0; y < 32; y++)
-                                heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
+                        });
+                        await ReceivePacketAsync();
 
-                        //int[] heights = new int[terrainSize*terrainSize];
-                        //for (int i = 0; i < heights.Length; i++)
-                        //{
-                        //    heights[i] = 50;
-                        //}
-
-                        SendTunnelCommand("scene/skybox/settime", new
+                        // SkyBox set time:
+                        SendTunnelCommand("scene/skyboxdsa/settime", new
                         {
                             time = 24
                         });
-                        //SendTunnelCommand($"scene/skybox/settime","{ time :24 }", null);
-                        //SendTunnelCommand("scene/terrain/add", " ", new
-                        //{
-                        //    size = new[] { 32, 32 },
-                        //    heights = heights.Cast<float>().ToArray()
-                        //});
+
+                        // Create terrain:
+                        int terrainSize = 256;
+                        float[,] heights = new float[terrainSize, terrainSize];
+                        for (int x = 0; x < terrainSize; x++)
+                            for (int y = 0; y < terrainSize; y++)
+                                heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
                         SendTunnelCommand("scene/terrain/add", new
                         {
-                            size = new[] { 32, 32 },
+                            size = new[] { terrainSize, terrainSize },
                             heights = heights.Cast<float>().ToArray()
                         });
+                        await ReceivePacketAsync();
+
+                        // Create terrain node:
                         SendTunnelCommand("scene/node/add", new
                         {
                             name = "floor",
@@ -133,44 +148,53 @@ namespace Client
                                 }
                             }
                         });
-                        //SendTunnelCommand("scene/node/add", "", new
-                        //{
-                        //    name = "floor",
-                        //    components = new
-                        //    {
-                        //        transform = new
-                        //        {
-                        //            position = new[] { -16, 0, -16 },
-                        //            scale = 1
-                        //        },
-                        //        terrain = new
-                        //        {
+                        await ReceivePacketAsync();
 
-                        //        }
-                        //    }
-                        //});
-                        //"{ size : [256, 256], heights : []}"
+                        // Create route:
+                        SendTunnelCommand("route/add", new
+                        {
+                            nodes = new[]
+                            {
+                                new { 
+                                    pos = new[] { 0, 0, 0},
+                                    dir = new[] { 5, 0, -5} 
+                                },
+                                new
+                                {
+                                    pos = new[] { 50, 0, 0},
+                                    dir = new[] { 5, 0, 5}
+                                },
+                                new
+                                {
+                                    pos = new[] { 50, 0, 50},
+                                    dir = new[] { -5, 0, 5}
+                                },
+                                 new
+                                {
+                                    pos = new[] { 0, 0, 50},
+                                    dir = new[] { -5, 0, -5}
+                                }
+                            }
+                        });
+                        string routeData = await ReceivePacketAsync();
+                        string routeUUID = GetRouteUUID(routeData);
 
-
-                        // Create terrain/ groundplane (W.I.P.):
-                        //int[] heights = new int[65536];
-                        //Random rnd = new Random();
-                        //for (int i = 0; i < heights.Length; i++)
-                        //{
-                        //    heights[i] = rnd.Next(0, 50);
-                        //}
-                        //SendTunnelCommand(tunnelId, "scene/terrain/add", "{\"size\" : [ 256, 256 ],\"heights\" : heights}");
-
-                        // Create route (bug):
-                        //int[,] routePoints = { { 0, 0, 0 }, { 5, 0, -5 }, { 5, 0, 5 }, { -5, 0, 5 }, { -5, 0, -5 } };
-                        //SendTunnelCommand(tunnelId, "route/add", "{\"nodes\" : [{\"pos\" : [ 0, 0, 0  ],\"dir\" : [ 5, 0, -5]},{\"pos\" : [ 50, 0, 0 ],\"dir\" : [ 5, 0, 5]},{\"pos\" : [ 50, 0, 50],\"dir\" : [ -5, 0, 5]},{\"pos\" : [ 0, 0, 50 ],\"dir\" : [ -5, 0, -5]},]}");
-                        //string routeId = await ReceivePacketAsync();
-                        //Console.WriteLine($"Received route ID: {routeId}");
-
-                        // Add roads to route (needs route first):
-                        //SendTunnelCommand(tunnelId, "scene/road/add", "{route : routeId}");
+                        // Add roads to the route
+                        SendTunnelCommand("scene/road/add", new
+                        {
+                            route = routeUUID,
+                        });
+                        await ReceivePacketAsync();
                     }
                 }
+                else
+                {
+                    ShutdownServer();
+                }
+            }
+            else
+            {
+                ShutdownServer();
             }
         }
 
@@ -192,10 +216,9 @@ namespace Client
         /// <summary>
         /// Listens for incoming packets from the VR Server
         /// </summary>
-        /// <returns></returns>
         public static async Task<string> ReceivePacketAsync()
         {
-            // Listen for incoming packets
+            // Listen for incoming packets from the VR Server
             byte[] prependBuffer = new byte[4];
             int totalBytesRead = 0;
 
@@ -206,11 +229,12 @@ namespace Client
                 if (bytesRead == 0)
                 {
                     Console.WriteLine("Error: Connection closed before reading the full length.");
-                    return null;
+                    return null; //Error: Return null
                 }
                 totalBytesRead += bytesRead;
             }
-            // Get length of incoming data
+
+            // Get length of incoming data (decrypt prepend)
             int dataLength = BitConverter.ToInt32(prependBuffer, 0);
             Console.WriteLine("datalenght: " + dataLength);
             totalBytesRead = 0;
@@ -224,11 +248,12 @@ namespace Client
                 if (bytesRead == 0)
                 {
                     Console.WriteLine("Error: Connection closed before reading the full packet.");
-                    return null;
+                    return null; //Error: Return null
                 }
                 totalBytesRead += bytesRead;
             }
-            // Get string of data
+
+            // Get string of data (decrypt data)
             dataString = Encoding.UTF8.GetString(dataBuffer);
             Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
 
@@ -236,29 +261,28 @@ namespace Client
         }
 
         /// <summary>
-        /// Gets the id from incoming data (sessionId, tunnelId etc.)
+        /// Filters out the id from incoming data 
+        /// Current id's: session-id, tunnel-id
         /// </summary>
         /// <param name="data"></param>
-        /// <returns></returns>
         public static string GetId(string data)
         {
-            
             // See if we have the host somewhere in the data
             bool hostInData = data.ToLower().Contains(hostName.ToLower());
             if (hostInData)
             {
                 string sessionId = "";
-                // Split data on '{' character
+                // Split data on clientinfo
                 string[] splitted = Regex.Split(data.ToLower(), "clientinfo");
                 bool sessionFound = false;
                 for (int i = 0; i < splitted.Length; i++)
                 {
-                    //To print the first ID (which is wrong!):
-                    //string a = splitted[2].Trim();
                     if (splitted[i].Contains(hostName.ToLower()))
                     {
-                        // Find the session id of the user with Regex (pattern 8-4-4-11)
+                        // Find the session id of the user with Regex (pattern: 8-4-4-11)
                         string pattern = "([a-z]|[0-9]){8}-([a-z]|[0-9]){4}-([a-z]|[0-9]){4}-([a-z]|[0-9]){4}-([a-z]|[0-9]){12}";
+
+                        // SessionID of current client is in the previous clientinfo data!
                         sessionId = Regex.Match(splitted[i - 1], pattern).Value;
                         sessionFound = true;
                         Console.WriteLine($"Session ID: {sessionId}");
@@ -267,9 +291,11 @@ namespace Client
                 if (!sessionFound)
                 {
                     Console.WriteLine("Error: Session Id not found!");
+                    return null; //Error: Return null
                 }
                 return sessionId;
-            } else
+            }
+            else
             {
                 //Set the Json in a tree structure 
                 var jsonDocument = JsonDocument.Parse(data);
@@ -282,47 +308,47 @@ namespace Client
                 {
                     return dataElement[0].GetProperty("id").GetString();
                 }
-                try
+                if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
+                    dataObject.ValueKind == JsonValueKind.Object)
                 {
-                    if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
-                        dataObject.ValueKind == JsonValueKind.Object)
+                    JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
+
+                    // Check if the incoming object's message is valid
+                    string errorMessage = jsonNode.ToString();
+                    if (errorMessage.Contains("does not support tunnel"))
                     {
-                        JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
-                        return jsonNode["id"].GetValue<string>();
+                        Console.WriteLine("Error: JsonObject does not contain an Id!");
+                        return null; //Error: Return null
                     }
-                }
-                catch (NullReferenceException ex)
-                {
-                    Console.WriteLine("No Value Returned, So VR might be inactive");
+
+                    return jsonNode["id"].GetValue<string>();
                 }
             }
-            return null;
+            return null; //If we even get here -> Error: Return null
         }
 
         /// <summary>
-        /// Initialize starting packet
+        /// Initialize starting packet (server response: all current sessions)
         /// </summary>
         public static void SendStartingPacket()
         {
-            //string jsonPacket = "{\"id\" : \"session/list\"}";
             var alJsonData = new
             {
                 id = "session/list",
                 data = new
                 {
-                    
+
                 }
             };
+
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
-            //byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
             byte[] prepend = BitConverter.GetBytes(data.Length);
-
             SendPacket(prepend, data);
         }
 
         /// <summary>
-        /// Initialize session packet
+        /// Initialize session packet (server response: tunnel-id)
         /// </summary>
         /// <param name="sessionId"></param>
         public static void SendSessionIdPacket(string sessionId)
@@ -336,46 +362,20 @@ namespace Client
                     key = ""
                 }
             };
-            //string jsonPacket = $"{{\"id\" : \"tunnel/create\",\"data\" : {{\"session\" : \"{sessionId}\",\"key\" : \"\"}}}}";
+
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
-
-            //byte[] prepend = new byte[] { (byte)data.Length, 0x00, 0x00, 0x00 };
             SendPacket(prepend, data);
         }
 
         /// <summary>
-        /// Initialize a tunnel command (Generic command for all tunnel functions)
+        /// Create specific tunnel commands (server response: variable)
         /// </summary>
-        /// <param name="tunnelId"></param>
         /// <param name="command"></param>
-        /// <param name="commandData"></param>
-        //public static void SendTunnelCommand(string command, string commandData, Object jsonCommandData)
-        //{
-        //    byte[] data;
-        //    if (jsonCommandData == null)
-        //    {
-        //        string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {{\"id\" : \"{command}\",\"data\" : {commandData}}}}}}}";
-        //        data = Encoding.ASCII.GetBytes(jsonPacket);
-        //    }
-        //    else
-        //    {
-        //        //string jsonPacket = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {jsonCommandData}}}}}}}";
-        //        //TODO probeer in je code vooral met (anonieme) objecten te werken, en dan pas helemaal aan het einde als je gaat sturen serializen, want nu ga je jsonstrings in strings plakken, dat wil je niet 
-
-        //        string jsonCommand = JsonConvert.SerializeObject(jsonCommandData);
-        //        string totalString = $"{{\"id\" : \"tunnel/send\",\"data\" :{{\"dest\" : \"{tunnelId}\",\"data\" : {{\"id\" : \"{command}\",\"data\" : {jsonCommand}}}}}}}";
-        //        data = Encoding.ASCII.GetBytes(totalString);
-        //    }
-
-        //    byte[] prepend = BitConverter.GetBytes(data.Length);
-        //    SendPacket(prepend, data);
-        //}
-
+        /// <param name="jsonCommandData"></param>
         public static void SendTunnelCommand(string command, object jsonCommandData)
         {
-
             var alJsonData = new
             {
                 id = "tunnel/send",
@@ -389,13 +389,51 @@ namespace Client
                     }
                 }
             };
-            string jsonPacket = JsonConvert.SerializeObject(alJsonData);
 
+            string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
             SendPacket(prepend, data);
         }
 
-      
+        /// <summary>
+        /// Retrieves the UUID of a route object specifically
+        /// </summary>
+        /// <param name="routeData"></param>
+        /// <returns></returns>
+        private static string GetRouteUUID(string routeData)
+        {
+            //Set the Json in a tree structure 
+            var jsonDocument = JsonDocument.Parse(routeData);
+            Console.WriteLine("JsonDoc: " + jsonDocument);
+
+            // Just search for the UUID of the route:
+            if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
+                dataObject.ValueKind == JsonValueKind.Object)
+            {
+                JsonNode jsonNode = System.Text.Json.JsonSerializer.SerializeToNode(dataObject);
+
+                // Check if the incoming object's message is valid
+                string errorMessage = jsonNode.ToString();
+                if (errorMessage.Contains("does not support tunnel"))
+                {
+                    Console.WriteLine("Error: JsonObject does not contain a UUID!");
+                    return null; //Error: Return null
+                }
+
+                // Get the data object in the data
+                if (jsonNode.AsObject().TryGetPropertyValue("data", out JsonNode dataDataObject))
+                {
+                    // Get the data object in the data object in the data
+                    if (dataDataObject.AsObject().TryGetPropertyValue("data", out JsonNode dataDataDataObject))
+                    {
+                        // Get the UUID from the data object in the data object in the data
+                        return dataDataDataObject["uuid"].GetValue<string>();
+                    }
+                }
+            }
+            return null;
+        }
+
     }
 }
