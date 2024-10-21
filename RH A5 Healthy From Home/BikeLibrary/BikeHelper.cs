@@ -16,15 +16,32 @@ namespace BikeLibrary
             bleHeart = new BLE();
         }
 
+        // List available devices
+        public void ListAvailableDevices()
+        {
+            List<String> bleBikeList = bleBike.ListDevices();
+            Console.WriteLine("Devices found: ");
+            foreach (var name in bleBikeList)
+            {
+                Console.WriteLine($"Device: {name}");
+            }
+        }
+
+        public List<string> GetAvailableDevices()
+        {
+            return bleBike.ListDevices();
+        }
+
         // Connect to the bike
         public async Task<bool> ConnectToBike(string bikeName)
         {
             try
             {
+                ListAvailableDevices();
                 int errorCode = await bleBike.OpenDevice(bikeName);
                 if (errorCode != 0)
                 {
-                    Console.WriteLine("Failed to connect to bike.");
+                    Console.WriteLine($"Can't connect to {bikeName}.");
                     return false;
                 }
 
@@ -36,7 +53,7 @@ namespace BikeLibrary
                     return false;
                 }
 
-                // Subscribe to bike
+                // Subscribe to bike characteristic
                 errorCode = await bleBike.SubscribeToCharacteristic("6e40fec2-b5a3-f393-e0a9-e50e24dcca9e");
                 if (errorCode != 0)
                 {
@@ -59,10 +76,11 @@ namespace BikeLibrary
         {
             try
             {
+                ListAvailableDevices();
                 int errorCode = await bleHeart.OpenDevice(hrMonitorName);
                 if (errorCode != 0)
                 {
-                    Console.WriteLine("Failed to connect to heart rate monitor.");
+                    Console.WriteLine($"Can't connect to {hrMonitorName}.");
                     return false;
                 }
 

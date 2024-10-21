@@ -188,6 +188,14 @@ namespace HealthyFromHomeApp.Clients
             }
 
             TxtBikeStatus.Text = "Attempting to connect to the bike...\n";
+
+            List<string> availableDevices = bikeHelper.GetAvailableDevices();
+            TxtBikeStatus.Text += "Devices found:\n";
+            foreach (var device in availableDevices)
+            {
+                TxtBikeStatus.Text += $"Device: {device}\n";
+            }
+
             bool bikeConnected = await bikeHelper.ConnectToBike("Tacx Flux 01249");
             if (bikeConnected)
             {
