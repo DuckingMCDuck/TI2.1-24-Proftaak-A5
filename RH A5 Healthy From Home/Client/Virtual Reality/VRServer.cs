@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Media.Media3D;
 
 namespace Client
 {
@@ -150,6 +151,28 @@ namespace Client
                         pos = new[] { 0, 0, 0},
                         dir = new[] { 5, 0, -5}
                     },
+                    new 
+                    { 
+                        pos = new[] { 50,0,0},
+                        dir = new[] { 5, 0,5 }
+                    },
+                    new
+                    { 
+                        pos = new[] { 0, 0, 50 },
+                        dir = new[] { -5,0,-5 }
+                    },
+                    new 
+                    { 
+                        pos = new[] {5,0,5 },
+                        dir = new[] {-5,0,-5 }
+                    }
+
+                }
+            });
+            string routeUUID = GetUUID(routeData);
+
+            /*
+             * ,
                     new
                     {
                         pos = new[] { 50, 0, 0},
@@ -165,9 +188,7 @@ namespace Client
                         pos = new[] { 0, 0, 50},
                         dir = new[] { -5, 0, -5}
                     }
-                }
-            });
-            string routeUUID = GetUUID(routeData);
+             * */
 
             // Add roads to the route:
             await SendTunnelCommand("scene/road/add", new
