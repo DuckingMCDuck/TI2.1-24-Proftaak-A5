@@ -197,8 +197,7 @@ namespace Client
                     model = new
                     {
                         file = "data/NetworkEngine/models/bike/bike.fbx",
-                        cullbackfaces = true,
-
+                        cullbackfaces = true
                     }
                 }
             });
