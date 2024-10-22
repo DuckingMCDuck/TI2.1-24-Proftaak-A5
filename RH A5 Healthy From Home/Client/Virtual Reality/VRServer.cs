@@ -69,12 +69,17 @@ namespace Client
         /// Disconnect from the VR Server (Shutdown). 
         /// This method should not be async, because the connection should be terminated instantly!
         /// </summary>
-        public static void ShutdownServer()
+        public static async void ShutdownServer()
         {
             stream.Close();
             vrServer.Close();
             vrServer.Dispose();
             MainWindow.TextChat.Text = "An error has occured, shutting down VRServer...\n";
+
+            // Automatically restart the VRServer after disconnect
+            await Task.Delay(10000);
+            MainWindow.TextChat.Text = "Retry connection to the VRServer...";
+            await Start();
         }
 
         /// <summary>
@@ -89,75 +94,81 @@ namespace Client
             sessionId = GetId(sessionIdData);
             Console.WriteLine($"Received session ID: {sessionId}");
 
-            if (!string.IsNullOrEmpty(sessionId))
+            // Check if we can continue
+            if (string.IsNullOrEmpty(sessionId))
             {
-                // Get the tunnelID
-                MainWindow.TextBoxBikeData.Text = "Sending session ID packet...";
-                SendSessionIdPacket(sessionId);
-                string tunnelIdData = await ReceivePacketAsync();
-                tunnelId = GetId(tunnelIdData);
-                Console.WriteLine($"Received tunnel ID: {tunnelId}");
+                ShutdownServer();
+            }
 
-                if (!string.IsNullOrEmpty(tunnelId))
+            // Get the tunnelID
+            MainWindow.TextBoxBikeData.Text = "Sending session ID packet...";
+            SendSessionIdPacket(sessionId);
+            string tunnelIdData = await ReceivePacketAsync();
+            tunnelId = GetId(tunnelIdData);
+            Console.WriteLine($"Received tunnel ID: {tunnelId}");
+
+            // Check if we can continue
+            if (string.IsNullOrEmpty(tunnelId))
+            {
+                ShutdownServer();
+            }
+
+            // Send scene configuration commands
+            MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
+
+            // Reset scene:
+            SendTunnelCommand("scene/reset", new
+            {
+
+            });
+            await ReceivePacketAsync();
+
+            // SkyBox set time:
+            SendTunnelCommand("scene/skyboxdsa/settime", new
+            {
+                time = 24
+            });
+
+            // Create terrain:
+            int terrainSize = 256;
+            float[,] heights = new float[terrainSize, terrainSize];
+            for (int x = 0; x < terrainSize; x++)
+                for (int y = 0; y < terrainSize; y++)
+                    heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
+            SendTunnelCommand("scene/terrain/add", new
+            {
+                size = new[] { terrainSize, terrainSize },
+                heights = heights.Cast<float>().ToArray()
+            });
+            await ReceivePacketAsync();
+
+            // Create terrain node:
+            SendTunnelCommand("scene/node/add", new
+            {
+                name = "floor",
+                components = new
                 {
-                    // Send scene configuration commands
-                    //while (vrServer.Connected)
+                    transform = new
                     {
-                        MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
+                        position = new[] { -16, 0, -16 },
+                        scale = 1
+                    },
+                    terrain = new
+                    {
 
-                        // Reset scene:
-                        SendTunnelCommand("scene/reset", new
-                        {
+                    }
+                }
+            });
+            await ReceivePacketAsync();
 
-                        });
-                        await ReceivePacketAsync();
-
-                        // SkyBox set time:
-                        SendTunnelCommand("scene/skyboxdsa/settime", new
-                        {
-                            time = 24
-                        });
-
-                        // Create terrain:
-                        int terrainSize = 256;
-                        float[,] heights = new float[terrainSize, terrainSize];
-                        for (int x = 0; x < terrainSize; x++)
-                            for (int y = 0; y < terrainSize; y++)
-                                heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
-                        SendTunnelCommand("scene/terrain/add", new
-                        {
-                            size = new[] { terrainSize, terrainSize },
-                            heights = heights.Cast<float>().ToArray()
-                        });
-                        await ReceivePacketAsync();
-
-                        // Create terrain node:
-                        SendTunnelCommand("scene/node/add", new
-                        {
-                            name = "floor",
-                            components = new
-                            {
-                                transform = new
-                                {
-                                    position = new[] { -16, 0, -16 },
-                                    scale = 1
-                                },
-                                terrain = new
-                                {
-
-                                }
-                            }
-                        });
-                        await ReceivePacketAsync();
-
-                        // Create route:
-                        SendTunnelCommand("route/add", new
-                        {
-                            nodes = new[]
-                            {
-                                new { 
+            // Create route:
+            SendTunnelCommand("route/add", new
+            {
+                nodes = new[]
+                {
+                                new {
                                     pos = new[] { 0, 0, 0},
-                                    dir = new[] { 5, 0, -5} 
+                                    dir = new[] { 5, 0, -5}
                                 },
                                 new
                                 {
@@ -175,27 +186,33 @@ namespace Client
                                     dir = new[] { -5, 0, -5}
                                 }
                             }
-                        });
-                        string routeData = await ReceivePacketAsync();
-                        string routeUUID = GetRouteUUID(routeData);
+            });
+            string routeData = await ReceivePacketAsync();
+            string routeUUID = GetRouteUUID(routeData);
 
-                        // Add roads to the route
-                        SendTunnelCommand("scene/road/add", new
-                        {
-                            route = routeUUID,
-                        });
-                        await ReceivePacketAsync();
+            // Add roads to the route
+            SendTunnelCommand("scene/road/add", new
+            {
+                route = routeUUID,
+            });
+            await ReceivePacketAsync();
+
+            SendTunnelCommand("scene/node/add", new
+            {
+                name = "bike",
+                components = new
+                {
+                    transform = new
+                    {
+                        position = new[] { 0, 0, 0 },
+                        scale = 1
+                    },
+                    model = new
+                    {
+                        file = "data/models/bike/bike.fbx"
                     }
                 }
-                else
-                {
-                    ShutdownServer();
-                }
-            }
-            else
-            {
-                ShutdownServer();
-            }
+            });
         }
 
         /// <summary>
@@ -228,7 +245,7 @@ namespace Client
                 int bytesRead = await stream.ReadAsync(prependBuffer, totalBytesRead, 4 - totalBytesRead);
                 if (bytesRead == 0)
                 {
-                    Console.WriteLine("Error: Connection closed before reading the full length.");
+                    Console.WriteLine("Error: No data recieved.");
                     return null; //Error: Return null
                 }
                 totalBytesRead += bytesRead;
@@ -267,6 +284,12 @@ namespace Client
         /// <param name="data"></param>
         public static string GetId(string data)
         {
+            if (data == null)
+            {
+                ShutdownServer();
+                return null;
+            }
+
             // See if we have the host somewhere in the data
             bool hostInData = data.ToLower().Contains(hostName.ToLower());
             if (hostInData)
