@@ -1,24 +1,12 @@
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO.IsolatedStorage;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Markup;
-using System.Xml.Linq;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Client
 {
@@ -107,109 +95,128 @@ namespace Client
             tunnelId = GetId(tunnelIdData);
             Console.WriteLine($"Received tunnel ID: {tunnelId}");
 
-            // Check if we can continue
-            if (string.IsNullOrEmpty(tunnelId))
-            {
-                ShutdownServer();
-            }
+                        // Reset scene:
+                       await SendTunnelCommand("scene/reset", new
+                        {
 
-            // Send scene configuration commands
-            MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
+                        });
+                        
 
-            // Reset scene:
-            SendTunnelCommand("scene/reset", new
-            {
+                        // SkyBox set time:
+                      await  SendTunnelCommand("scene/skybox/settime", new
+                        {
+                            time = 12
+                        });
+                        
+                        // Create terrain:
+                        int terrainSize = 128;
+                        float[,] heights = new float[terrainSize, terrainSize];
+                        for (int x = 0; x < terrainSize; x++)
+                            for (int y = 0; y < terrainSize; y++)
+                                heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
+                        await SendTunnelCommand("scene/terrain/add", new
+                        {
+                            size = new[] { terrainSize, terrainSize },
+                            heights = heights.Cast<float>().ToArray()
+                        });
+                     
 
-            });
-            await ReceivePacketAsync();
-
-            // SkyBox set time:
-            SendTunnelCommand("scene/skyboxdsa/settime", new
-            {
-                time = 24
-            });
-
-            // Create terrain:
-            int terrainSize = 256;
-            float[,] heights = new float[terrainSize, terrainSize];
-            for (int x = 0; x < terrainSize; x++)
-                for (int y = 0; y < terrainSize; y++)
-                    heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
-            SendTunnelCommand("scene/terrain/add", new
-            {
-                size = new[] { terrainSize, terrainSize },
-                heights = heights.Cast<float>().ToArray()
-            });
-            await ReceivePacketAsync();
-
-            // Create terrain node:
-            SendTunnelCommand("scene/node/add", new
-            {
-                name = "floor",
-                components = new
-                {
-                    transform = new
-                    {
-                        position = new[] { -16, 0, -16 },
-                        scale = 1
-                    },
-                    terrain = new
-                    {
-
-                    }
-                }
-            });
-            await ReceivePacketAsync();
-
-            // Create route:
-            SendTunnelCommand("route/add", new
-            {
-                nodes = new[]
-                {
-                                new {
-                                    pos = new[] { 0, 0, 0},
-                                    dir = new[] { 5, 0, -5}
-                                },
-                                new
+                        // Create terrain node:
+                        await SendTunnelCommand("scene/node/add", new
+                        {
+                            name = "floor",
+                            components = new
+                            {
+                                transform = new
                                 {
-                                    pos = new[] { 50, 0, 0},
-                                    dir = new[] { 5, 0, 5}
+                                    position = new[] { -16, 0, -16 },
+                                    scale = 1
                                 },
-                                new
+                                terrain = new
                                 {
-                                    pos = new[] { 50, 0, 50},
-                                    dir = new[] { -5, 0, 5}
-                                },
-                                 new
-                                {
-                                    pos = new[] { 0, 0, 50},
-                                    dir = new[] { -5, 0, -5}
+
                                 }
                             }
-            });
-            string routeData = await ReceivePacketAsync();
-            string routeUUID = GetRouteUUID(routeData);
+                        });
 
-            // Add roads to the route
-            SendTunnelCommand("scene/road/add", new
-            {
-                route = routeUUID,
-            });
-            await ReceivePacketAsync();
 
-            SendTunnelCommand("scene/node/add", new
-            {
-                name = "bike",
-                components = new
-                {
-                    transform = new
-                    {
-                        position = new[] { 0, 0, 0 },
-                        scale = 1
-                    },
-                    model = new
-                    {
-                        file = "data/models/bike/bike.fbx"
+                        // Create route:
+                        string routeData = await SendTunnelCommand("route/add", new
+                        {
+                          nodes = new[]
+                          {
+                            new {
+                               pos = new[] { 0, 0, 0},
+                               dir = new[] { 5, 0, -5}
+                            },
+                            new
+                            {
+                               pos = new[] { 50, 0, 0},
+                               dir = new[] { 5, 0, 5}
+                            },
+                            new
+                            {
+                               pos = new[] { 50, 0, 50},
+                               dir = new[] { -5, 0, 5}
+                            },
+                            new
+                            {
+                               pos = new[] { 0, 0, 50},
+                               dir = new[] { -5, 0, -5}
+                            }
+                          }
+                        });
+                        Console.WriteLine(routeData);
+                        string routeUUID = GetUUID(routeData);
+                        Console.WriteLine(routeUUID);
+                        // Add roads to the route
+                        await SendTunnelCommand("scene/road/add", new
+                        {
+                            route = routeUUID,
+                        });
+
+
+                       string getCameraNode = await SendTunnelCommand("scene/node/find", new
+                       {   
+                            name = "cameraNode"
+                       });
+                        Console.WriteLine(getCameraNode);
+
+                        string GuidBikeData = await SendTunnelCommand("scene/node/add", new
+                        {
+                            name = "bike",
+                            components = new
+                            {
+                                transform = new
+                                {
+                                    position = new[] { 90, 0, 0},
+                                    scale = 1,
+                                    rotation = new[] { 90, 0, 0 }
+                                },
+                                model = new
+                                {
+                                    file = "data/NetworkEngine/models/bike/bike.fbx",
+                                    cullbackfaces = true,
+
+                                }
+                            }
+                        });
+                        string GuidBike = GetUUID(GuidBikeData);
+
+                        await SendTunnelCommand("route/follow", new
+                        {
+                            route = routeUUID,
+                            node = GuidBike,
+                            speed = 1,
+                            offset = 0.0,
+                            rotate = "XYZ",
+                            smoothing = 1.0,
+                            followHeight = true,
+                            rotateOffset = new[] { 0, 0, 0 },
+                            positionOffset = new[] { 0, 0, 0 }
+                        });
+
+                      
                     }
                 }
             });
@@ -397,7 +404,7 @@ namespace Client
         /// </summary>
         /// <param name="command"></param>
         /// <param name="jsonCommandData"></param>
-        public static void SendTunnelCommand(string command, object jsonCommandData)
+        public static async Task<string> SendTunnelCommand(string command, object jsonCommandData)
         {
             var alJsonData = new
             {
@@ -417,6 +424,7 @@ namespace Client
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
             SendPacket(prepend, data);
+            return await ReceivePacketAsync();
         }
 
         /// <summary>
@@ -424,7 +432,7 @@ namespace Client
         /// </summary>
         /// <param name="routeData"></param>
         /// <returns></returns>
-        private static string GetRouteUUID(string routeData)
+        private static string GetUUID(string routeData)
         {
             //Set the Json in a tree structure 
             var jsonDocument = JsonDocument.Parse(routeData);
