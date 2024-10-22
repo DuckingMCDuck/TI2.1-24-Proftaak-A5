@@ -30,9 +30,9 @@ namespace Client.Virtual_Reality
             return new { };
         }
 
-        public static object GetSkyBoxTime()
+        public static object GetSkyBoxTime(int timeTochange)
         {
-            return new { time = 12 };
+            return new { time = timeTochange };
         }
 
         public static object GetTerrainData(int terrainSize)
@@ -48,11 +48,23 @@ namespace Client.Virtual_Reality
                 heights = heights.Cast<float>().ToArray() };
         }
 
-        public static object CreateFloorComponent()
+        public static object CreateFloorComponent(string nameFLoor)
         {
-            return new { name = "floor", components = new { 
+            return new { name = nameFLoor, components = new { 
                 transform = new { position = new[] { -16, 0, -16 }, scale = 1 }, 
                 terrain = new { } } };
+        }
+        public static object CreateComponent(string nameComponent, int[] positions)
+        {
+            return new
+            {
+                name = nameComponent,
+                components = new
+                {
+                    transform = new { position = positions, scale = 1 },
+                    terrain = new { }
+                }
+            };
         }
 
         public static object AddRoads(string routeUUID)
@@ -60,16 +72,28 @@ namespace Client.Virtual_Reality
             return new { route = routeUUID };
         }
 
-        public static object CreateBike()
+        public static object CreateBike(string fileName, string nameCreation)
         {
-            return new { name = "bike", components = new {
+            return new { name = nameCreation, components = new {
                 transform = new { position = new[] { 0, 0, 0 }, scale = 1, rotation = new[] { 0, 0, 0 } },
-                model = new { file = "data/NetworkEngine/models/bike/bike.fbx",  cullbackfaces = true } } };
+                model = new { file = fileName,  cullbackfaces = true } } };
+        }
+        public static object CreateModel(string fileName, string nameCreation, int[] positions, int[] rotations)
+        {
+            return new
+            {
+                name = nameCreation,
+                components = new
+                {
+                    transform = new { position = positions, scale = 1, rotation = rotations },
+                    model = new { file = fileName, cullbackfaces = true }
+                }
+            };
         }
 
-        public static object LetItemFollowRoute(string routeUUID, string itemGUID)
+        public static object LetItemFollowRoute(string routeUUID, string itemGUID, string rotatation, int speedObject)
         {
-            return new { route = routeUUID,  node = itemGUID, speed = 2, offset = 0.0, rotate = "XYZ", smoothing = 1.0, 
+            return new { route = routeUUID,  node = itemGUID, speed = speedObject, offset = 0.0, rotate = rotatation, smoothing = 1.0, 
                 followHeight = true, rotateOffset = new[] { 0, 0, 0 }, positionOffset = new[] { 0, 0, 0 } };
         }
 

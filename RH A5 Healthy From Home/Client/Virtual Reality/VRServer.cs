@@ -101,14 +101,15 @@ namespace Client
             await SendTunnelCommand("scene/reset", JsonBuilder.EmptyObject());
 
             // SkyBox set time:
-            await SendTunnelCommand("scene/skybox/settime", JsonBuilder.GetSkyBoxTime());
+            await SendTunnelCommand("scene/skybox/settime", JsonBuilder.GetSkyBoxTime(12));
 
             // Create terrain:
             int terrainSize = 128;
             await SendTunnelCommand("scene/terrain/add", JsonBuilder.GetTerrainData(terrainSize));
 
             // Create terrain node:
-            await SendTunnelCommand("scene/node/add", JsonBuilder.CreateFloorComponent());
+            await SendTunnelCommand("scene/node/add", JsonBuilder.CreateComponent("floor",new int[] {-16, 0, -16}));
+
 
             // Create route (F1 Monza Circuit):
             string routeData = await SendTunnelCommand("route/add", JsonBuilder.GetRouteData());
@@ -123,11 +124,11 @@ namespace Client
             Console.WriteLine(getCameraNode);
 
             // Create bike model node:
-            string GuidBikeData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreateBike());
+            string GuidBikeData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreateModel("data/NetworkEngine/models/bike/bike.fbx", "bike", new int[] { 0,0,0}, new int[] { 0,0,0}));
             string GuidBike = GetUUID(GuidBikeData);
 
             // Let the bike follow the route:
-            await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRoute(routeUUID, GuidBike));
+            await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRoute(routeUUID, GuidBike, "XY", 2));
         }
 
         /// <summary>
