@@ -10,6 +10,21 @@ namespace Client.Virtual_Reality
     public class JsonBuilder
     {
         // This class contains all of the JSON objects that are sent to the VR Server
+        public static object GetStartingPacketData()
+        {
+            return new { id = "session/list", data = new { } };
+        }
+
+        public static object GetSessionIdPacketData(string sessionId)
+        {
+            return new { id = "tunnel/create", data = new { session = sessionId, key = "" } };
+        }
+
+        public static object GetTunnelCommandData(string tunnelId, string command, object jsonCommandData)
+        {
+            return new { id = "tunnel/send", data = new { dest = tunnelId, data = new { id = command, data = jsonCommandData } } }; 
+        }
+
         public static object EmptyObject()
         {
             return new { };
@@ -63,13 +78,12 @@ namespace Client.Virtual_Reality
             return new { name = nodeName };
         }
 
-        // THIS IS THE LAST OBJECT (saves you some scrolling)
         public static object GetRouteData()
         {
             return new {
                 nodes = new[] {
                     new { pos = new[] { 0, 0, 0 }, dir = new[] { 0, 0, 0 } },
-                    new { pos = new[] { 15,0,0 }, dir = new[] { 0, 0, 0 } },
+                    new { pos = new[] { 15, 0,0 }, dir = new[] { 0, 0, 0 } },
                     new { pos = new[] { 40, 0, 40 }, dir = new[] { 0, 0, 0 } },
                     new { pos = new[] { 45, 0, 39 }, dir = new[] { 0, 0, 0 } },
                     new { pos = new[] { 50, 0, 45 }, dir = new[] { 0, 0, 0 } },

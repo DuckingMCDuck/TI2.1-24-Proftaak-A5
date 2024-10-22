@@ -264,14 +264,8 @@ namespace Client
         /// </summary>
         public static async Task<string> SendStartingPacket()
         {
-            var alJsonData = new
-            {
-                id = "session/list",
-                data = new
-                {
-
-                }
-            };
+            // Create session list command
+            var alJsonData = JsonBuilder.GetStartingPacketData();
 
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
@@ -286,15 +280,8 @@ namespace Client
         /// <param name="sessionId"></param>
         public static async Task<string> SendSessionIdPacket(string sessionId)
         {
-            var alJsonData = new
-            {
-                id = "tunnel/create",
-                data = new
-                {
-                    session = sessionId,
-                    key = ""
-                }
-            };
+            // Create tunnel create command
+            var alJsonData = JsonBuilder.GetSessionIdPacketData(sessionId);
 
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
@@ -310,19 +297,8 @@ namespace Client
         /// <param name="jsonCommandData"></param>
         public static async Task<string> SendTunnelCommand(string command, object jsonCommandData)
         {
-            var alJsonData = new
-            {
-                id = "tunnel/send",
-                data = new
-                {
-                    dest = tunnelId,
-                    data = new
-                    {
-                        id = command,
-                        data = jsonCommandData
-                    }
-                }
-            };
+            // Create tunnel send command
+            var alJsonData = JsonBuilder.GetTunnelCommandData(tunnelId, command, jsonCommandData);
 
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
