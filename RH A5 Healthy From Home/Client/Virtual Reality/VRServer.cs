@@ -1,3 +1,4 @@
+using Client.Virtual_Reality;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
@@ -19,6 +20,7 @@ namespace Client
         public static string hostName = Environment.MachineName;
         public static string sessionId;
         public static string tunnelId;
+        public static JsonBuilder jsonBuilder = new JsonBuilder();
 
         public VRServer() { }
 
@@ -75,8 +77,7 @@ namespace Client
             MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
 
             // Get the sessionID
-            SendStartingPacket();
-            string sessionIdData = await ReceivePacketAsync();
+            string sessionIdData = await SendStartingPacket();
             sessionId = GetId(sessionIdData);
             Console.WriteLine($"Received session ID: {sessionId}");
 
@@ -87,8 +88,7 @@ namespace Client
             }
 
             // Get the tunnelID
-            SendSessionIdPacket(sessionId);
-            string tunnelIdData = await ReceivePacketAsync();
+            string tunnelIdData = await SendSessionIdPacket(sessionId);
             tunnelId = GetId(tunnelIdData);
             Console.WriteLine($"Received tunnel ID: {tunnelId}");
 
@@ -99,193 +99,36 @@ namespace Client
             }
            
             // Reset scene:
-            await SendTunnelCommand("scene/reset", new
-            {
-
-            });
+            await SendTunnelCommand("scene/reset", JsonBuilder.EmptyObject());
 
             // SkyBox set time:
-            await SendTunnelCommand("scene/skybox/settime", new
-            {
-                time = 12
-            });
+            await SendTunnelCommand("scene/skybox/settime", JsonBuilder.GetSkyBoxTime());
 
             // Create terrain:
             int terrainSize = 128;
-            float[,] heights = new float[terrainSize, terrainSize];
-            for (int x = 0; x < terrainSize; x++)
-                for (int y = 0; y < terrainSize; y++)
-                    heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
-            await SendTunnelCommand("scene/terrain/add", new
-            {
-                size = new[] { terrainSize, terrainSize },
-                heights = heights.Cast<float>().ToArray()
-            });
+            await SendTunnelCommand("scene/terrain/add", JsonBuilder.GetTerrainData(terrainSize));
 
             // Create terrain node:
-            await SendTunnelCommand("scene/node/add", new
-            {
-                name = "floor",
-                components = new
-                {
-                    transform = new
-                    {
-                        position = new[] { -16, 0, -16 },
-                        scale = 1
-                    },
-                    terrain = new
-                    {
-
-                    }
-                }
-            });
+            await SendTunnelCommand("scene/node/add", JsonBuilder.CreateFloorComponent());
 
             // Create route (F1 Monza Circuit):
-            string routeData = await SendTunnelCommand("route/add", new
-            {
-                nodes = new[]
-                {
-                    new 
-                    {
-                        pos = new[] { 0, 0, 0 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new 
-                    { 
-                        pos = new[] { 15,0,0 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 40, 0, 40 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 45, 0, 39 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 50, 0, 45 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 90, 0, 45 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 95, 0, 50 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 95, 0, 55 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 90, 0, 57 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 80, 0, 60 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 70, 0, 60 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 40, 0, 60 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 40, 0, 55 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 30, 0, 58 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 25, 0, 57 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 20, 0, 50 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 15, 0, 30 },
-                        dir = new[] { 0, 0, 0 }
-                    },
-                    new
-                    {
-                        pos = new[] { 10, 0, 30 },
-                        dir = new[] { 0, 0, 0 }
-                    }
-                }
-            });
+            string routeData = await SendTunnelCommand("route/add", JsonBuilder.GetRouteData());
             string routeUUID = GetUUID(routeData);
 
             // Add roads to the route:
-            await SendTunnelCommand("scene/road/add", new
-            {
-                route = routeUUID,
-            });
+            await SendTunnelCommand("scene/road/add", JsonBuilder.AddRoads(routeUUID));
 
             // Get camera node:
-            string getCameraNode = await SendTunnelCommand("scene/node/find", new
-            {
-                name = "cameraNode"
-            });
+            string getCameraNode = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNode("cameraNode"));
+            // ADD THIS JSON DATA TO THE JSONBUILDER IF IT IS COMPLETE
             Console.WriteLine(getCameraNode);
 
             // Create bike model node:
-            string GuidBikeData = await SendTunnelCommand("scene/node/add", new
-            {
-                name = "bike",
-                components = new
-                {
-                    transform = new
-                    {
-                        position = new[] { 0, 0, 0 },
-                        scale = 1,
-                        rotation = new[] { 0, 0, 0 }
-                    },
-                    model = new
-                    {
-                        file = "data/NetworkEngine/models/bike/bike.fbx",
-                        cullbackfaces = true
-                    }
-                }
-            });
+            string GuidBikeData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreateBike());
             string GuidBike = GetUUID(GuidBikeData);
 
             // Let the bike follow the route:
-            await SendTunnelCommand("route/follow", new
-            {
-                route = routeUUID,
-                node = GuidBike,
-                speed = 2,
-                offset = 0.0,
-                rotate = "XYZ",
-                smoothing = 1.0,
-                followHeight = true,
-                rotateOffset = new[] { 0, 0, 0 },
-                positionOffset = new[] { 0, 0, 0 }
-            });
+            await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRoute(routeUUID, GuidBike));
         }
 
         /// <summary>
@@ -420,7 +263,7 @@ namespace Client
         /// <summary>
         /// Initialize starting packet (server response: all current sessions)
         /// </summary>
-        public static void SendStartingPacket()
+        public static async Task<string> SendStartingPacket()
         {
             var alJsonData = new
             {
@@ -435,13 +278,14 @@ namespace Client
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
             SendPacket(prepend, data);
+            return await ReceivePacketAsync();
         }
 
         /// <summary>
         /// Initialize session packet (server response: tunnel-id)
         /// </summary>
         /// <param name="sessionId"></param>
-        public static void SendSessionIdPacket(string sessionId)
+        public static async Task<string> SendSessionIdPacket(string sessionId)
         {
             var alJsonData = new
             {
@@ -457,6 +301,7 @@ namespace Client
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
             SendPacket(prepend, data);
+            return await ReceivePacketAsync();
         }
 
         /// <summary>
