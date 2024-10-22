@@ -246,5 +246,10 @@ namespace HealthyFromHomeApp.Clients
             if (TxtBikeData.LineCount > 300)
                 TxtBikeData.Text = TxtBikeData.Text.Substring(TxtBikeData.LineCount - 100);
         }
+
+        private void BtnConnectHeart_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

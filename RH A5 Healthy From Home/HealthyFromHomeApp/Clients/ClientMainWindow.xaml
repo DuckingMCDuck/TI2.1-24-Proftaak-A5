@@ -19,7 +19,8 @@
         <TextBox x:Name="TxtTypeBar" HorizontalAlignment="Center" Margin="0,219,0,53" TextWrapping="Wrap" Text="" Width="754" Grid.Row="1" />
         <Button x:Name="BtnSendMessage" Content="Send" Margin="0,281,180,0" Click="BtnSendMessage_Click" Grid.Row="1" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Width="430"/>
         <Button x:Name="BtnSimulate" Content="Start/Stop Simulating" HorizontalAlignment="Left" Margin="405,184,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360" Click="BtnSimulate_Click"/>
-        <Button x:Name="BtnConnect" Content="Connect to Bike (Simulate)" HorizontalAlignment="Left" Margin="405,40,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360" Click="BtnConnectBike_Click"/>
+        <Button x:Name="BtnConnectBike" Content="Connect to Bike (Simulate)" HorizontalAlignment="Left" Margin="415,40,0,0" Grid.Row="1" VerticalAlignment="Top" Width="160" Click="BtnConnectBike_Click"/>
         <TextBox x:Name="TxtBikeStatus" HorizontalAlignment="Left" Margin="405,44,0,0" TextWrapping="Wrap" Text="Bike connection status..." VerticalAlignment="Top" Width="360" Height="110" Grid.RowSpan="2" IsReadOnly="True"/>
+        <Button x:Name="BtnConnectHeart" Content="Connect to heartrate" HorizontalAlignment="Left" Margin="595,40,0,0" Grid.Row="1" VerticalAlignment="Top" Width="160" Click="BtnConnectHeart_Click"/>
     </Grid>
 </Window>
