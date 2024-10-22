@@ -207,14 +207,14 @@ namespace HealthyFromHomeApp.Clients
             }
 
             // Try to connect to specified bike (Todo: grab and use specified serialcode)
-            bool bikeConnected = await bikeHelper.ConnectToBike("Tacx Flux 01249");
+            bool bikeConnected = await bikeHelper.ConnectToBike("Tacx Flux 00472");
             if (bikeConnected)
             {
                 TxtBikeStatus.Text += "Bike connected successfully!\n";
                 this.bikeConnected = true;
 
                 // Open new bike session window
-                BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(simulator);
+                BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(bikeHelper);
                 bikeSessionWindow.Closed += (s, args) =>
                 {
                     isSessionActive = false;

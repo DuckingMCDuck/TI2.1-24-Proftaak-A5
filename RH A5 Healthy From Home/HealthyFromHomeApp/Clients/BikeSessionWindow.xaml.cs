@@ -1,6 +1,8 @@
-﻿using BikeLibrary;
+﻿
+using System;
 using System.Threading.Tasks;
 using System.Windows;
+using BikeLibrary;
 
 namespace HealthyFromHomeApp.Clients
 {
@@ -10,7 +12,7 @@ namespace HealthyFromHomeApp.Clients
         private bool isReceivingData;
 
         // Constructor 
-        public BikeSessionWindow(Simulator simulator)
+        public BikeSessionWindow(BikeHelper bikeHelper)
         {
             InitializeComponent();
             this.bikeHelper = bikeHelper;
@@ -37,7 +39,7 @@ namespace HealthyFromHomeApp.Clients
                 // Update the UI with the received data, running on the UI thread using the Dispatcher
                 Dispatcher.Invoke(() =>
                 {
-                    TxtBikeData.AppendText($"{bikeData}"); // Append the received bike data to the TextBox
+                    TxtBikeData.AppendText($"{bikeData}\n"); // Append the received bike data to the TextBox
                     TxtBikeData.ScrollToEnd();
                 });
             }

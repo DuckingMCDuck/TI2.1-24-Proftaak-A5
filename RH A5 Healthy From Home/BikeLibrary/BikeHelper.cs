@@ -1,4 +1,5 @@
 ﻿using Avans.TI.BLE;
+using BikeLibrary;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -112,10 +113,20 @@ namespace BikeLibrary
 
         private void BleBike_SubscriptionValueChanged(object sender, BLESubscriptionValueChangedEventArgs e)
         {
-            Console.WriteLine($"Bike data received: {BitConverter.ToString(e.Data).Replace("-", " ")}");
+            string bikeData = BitConverter.ToString(e.Data).Replace("-", " ");
+            Console.WriteLine($"Bike data received: {bikeData}");
+
+            if (OnBikeDataReceived != null)
+            {
+                OnBikeDataReceived.Invoke(bikeData);
+            }
+            else
+            {
+                Console.WriteLine("Warning: No subscribers for OnBikeDataReceived event");
+            }
         }
 
-        // Event to notify subscribers when data is received
+        // Event to notify subscribers when bike data is received
         public event Action<string> OnBikeDataReceived;
 
         private void BleHeart_SubscriptionValueChanged(object sender, BLESubscriptionValueChangedEventArgs e)
