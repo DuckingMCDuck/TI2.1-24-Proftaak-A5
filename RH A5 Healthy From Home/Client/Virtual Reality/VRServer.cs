@@ -57,17 +57,12 @@ namespace Client
         /// Disconnect from the VR Server (Shutdown). 
         /// This method should not be async, because the connection should be terminated instantly!
         /// </summary>
-        public static async void ShutdownServer()
+        public static void ShutdownServer()
         {
             stream.Close();
             vrServer.Close();
             vrServer.Dispose();
             MainWindow.TextChat.Text = "An error has occured, shutting down VRServer...\n";
-
-            // Automatically restart the VRServer after disconnect
-            await Task.Delay(10000);
-            MainWindow.TextChat.Text = "Retry connection to the VRServer...";
-            await Start();
         }
 
         /// <summary>
@@ -82,18 +77,21 @@ namespace Client
             sessionId = GetId(sessionIdData);
             Console.WriteLine($"Received session ID: {sessionId}");
 
-            // Check if we can continue
-            if (string.IsNullOrEmpty(sessionId))
+            if (!string.IsNullOrEmpty(sessionId))
             {
-                ShutdownServer();
-            }
+                // Get the tunnelID
+                MainWindow.TextBoxBikeData.Text = "Sending session ID packet...";
+                SendSessionIdPacket(sessionId);
+                string tunnelIdData = await ReceivePacketAsync();
+                tunnelId = GetId(tunnelIdData);
+                Console.WriteLine($"Received tunnel ID: {tunnelId}");
 
-            // Get the tunnelID
-            MainWindow.TextBoxBikeData.Text = "Sending session ID packet...";
-            SendSessionIdPacket(sessionId);
-            string tunnelIdData = await ReceivePacketAsync();
-            tunnelId = GetId(tunnelIdData);
-            Console.WriteLine($"Received tunnel ID: {tunnelId}");
+                if (!string.IsNullOrEmpty(tunnelId))
+                {
+                    // Send scene configuration commands
+                    //while (vrServer.Connected)
+                    {
+                        MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
 
                         // Reset scene:
                        await SendTunnelCommand("scene/reset", new
@@ -189,9 +187,9 @@ namespace Client
                             {
                                 transform = new
                                 {
-                                    position = new[] { 90, 0, 0},
+                                    position = new[] { 0, 0, 0},
                                     scale = 1,
-                                    rotation = new[] { 90, 0, 0 }
+                                    rotation = new[] { 0, 0, 0 }
                                 },
                                 model = new
                                 {
@@ -207,7 +205,7 @@ namespace Client
                         {
                             route = routeUUID,
                             node = GuidBike,
-                            speed = 1,
+                            speed = 2,
                             offset = 0.0,
                             rotate = "XYZ",
                             smoothing = 1.0,
@@ -219,7 +217,15 @@ namespace Client
                       
                     }
                 }
-            });
+                else
+                {
+                    ShutdownServer();
+                }
+            }
+            else
+            {
+                ShutdownServer();
+            }
         }
 
         /// <summary>
@@ -252,7 +258,7 @@ namespace Client
                 int bytesRead = await stream.ReadAsync(prependBuffer, totalBytesRead, 4 - totalBytesRead);
                 if (bytesRead == 0)
                 {
-                    Console.WriteLine("Error: No data recieved.");
+                    Console.WriteLine("Error: Connection closed before reading the full length.");
                     return null; //Error: Return null
                 }
                 totalBytesRead += bytesRead;
@@ -291,12 +297,6 @@ namespace Client
         /// <param name="data"></param>
         public static string GetId(string data)
         {
-            if (data == null)
-            {
-                ShutdownServer();
-                return null;
-            }
-
             // See if we have the host somewhere in the data
             bool hostInData = data.ToLower().Contains(hostName.ToLower());
             if (hostInData)
