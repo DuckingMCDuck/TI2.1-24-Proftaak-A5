@@ -71,8 +71,10 @@ namespace Client
         /// </summary>
         public static async Task PacketHandlerAsync()
         {
+            // Send scene configuration commands
+            MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
+
             // Get the sessionID
-            MainWindow.TextBoxBikeData.Text = "Sending starting packet...";
             SendStartingPacket();
             string sessionIdData = await ReceivePacketAsync();
             sessionId = GetId(sessionIdData);
@@ -85,7 +87,6 @@ namespace Client
             }
 
             // Get the tunnelID
-            MainWindow.TextBoxBikeData.Text = "Sending session ID packet...";
             SendSessionIdPacket(sessionId);
             string tunnelIdData = await ReceivePacketAsync();
             tunnelId = GetId(tunnelIdData);
@@ -96,9 +97,7 @@ namespace Client
             {
                 ShutdownServer();
             }
-            // Send scene configuration commands
-            MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
-
+           
             // Reset scene:
             await SendTunnelCommand("scene/reset", new
             {
@@ -141,54 +140,104 @@ namespace Client
                 }
             });
 
-            // Create route:
+            // Create route (F1 Monza Circuit):
             string routeData = await SendTunnelCommand("route/add", new
             {
                 nodes = new[]
                 {
                     new 
                     {
-                        pos = new[] { 0, 0, 0},
-                        dir = new[] { 5, 0, -5}
+                        pos = new[] { 0, 0, 0 },
+                        dir = new[] { 0, 0, 0 }
                     },
                     new 
                     { 
-                        pos = new[] { 50,0,0},
-                        dir = new[] { 5, 0,5 }
+                        pos = new[] { 15,0,0 },
+                        dir = new[] { 0, 0, 0 }
                     },
                     new
-                    { 
-                        pos = new[] { 0, 0, 50 },
-                        dir = new[] { -5,0,-5 }
+                    {
+                        pos = new[] { 40, 0, 40 },
+                        dir = new[] { 0, 0, 0 }
                     },
-                    new 
-                    { 
-                        pos = new[] {5,0,5 },
-                        dir = new[] {-5,0,-5 }
+                    new
+                    {
+                        pos = new[] { 45, 0, 39 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 50, 0, 45 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 90, 0, 45 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 95, 0, 50 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 95, 0, 55 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 90, 0, 57 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 80, 0, 60 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 70, 0, 60 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 40, 0, 60 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 40, 0, 55 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 30, 0, 58 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 25, 0, 57 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 20, 0, 50 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 15, 0, 30 },
+                        dir = new[] { 0, 0, 0 }
+                    },
+                    new
+                    {
+                        pos = new[] { 10, 0, 30 },
+                        dir = new[] { 0, 0, 0 }
                     }
-
                 }
             });
             string routeUUID = GetUUID(routeData);
-
-            /*
-             * ,
-                    new
-                    {
-                        pos = new[] { 50, 0, 0},
-                        dir = new[] { 5, 0, 5}
-                    },
-                    new
-                    {
-                        pos = new[] { 50, 0, 50},
-                        dir = new[] { -5, 0, 5}
-                    },
-                    new
-                    {
-                        pos = new[] { 0, 0, 50},
-                        dir = new[] { -5, 0, -5}
-                    }
-             * */
 
             // Add roads to the route:
             await SendTunnelCommand("scene/road/add", new
