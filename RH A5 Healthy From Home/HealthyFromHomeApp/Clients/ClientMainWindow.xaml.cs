@@ -10,6 +10,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using HealthyFromHomeApp.Common;
 using BikeLibrary;
+using Microsoft.VisualBasic;
+using System.Text.RegularExpressions;
 
 namespace HealthyFromHomeApp.Clients
 {
@@ -190,6 +192,14 @@ namespace HealthyFromHomeApp.Clients
         // Event handler to connect to the bike
         private async void BtnConnectBike_Click(object sender, RoutedEventArgs e)
         {
+            string enterdText = Interaction.InputBox("Enter the last 5 digits of the serial-number of the bike to continue: ", "Enter bike details", "");
+            string pattern = "[0-9]{5}";
+            string match = Regex.Match(enterdText, pattern).Value;
+            if (match == null || match == "")
+            {
+                MessageBox.Show("No bike details were specified, please try again.");
+                return;
+            }
             if (isSessionActive)
             {
                 MessageBox.Show("A session is already running. Please stop the current session before starting a new one.", "Session Already Running", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -207,7 +217,7 @@ namespace HealthyFromHomeApp.Clients
             }
 
             // Try to connect to specified bike (Todo: grab and use specified serialcode)
-            bool bikeConnected = await bikeHelper.ConnectToBike("Tacx Flux 00472");
+            bool bikeConnected = await bikeHelper.ConnectToBike("Tacx Flux " + match);
             if (bikeConnected)
             {
                 TxtBikeStatus.Text += "Bike connected successfully!\n";
