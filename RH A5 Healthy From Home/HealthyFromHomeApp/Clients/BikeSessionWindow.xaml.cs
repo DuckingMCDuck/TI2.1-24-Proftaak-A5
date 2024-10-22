@@ -18,6 +18,7 @@ namespace HealthyFromHomeApp.Clients
         public string elapsed_Time = String.Empty;
         public string accumulated_Power = String.Empty;
         public string instantaneous_Power = String.Empty;
+        private bool isReceivingHeartRateData = false;
 
         // Constructor 
         public BikeSessionWindow(BikeHelper bikeHelper)
@@ -82,6 +83,29 @@ namespace HealthyFromHomeApp.Clients
                     TxtBikeData.ScrollToEnd();
                 });
             }
+
+            if (isReceivingHeartRateData)
+            {
+                List<(string, int)> decodedData = DataDecoder.Decode(bikeData);
+                for (int i = 0; i < decodedData.Count; i++)
+                {
+                    if (decodedData[i].Item1 == "HeartRate")
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            TxtHeartrateData.Clear();
+                            TxtHeartrateData.Text = decodedData[i].Item2.ToString();
+                        });
+                    }
+                }
+            }
+        }
+
+        private async void HeartRateButton_Click(object sender, RoutedEventArgs e)
+        {
+            await bikeHelper.ConnectToHeartRateMonitor("Decathlon Dual HR");
+            isReceivingHeartRateData = true;
+
         }
     }
 }

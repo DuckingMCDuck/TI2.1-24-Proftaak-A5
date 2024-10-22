@@ -8,6 +8,7 @@
             <Button x:Name="BtnStartSession" Content="Start Session" Height="30" Width="100" Margin="0,0,10,0" Click="BtnStartSession_Click"/>
             <Button x:Name="BtnStopSession" Content="Stop Session" Height="30" Width="100" Click="BtnStopSession_Click"/>
         </StackPanel>
-        <TextBox HorizontalAlignment="Left" Margin="10,341,0,0" TextWrapping="Wrap" Text="Heartrate:" VerticalAlignment="Top" Width="120"/>
+        <TextBox x:Name="TxtHeartrateData" HorizontalAlignment="Left" Margin="10,341,0,0" TextWrapping="Wrap" Text="Heartrate:" VerticalAlignment="Top" Width="120"/>
+        <Button Content="Connect" HorizontalAlignment="Left" Margin="135,340,0,0" VerticalAlignment="Top" Width="79" Click="HeartRateButton_Click"/>
     </Grid>
 </Window>

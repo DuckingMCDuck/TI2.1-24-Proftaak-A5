@@ -17,7 +17,7 @@ namespace HealthyFromHomeApp.Clients
     {
         private bool isSessionActive = false; // Track if a bike session is active
 
-        internal static ClientMainWindow client; 
+        internal static ClientMainWindow client;
 
         // Properties for getting and setting text to debug or chat textboxes
         internal string debugText
@@ -130,7 +130,7 @@ namespace HealthyFromHomeApp.Clients
                     }
 
                     string encryptedMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                    string message = EncryptHelper.Decrypt(encryptedMessage); 
+                    string message = EncryptHelper.Decrypt(encryptedMessage);
 
                     string[] splitMessage = message.Split(':');
                     if (splitMessage.Length > 1)
@@ -173,7 +173,7 @@ namespace HealthyFromHomeApp.Clients
             TxtChat.AppendText($"{rawClient}: {rawMessage}\n");
             TxtTypeBar.Clear();
             SendMessageToServer(encryptedMessage); // Send to server
-            
+
         }
 
         // Helper method to send it to the server
@@ -245,11 +245,6 @@ namespace HealthyFromHomeApp.Clients
                 TxtBikeData.ScrollToEnd();
             if (TxtBikeData.LineCount > 300)
                 TxtBikeData.Text = TxtBikeData.Text.Substring(TxtBikeData.LineCount - 100);
-        }
-
-        private void BtnConnectHeart_Click(object sender, RoutedEventArgs e)
-        {
-
         }
     }
 }
