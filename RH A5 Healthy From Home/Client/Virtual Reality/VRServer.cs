@@ -77,155 +77,146 @@ namespace Client
             sessionId = GetId(sessionIdData);
             Console.WriteLine($"Received session ID: {sessionId}");
 
-            if (!string.IsNullOrEmpty(sessionId))
-            {
-                // Get the tunnelID
-                MainWindow.TextBoxBikeData.Text = "Sending session ID packet...";
-                SendSessionIdPacket(sessionId);
-                string tunnelIdData = await ReceivePacketAsync();
-                tunnelId = GetId(tunnelIdData);
-                Console.WriteLine($"Received tunnel ID: {tunnelId}");
-
-                if (!string.IsNullOrEmpty(tunnelId))
-                {
-                    // Send scene configuration commands
-                    //while (vrServer.Connected)
-                    {
-                        MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
-
-                        // Reset scene:
-                       await SendTunnelCommand("scene/reset", new
-                        {
-
-                        });
-                        
-
-                        // SkyBox set time:
-                      await  SendTunnelCommand("scene/skybox/settime", new
-                        {
-                            time = 12
-                        });
-                        
-                        // Create terrain:
-                        int terrainSize = 128;
-                        float[,] heights = new float[terrainSize, terrainSize];
-                        for (int x = 0; x < terrainSize; x++)
-                            for (int y = 0; y < terrainSize; y++)
-                                heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
-                        await SendTunnelCommand("scene/terrain/add", new
-                        {
-                            size = new[] { terrainSize, terrainSize },
-                            heights = heights.Cast<float>().ToArray()
-                        });
-                     
-
-                        // Create terrain node:
-                        await SendTunnelCommand("scene/node/add", new
-                        {
-                            name = "floor",
-                            components = new
-                            {
-                                transform = new
-                                {
-                                    position = new[] { -16, 0, -16 },
-                                    scale = 1
-                                },
-                                terrain = new
-                                {
-
-                                }
-                            }
-                        });
-
-
-                        // Create route:
-                        string routeData = await SendTunnelCommand("route/add", new
-                        {
-                          nodes = new[]
-                          {
-                            new {
-                               pos = new[] { 0, 0, 0},
-                               dir = new[] { 5, 0, -5}
-                            },
-                            new
-                            {
-                               pos = new[] { 50, 0, 0},
-                               dir = new[] { 5, 0, 5}
-                            },
-                            new
-                            {
-                               pos = new[] { 50, 0, 50},
-                               dir = new[] { -5, 0, 5}
-                            },
-                            new
-                            {
-                               pos = new[] { 0, 0, 50},
-                               dir = new[] { -5, 0, -5}
-                            }
-                          }
-                        });
-                        Console.WriteLine(routeData);
-                        string routeUUID = GetUUID(routeData);
-                        Console.WriteLine(routeUUID);
-                        // Add roads to the route
-                        await SendTunnelCommand("scene/road/add", new
-                        {
-                            route = routeUUID,
-                        });
-
-
-                       string getCameraNode = await SendTunnelCommand("scene/node/find", new
-                       {   
-                            name = "cameraNode"
-                       });
-                        Console.WriteLine(getCameraNode);
-
-                        string GuidBikeData = await SendTunnelCommand("scene/node/add", new
-                        {
-                            name = "bike",
-                            components = new
-                            {
-                                transform = new
-                                {
-                                    position = new[] { 0, 0, 0},
-                                    scale = 1,
-                                    rotation = new[] { 0, 0, 0 }
-                                },
-                                model = new
-                                {
-                                    file = "data/NetworkEngine/models/bike/bike.fbx",
-                                    cullbackfaces = true,
-
-                                }
-                            }
-                        });
-                        string GuidBike = GetUUID(GuidBikeData);
-
-                        await SendTunnelCommand("route/follow", new
-                        {
-                            route = routeUUID,
-                            node = GuidBike,
-                            speed = 2,
-                            offset = 0.0,
-                            rotate = "XYZ",
-                            smoothing = 1.0,
-                            followHeight = true,
-                            rotateOffset = new[] { 0, 0, 0 },
-                            positionOffset = new[] { 0, 0, 0 }
-                        });
-
-                      
-                    }
-                }
-                else
-                {
-                    ShutdownServer();
-                }
-            }
-            else
+            // Check if sessionId is valid
+            if (string.IsNullOrEmpty(sessionId))
             {
                 ShutdownServer();
             }
+
+            // Get the tunnelID
+            MainWindow.TextBoxBikeData.Text = "Sending session ID packet...";
+            SendSessionIdPacket(sessionId);
+            string tunnelIdData = await ReceivePacketAsync();
+            tunnelId = GetId(tunnelIdData);
+            Console.WriteLine($"Received tunnel ID: {tunnelId}");
+
+            // Check if tunnelId is valid
+            if (string.IsNullOrEmpty(tunnelId))
+            {
+                ShutdownServer();
+            }
+            // Send scene configuration commands
+            MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
+
+            // Reset scene:
+            await SendTunnelCommand("scene/reset", new
+            {
+
+            });
+
+            // SkyBox set time:
+            await SendTunnelCommand("scene/skybox/settime", new
+            {
+                time = 12
+            });
+
+            // Create terrain:
+            int terrainSize = 128;
+            float[,] heights = new float[terrainSize, terrainSize];
+            for (int x = 0; x < terrainSize; x++)
+                for (int y = 0; y < terrainSize; y++)
+                    heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
+            await SendTunnelCommand("scene/terrain/add", new
+            {
+                size = new[] { terrainSize, terrainSize },
+                heights = heights.Cast<float>().ToArray()
+            });
+
+            // Create terrain node:
+            await SendTunnelCommand("scene/node/add", new
+            {
+                name = "floor",
+                components = new
+                {
+                    transform = new
+                    {
+                        position = new[] { -16, 0, -16 },
+                        scale = 1
+                    },
+                    terrain = new
+                    {
+
+                    }
+                }
+            });
+
+            // Create route:
+            string routeData = await SendTunnelCommand("route/add", new
+            {
+                nodes = new[]
+                {
+                    new 
+                    {
+                        pos = new[] { 0, 0, 0},
+                        dir = new[] { 5, 0, -5}
+                    },
+                    new
+                    {
+                        pos = new[] { 50, 0, 0},
+                        dir = new[] { 5, 0, 5}
+                    },
+                    new
+                    {
+                        pos = new[] { 50, 0, 50},
+                        dir = new[] { -5, 0, 5}
+                    },
+                    new
+                    {
+                        pos = new[] { 0, 0, 50},
+                        dir = new[] { -5, 0, -5}
+                    }
+                }
+            });
+            string routeUUID = GetUUID(routeData);
+
+            // Add roads to the route:
+            await SendTunnelCommand("scene/road/add", new
+            {
+                route = routeUUID,
+            });
+
+            // Get camera node:
+            string getCameraNode = await SendTunnelCommand("scene/node/find", new
+            {
+                name = "cameraNode"
+            });
+            Console.WriteLine(getCameraNode);
+
+            // Create bike model node:
+            string GuidBikeData = await SendTunnelCommand("scene/node/add", new
+            {
+                name = "bike",
+                components = new
+                {
+                    transform = new
+                    {
+                        position = new[] { 0, 0, 0 },
+                        scale = 1,
+                        rotation = new[] { 0, 0, 0 }
+                    },
+                    model = new
+                    {
+                        file = "data/NetworkEngine/models/bike/bike.fbx",
+                        cullbackfaces = true,
+
+                    }
+                }
+            });
+            string GuidBike = GetUUID(GuidBikeData);
+
+            // Let the bike follow the route:
+            await SendTunnelCommand("route/follow", new
+            {
+                route = routeUUID,
+                node = GuidBike,
+                speed = 2,
+                offset = 0.0,
+                rotate = "XYZ",
+                smoothing = 1.0,
+                followHeight = true,
+                rotateOffset = new[] { 0, 0, 0 },
+                positionOffset = new[] { 0, 0, 0 }
+            });
         }
 
         /// <summary>
