@@ -20,7 +20,6 @@ namespace Client
         public static string hostName = Environment.MachineName;
         public static string sessionId;
         public static string tunnelId;
-        public static JsonBuilder jsonBuilder = new JsonBuilder();
 
         public VRServer() { }
 
