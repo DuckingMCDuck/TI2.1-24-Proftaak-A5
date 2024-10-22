@@ -10,6 +10,7 @@ namespace HealthyFromHomeApp.Clients
     {
         private BikeHelper bikeHelper;
         private bool isReceivingData;
+        private DataDecoder decoder;
 
         // Constructor 
         public BikeSessionWindow(BikeHelper bikeHelper)
@@ -17,6 +18,7 @@ namespace HealthyFromHomeApp.Clients
             InitializeComponent();
             this.bikeHelper = bikeHelper;
             this.bikeHelper.OnBikeDataReceived += OnBikeDataReceived;
+            this.decoder = new DataDecoder();
         }
 
         // Event handler for the Start Session button click event
@@ -36,10 +38,14 @@ namespace HealthyFromHomeApp.Clients
         {
             if (isReceivingData)
             {
-                // Update the UI with the received data, running on the UI thread using the Dispatcher
+                // Decode the incoming bike data
+                var decodedData = DataDecoder.Decode(bikeData);
+                string decodedString = DataDecoder.MakeString(decodedData);
+
+                // Update the UI with the decoded data, running on the UI thread using the Dispatcher
                 Dispatcher.Invoke(() =>
                 {
-                    TxtBikeData.AppendText($"{bikeData}\n"); // Append the received bike data to the TextBox
+                    TxtBikeData.AppendText($"{decodedString}"); // Append the decoded data to the TextBox
                     TxtBikeData.ScrollToEnd();
                 });
             }
