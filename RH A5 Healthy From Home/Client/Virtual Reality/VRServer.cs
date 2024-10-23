@@ -7,8 +7,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media.Media3D;
+using System.Windows.Threading;
 
 namespace Client
 {
@@ -45,11 +47,11 @@ namespace Client
             }
             catch (SocketException)
             {
-                MainWindow.TextChat.Text = "Error connection to the VRServer!\n";
+                MainWindow.TextChat.Text += "Error connection to the VRServer!\n";
                 return;
             }
             stream = vrServer.GetStream();
-            MainWindow.TextChat.Text = "Connected to VR Server!\n";
+            MainWindow.TextChat.Text += "Connected to VR Server!\n";
 
             // Start listening for packets
             await PacketHandlerAsync();
@@ -59,12 +61,17 @@ namespace Client
         /// Disconnect from the VR Server (Shutdown). 
         /// This method should not be async, because the connection should be terminated instantly!
         /// </summary>
-        public static void ShutdownServer()
+        public static async void ShutdownServer()
         {
+            MainWindow.TextChat.Text += "An error has occured, shutting down VRServer...\n";
             stream.Close();
             vrServer.Close();
             vrServer.Dispose();
-            MainWindow.TextChat.Text = "An error has occured, shutting down VRServer...\n";
+
+            // Automatically restart the VRServer after 10 seconds (pause this Thread)
+            await Task.Delay(10000);
+            MainWindow.TextChat.Text += "Trying to restart VRServer...\n";
+            await Start();
         }
 
         /// <summary>
@@ -73,7 +80,7 @@ namespace Client
         public static async Task PacketHandlerAsync()
         {
             // Send scene configuration commands
-            MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
+            MainWindow.TextBoxBikeData.Text += "Setting up the environment...";
 
             // Get the sessionID
             string sessionIdData = await SendStartingPacket();
@@ -84,6 +91,7 @@ namespace Client
             if (string.IsNullOrEmpty(sessionId))
             {
                 ShutdownServer();
+                return;
             }
 
             // Get the tunnelID
@@ -95,6 +103,7 @@ namespace Client
             if (string.IsNullOrEmpty(tunnelId))
             {
                 ShutdownServer();
+                return;
             }
            
             // OPTIONAL:
@@ -376,11 +385,12 @@ namespace Client
                         dataDataDataElement.ValueKind == JsonValueKind.Array &&
                         dataDataDataElement.GetArrayLength() > 0)
                     {
+                        // Get the UUID property from the data array in the data object in the data object in the Json Document
                         return dataDataDataElement[0].GetProperty("uuid").GetString();
                     }
                 }
             }
-            return null;
+            return null; //If we even get here -> Error: Return null
         }
 
     }
