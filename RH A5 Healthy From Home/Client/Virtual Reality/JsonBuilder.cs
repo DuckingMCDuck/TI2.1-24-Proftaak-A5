@@ -22,15 +22,21 @@ namespace Client.Virtual_Reality
 
         public static object GetTunnelCommandData(string tunnelId, string command, object jsonCommandData)
         {
-            return new { id = "tunnel/send", data = new { dest = tunnelId, data = new { id = command, data = jsonCommandData } } }; 
+            if (jsonCommandData != null)
+            {
+                return new { id = "tunnel/send", data = new { dest = tunnelId, data = new { id = command, data = jsonCommandData } } };
+            } else
+            {
+                return new { id = "tunnel/send", data = new { dest = tunnelId, data = new { id = command, data = new { } } } };
+            }
         }
 
-        public static object EmptyObject()
+        public static object EmptyObjectData()
         {
             return new { };
         }
 
-        public static object GetSkyBoxTime(int timeTochange)
+        public static object GetSkyBoxTimeData(int timeTochange)
         {
             return new { time = timeTochange };
         }
@@ -48,58 +54,39 @@ namespace Client.Virtual_Reality
                 heights = heights.Cast<float>().ToArray() };
         }
 
-        public static object CreateFloorComponent(string nameFLoor)
+        public static object CreateComponentData(string nameComponent, int[] positions)
         {
-            return new { name = nameFLoor, components = new { 
-                transform = new { position = new[] { -16, 0, -16 }, scale = 1 }, 
+            return new { name = nameComponent, components = new {
+                transform = new { position = positions, scale = 1 },
                 terrain = new { } } };
         }
-        public static object CreateComponent(string nameComponent, int[] positions)
-        {
-            return new
-            {
-                name = nameComponent,
-                components = new
-                {
-                    transform = new { position = positions, scale = 1 },
-                    terrain = new { }
-                }
-            };
-        }
 
-        public static object AddRoads(string routeUUID)
+        public static object AddRoadsData(string routeUUID)
         {
             return new { route = routeUUID };
         }
 
-        public static object CreateBike(string fileName, string nameCreation)
+        public static object CreateModelData(string fileName, string nameCreation, int[] positions, int[] rotations)
         {
-            return new { name = nameCreation, components = new {
-                transform = new { position = new[] { 0, 0, 0 }, scale = 1, rotation = new[] { 0, 0, 0 } },
-                model = new { file = fileName,  cullbackfaces = true } } };
-        }
-        public static object CreateModel(string fileName, string nameCreation, int[] positions, int[] rotations)
-        {
-            return new
-            {
-                name = nameCreation,
-                components = new
-                {
-                    transform = new { position = positions, scale = 1, rotation = rotations },
-                    model = new { file = fileName, cullbackfaces = true }
-                }
-            };
+            return new { name = nameCreation, components = new { 
+                transform = new { position = positions, scale = 1, rotation = rotations },
+                model = new { file = fileName, cullbackfaces = true } } };
         }
 
-        public static object LetItemFollowRoute(string routeUUID, string itemGUID, string rotatation, int speedObject)
+        public static object LetItemFollowRouteData(string routeUUID, string itemGUID, string rotatation, int speedObject)
         {
             return new { route = routeUUID,  node = itemGUID, speed = speedObject, offset = 0.0, rotate = rotatation, smoothing = 1.0, 
                 followHeight = true, rotateOffset = new[] { 0, 0, 0 }, positionOffset = new[] { 0, 0, 0 } };
         }
 
-        public static object FindNode(string nodeName)
+        public static object FindNodeData(string nodeName)
         {
             return new { name = nodeName };
+        }
+
+        public static object DeleteNodeData(string nodeId)
+        {
+            return new { id = nodeId };
         }
 
         public static object GetRouteData()

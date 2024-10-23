@@ -97,38 +97,62 @@ namespace Client
                 ShutdownServer();
             }
            
+            // OPTIONAL:
             // Reset scene:
-            await SendTunnelCommand("scene/reset", JsonBuilder.EmptyObject());
+            await SendTunnelCommand("scene/reset", JsonBuilder.EmptyObjectData());
+            // Get scene data:
+            string getSceneData = await SendTunnelCommand("scene/get", null);
+            Console.WriteLine("ALL SCENE DATA: " + getSceneData);
 
+            // REQUIRED:
             // SkyBox set time:
-            await SendTunnelCommand("scene/skybox/settime", JsonBuilder.GetSkyBoxTime(12));
+            await SendTunnelCommand("scene/skybox/settime", JsonBuilder.GetSkyBoxTimeData(12));
 
             // Create terrain:
             int terrainSize = 128;
             await SendTunnelCommand("scene/terrain/add", JsonBuilder.GetTerrainData(terrainSize));
 
             // Create terrain node:
-            await SendTunnelCommand("scene/node/add", JsonBuilder.CreateComponent("floor",new int[] {-16, 0, -16}));
+            await SendTunnelCommand("scene/node/add", JsonBuilder.CreateComponentData("floor",new int[] {-16, 0, -16}));
 
 
             // Create route (F1 Monza Circuit):
             string routeData = await SendTunnelCommand("route/add", JsonBuilder.GetRouteData());
-            string routeUUID = GetUUID(routeData);
+            string routeUuid = GetUuid(routeData);
 
             // Add roads to the route:
-            await SendTunnelCommand("scene/road/add", JsonBuilder.AddRoads(routeUUID));
+            await SendTunnelCommand("scene/road/add", JsonBuilder.AddRoadsData(routeUuid));
 
-            // Get camera node:
-            string getCameraNode = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNode("cameraNode"));
-            // ADD THIS JSON DATA TO THE JSONBUILDER IF IT IS COMPLETE
-            Console.WriteLine(getCameraNode);
+            // Find camera node:
+            string getCameraNodeData = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNodeData("Camera"));
+            if (getCameraNodeData != null)
+            {
+                // Get camera node
+                string cameraNodeId = GetUuid(getCameraNodeData);
+                Console.WriteLine("Camera Node ID: " + cameraNodeId);
+                // Let the camera follow the route:
+                await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2));
+            }
+
+            // Find groundplane node:
+            string getGroundplaneNodeData = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNodeData("GroundPlane"));
+            if (getGroundplaneNodeData != null)
+            {
+                // Get camera node
+                string groundPlaneId = GetUuid(getGroundplaneNodeData);
+                Console.WriteLine("Groundplane ID: " + groundPlaneId);
+                await SendTunnelCommand("scene/node/delete", JsonBuilder.DeleteNodeData(groundPlaneId));
+            }
 
             // Create bike model node:
-            string GuidBikeData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreateModel("data/NetworkEngine/models/bike/bike.fbx", "bike", new int[] { 0,0,0}, new int[] { 0,0,0}));
-            string GuidBike = GetUUID(GuidBikeData);
+            string GuidBikeData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreateModelData("data/NetworkEngine/models/bike/bike.fbx", "bike", new int[] { 0,0,0}, new int[] { 0,0,0}));
+            string GuidBike = GetUuid(GuidBikeData);
+            if (GuidBike != null)
+            {
+                // Let the bike follow the route:
+                await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, GuidBike, "XYZ", 2));
+            };
 
-            // Let the bike follow the route:
-            await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRoute(routeUUID, GuidBike, "XY", 2));
         }
 
         /// <summary>
@@ -311,15 +335,15 @@ namespace Client
         /// <summary>
         /// Retrieves the UUID of a route object specifically
         /// </summary>
-        /// <param name="routeData"></param>
+        /// <param name="data"></param>
         /// <returns></returns>
-        private static string GetUUID(string routeData)
+        private static string GetUuid(string data)
         {
             //Set the Json in a tree structure 
-            var jsonDocument = JsonDocument.Parse(routeData);
+            var jsonDocument = JsonDocument.Parse(data);
             Console.WriteLine("JsonDoc: " + jsonDocument);
 
-            // Just search for the UUID of the route:
+            // Get the data object in the Json Document
             if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
                 dataObject.ValueKind == JsonValueKind.Object)
             {
@@ -333,14 +357,26 @@ namespace Client
                     return null; //Error: Return null
                 }
 
-                // Get the data object in the data
-                if (jsonNode.AsObject().TryGetPropertyValue("data", out JsonNode dataDataObject))
+                // Get the data object in the data object in the Json Document
+                if (dataObject.TryGetProperty("data", out JsonElement dataDataObject) &&
+                    dataDataObject.ValueKind == JsonValueKind.Object)
                 {
-                    // Get the data object in the data object in the data
-                    if (dataDataObject.AsObject().TryGetPropertyValue("data", out JsonNode dataDataDataObject))
+                    // Check if we are searching in the recieved data of a command or the data of the entire scene (2 cases):
+
+                    // Get the data object in the data object in the data object in the Json Document
+                    if (dataDataObject.TryGetProperty("data", out JsonElement dataDataDataObject) &&
+                        dataDataDataObject.ValueKind == JsonValueKind.Object)
                     {
-                        // Get the UUID from the data object in the data object in the data
-                        return dataDataDataObject["uuid"].GetValue<string>();
+                        // Get the UUID property from the data object in the data object in the data object in the Json Document
+                        return dataDataDataObject.GetProperty("uuid").GetString();
+                    }
+
+                    // Get the data array in the data object in the data object in the Json Document (scene data search)
+                    else if (dataDataObject.TryGetProperty("data", out JsonElement dataDataDataElement) &&
+                        dataDataDataElement.ValueKind == JsonValueKind.Array &&
+                        dataDataDataElement.GetArrayLength() > 0)
+                    {
+                        return dataDataDataElement[0].GetProperty("uuid").GetString();
                     }
                 }
             }
