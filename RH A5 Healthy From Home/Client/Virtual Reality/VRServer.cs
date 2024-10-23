@@ -1,3 +1,4 @@
+using Client.Virtual_Reality;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Media.Media3D;
 
 namespace Client
 {
@@ -70,10 +72,11 @@ namespace Client
         /// </summary>
         public static async Task PacketHandlerAsync()
         {
+            // Send scene configuration commands
+            MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
+
             // Get the sessionID
-            MainWindow.TextBoxBikeData.Text = "Sending starting packet...";
-            SendStartingPacket();
-            string sessionIdData = await ReceivePacketAsync();
+            string sessionIdData = await SendStartingPacket();
             sessionId = GetId(sessionIdData);
             Console.WriteLine($"Received session ID: {sessionId}");
 
@@ -84,9 +87,7 @@ namespace Client
             }
 
             // Get the tunnelID
-            MainWindow.TextBoxBikeData.Text = "Sending session ID packet...";
-            SendSessionIdPacket(sessionId);
-            string tunnelIdData = await ReceivePacketAsync();
+            string tunnelIdData = await SendSessionIdPacket(sessionId);
             tunnelId = GetId(tunnelIdData);
             Console.WriteLine($"Received tunnel ID: {tunnelId}");
 
@@ -95,127 +96,63 @@ namespace Client
             {
                 ShutdownServer();
             }
-            // Send scene configuration commands
-            MainWindow.TextBoxBikeData.Text = "Setting up the environment...";
-
+           
+            // OPTIONAL:
             // Reset scene:
-            await SendTunnelCommand("scene/reset", new
-            {
+            await SendTunnelCommand("scene/reset", JsonBuilder.EmptyObjectData());
+            // Get scene data:
+            string getSceneData = await SendTunnelCommand("scene/get", null);
+            Console.WriteLine("ALL SCENE DATA: " + getSceneData);
 
-            });
-
+            // REQUIRED:
             // SkyBox set time:
-            await SendTunnelCommand("scene/skybox/settime", new
-            {
-                time = 12
-            });
+            await SendTunnelCommand("scene/skybox/settime", JsonBuilder.GetSkyBoxTimeData(12));
 
             // Create terrain:
             int terrainSize = 128;
-            float[,] heights = new float[terrainSize, terrainSize];
-            for (int x = 0; x < terrainSize; x++)
-                for (int y = 0; y < terrainSize; y++)
-                    heights[x, y] = 2 + (float)(Math.Cos(x / 5.0) + Math.Cos(y / 5.0));
-            await SendTunnelCommand("scene/terrain/add", new
-            {
-                size = new[] { terrainSize, terrainSize },
-                heights = heights.Cast<float>().ToArray()
-            });
+            await SendTunnelCommand("scene/terrain/add", JsonBuilder.GetTerrainData(terrainSize));
 
             // Create terrain node:
-            await SendTunnelCommand("scene/node/add", new
-            {
-                name = "floor",
-                components = new
-                {
-                    transform = new
-                    {
-                        position = new[] { -16, 0, -16 },
-                        scale = 1
-                    },
-                    terrain = new
-                    {
+            await SendTunnelCommand("scene/node/add", JsonBuilder.CreateComponentData("floor",new int[] {-16, 0, -16}));
 
-                    }
-                }
-            });
 
-            // Create route:
-            string routeData = await SendTunnelCommand("route/add", new
-            {
-                nodes = new[]
-                {
-                    new 
-                    {
-                        pos = new[] { 0, 0, 0},
-                        dir = new[] { 5, 0, -5}
-                    },
-                    new
-                    {
-                        pos = new[] { 50, 0, 0},
-                        dir = new[] { 5, 0, 5}
-                    },
-                    new
-                    {
-                        pos = new[] { 50, 0, 50},
-                        dir = new[] { -5, 0, 5}
-                    },
-                    new
-                    {
-                        pos = new[] { 0, 0, 50},
-                        dir = new[] { -5, 0, -5}
-                    }
-                }
-            });
-            string routeUUID = GetUUID(routeData);
+            // Create route (F1 Monza Circuit):
+            string routeData = await SendTunnelCommand("route/add", JsonBuilder.GetRouteData());
+            string routeUuid = GetUuid(routeData);
 
             // Add roads to the route:
-            await SendTunnelCommand("scene/road/add", new
-            {
-                route = routeUUID,
-            });
+            await SendTunnelCommand("scene/road/add", JsonBuilder.AddRoadsData(routeUuid));
 
-            // Get camera node:
-            string getCameraNode = await SendTunnelCommand("scene/node/find", new
+            // Find camera node:
+            string getCameraNodeData = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNodeData("Camera"));
+            if (getCameraNodeData != null)
             {
-                name = "cameraNode"
-            });
-            Console.WriteLine(getCameraNode);
+                // Get camera node
+                string cameraNodeId = GetUuid(getCameraNodeData);
+                Console.WriteLine("Camera Node ID: " + cameraNodeId);
+                // Let the camera follow the route:
+                await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2));
+            }
+
+            // Find groundplane node:
+            string getGroundplaneNodeData = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNodeData("GroundPlane"));
+            if (getGroundplaneNodeData != null)
+            {
+                // Get camera node
+                string groundPlaneId = GetUuid(getGroundplaneNodeData);
+                Console.WriteLine("Groundplane ID: " + groundPlaneId);
+                await SendTunnelCommand("scene/node/delete", JsonBuilder.DeleteNodeData(groundPlaneId));
+            }
 
             // Create bike model node:
-            string GuidBikeData = await SendTunnelCommand("scene/node/add", new
+            string GuidBikeData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreateModelData("data/NetworkEngine/models/bike/bike.fbx", "bike", new int[] { 0,0,0}, new int[] { 0,0,0}));
+            string GuidBike = GetUuid(GuidBikeData);
+            if (GuidBike != null)
             {
-                name = "bike",
-                components = new
-                {
-                    transform = new
-                    {
-                        position = new[] { 0, 0, 0 },
-                        scale = 1,
-                        rotation = new[] { 0, 0, 0 }
-                    },
-                    model = new
-                    {
-                        file = "data/NetworkEngine/models/bike/bike.fbx",
-                        cullbackfaces = true
-                    }
-                }
-            });
-            string GuidBike = GetUUID(GuidBikeData);
+                // Let the bike follow the route:
+                await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, GuidBike, "XYZ", 2));
+            };
 
-            // Let the bike follow the route:
-            await SendTunnelCommand("route/follow", new
-            {
-                route = routeUUID,
-                node = GuidBike,
-                speed = 2,
-                offset = 0.0,
-                rotate = "XYZ",
-                smoothing = 1.0,
-                followHeight = true,
-                rotateOffset = new[] { 0, 0, 0 },
-                positionOffset = new[] { 0, 0, 0 }
-            });
         }
 
         /// <summary>
@@ -350,43 +287,32 @@ namespace Client
         /// <summary>
         /// Initialize starting packet (server response: all current sessions)
         /// </summary>
-        public static void SendStartingPacket()
+        public static async Task<string> SendStartingPacket()
         {
-            var alJsonData = new
-            {
-                id = "session/list",
-                data = new
-                {
-
-                }
-            };
+            // Create session list command
+            var alJsonData = JsonBuilder.GetStartingPacketData();
 
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
             SendPacket(prepend, data);
+            return await ReceivePacketAsync();
         }
 
         /// <summary>
         /// Initialize session packet (server response: tunnel-id)
         /// </summary>
         /// <param name="sessionId"></param>
-        public static void SendSessionIdPacket(string sessionId)
+        public static async Task<string> SendSessionIdPacket(string sessionId)
         {
-            var alJsonData = new
-            {
-                id = "tunnel/create",
-                data = new
-                {
-                    session = sessionId,
-                    key = ""
-                }
-            };
+            // Create tunnel create command
+            var alJsonData = JsonBuilder.GetSessionIdPacketData(sessionId);
 
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
             byte[] prepend = BitConverter.GetBytes(data.Length);
             SendPacket(prepend, data);
+            return await ReceivePacketAsync();
         }
 
         /// <summary>
@@ -396,19 +322,8 @@ namespace Client
         /// <param name="jsonCommandData"></param>
         public static async Task<string> SendTunnelCommand(string command, object jsonCommandData)
         {
-            var alJsonData = new
-            {
-                id = "tunnel/send",
-                data = new
-                {
-                    dest = tunnelId,
-                    data = new
-                    {
-                        id = command,
-                        data = jsonCommandData
-                    }
-                }
-            };
+            // Create tunnel send command
+            var alJsonData = JsonBuilder.GetTunnelCommandData(tunnelId, command, jsonCommandData);
 
             string jsonPacket = JsonConvert.SerializeObject(alJsonData);
             byte[] data = Encoding.ASCII.GetBytes(jsonPacket);
@@ -420,15 +335,15 @@ namespace Client
         /// <summary>
         /// Retrieves the UUID of a route object specifically
         /// </summary>
-        /// <param name="routeData"></param>
+        /// <param name="data"></param>
         /// <returns></returns>
-        private static string GetUUID(string routeData)
+        private static string GetUuid(string data)
         {
             //Set the Json in a tree structure 
-            var jsonDocument = JsonDocument.Parse(routeData);
+            var jsonDocument = JsonDocument.Parse(data);
             Console.WriteLine("JsonDoc: " + jsonDocument);
 
-            // Just search for the UUID of the route:
+            // Get the data object in the Json Document
             if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
                 dataObject.ValueKind == JsonValueKind.Object)
             {
@@ -442,14 +357,26 @@ namespace Client
                     return null; //Error: Return null
                 }
 
-                // Get the data object in the data
-                if (jsonNode.AsObject().TryGetPropertyValue("data", out JsonNode dataDataObject))
+                // Get the data object in the data object in the Json Document
+                if (dataObject.TryGetProperty("data", out JsonElement dataDataObject) &&
+                    dataDataObject.ValueKind == JsonValueKind.Object)
                 {
-                    // Get the data object in the data object in the data
-                    if (dataDataObject.AsObject().TryGetPropertyValue("data", out JsonNode dataDataDataObject))
+                    // Check if we are searching in the recieved data of a command or the data of the entire scene (2 cases):
+
+                    // Get the data object in the data object in the data object in the Json Document
+                    if (dataDataObject.TryGetProperty("data", out JsonElement dataDataDataObject) &&
+                        dataDataDataObject.ValueKind == JsonValueKind.Object)
                     {
-                        // Get the UUID from the data object in the data object in the data
-                        return dataDataDataObject["uuid"].GetValue<string>();
+                        // Get the UUID property from the data object in the data object in the data object in the Json Document
+                        return dataDataDataObject.GetProperty("uuid").GetString();
+                    }
+
+                    // Get the data array in the data object in the data object in the Json Document (scene data search)
+                    else if (dataDataObject.TryGetProperty("data", out JsonElement dataDataDataElement) &&
+                        dataDataDataElement.ValueKind == JsonValueKind.Array &&
+                        dataDataDataElement.GetArrayLength() > 0)
+                    {
+                        return dataDataDataElement[0].GetProperty("uuid").GetString();
                     }
                 }
             }

@@ -91,6 +91,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Simulator\Simulator.cs" />
+    <Compile Include="Virtual Reality\JsonBuilder.cs" />
     <Compile Include="Virtual Reality\VRServer.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
