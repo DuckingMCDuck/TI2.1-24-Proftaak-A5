@@ -193,6 +193,11 @@ namespace HealthyFromHomeApp.Clients
         private async void BtnConnectBike_Click(object sender, RoutedEventArgs e)
         {
             string enterdText = Interaction.InputBox("Enter the last 5 digits of the serial-number of the bike to continue: ", "Enter bike details", "");
+            if (enterdText.Length > 5)
+            {
+                MessageBox.Show("This message is too long!");
+                return;
+            }
             string pattern = "[0-9]{5}";
             string match = Regex.Match(enterdText, pattern).Value;
             if (match == null || match == "")
