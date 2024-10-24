@@ -102,6 +102,20 @@ namespace HealthyFromHomeApp.Doctor
                     string clientsList = message.Replace("clients_update:", "");
                     UpdateClientList(clientsList.Split(','));
                 }
+                else if (message.StartsWith("bike_data:"))
+                {
+                    // Handle incoming bike data and call AppendBikeData method
+                    string[] messageParts = message.Split(':');
+                    string clientName = messageParts[1]; // Assuming the format is "bike_data:clientName:data"
+                    string bikeData = string.Join(":", messageParts.Skip(2));
+
+                    // Check if there is an open chat window for the client
+                    if (openClientWindows.ContainsKey(clientName))
+                    {
+                        // Forward the bike data to the specific ClientChatWindow instance
+                        Dispatcher.Invoke(() => openClientWindows[clientName].AppendBikeData(bikeData));
+                    }
+                }
                 else
                 {
                     // Handle incoming messages from specific client
@@ -113,7 +127,8 @@ namespace HealthyFromHomeApp.Doctor
                     if (openClientWindows.ContainsKey(senderClient))
                     {
                         Dispatcher.Invoke(() => openClientWindows[senderClient].AppendMessage(clientMessage));
-                    } else
+                    }
+                    else
                     {
                         // Notify doctor of new message if no chat window is open
                         NotifyDoctorOfNewMessage(senderClient, clientMessage);

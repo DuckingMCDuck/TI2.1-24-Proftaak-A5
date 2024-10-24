@@ -229,7 +229,7 @@ namespace HealthyFromHomeApp.Clients
                 this.bikeConnected = true;
 
                 // Open new bike session window
-                BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(bikeHelper);
+                BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(bikeHelper, tcpClient, clientName);
                 bikeSessionWindow.Closed += (s, args) =>
                 {
                     isSessionActive = false;

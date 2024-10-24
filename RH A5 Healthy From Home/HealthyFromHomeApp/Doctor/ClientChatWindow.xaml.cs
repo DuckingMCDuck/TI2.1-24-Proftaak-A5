@@ -60,5 +60,14 @@ namespace HealthyFromHomeApp.Doctor
         {
             chatHistory.AppendText($"{clientName}:{message}\n");
         }
+
+        public void AppendBikeData(string data)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                bikeDataTextBox.AppendText($"{data}\n");
+                bikeDataTextBox.ScrollToEnd();
+            });
+        }
     }
 }

@@ -3,8 +3,44 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Chat with Client" Height="400" Width="600" ResizeMode="NoResize">
     <Grid>
-        <TextBox x:Name="chatHistory" HorizontalAlignment="Left" Height="300" VerticalAlignment="Top" Width="580" Margin="10,10,0,0" IsReadOnly="True" TextWrapping="Wrap" />
-        <TextBox x:Name="messageBox" HorizontalAlignment="Left" Height="50" VerticalAlignment="Bottom" Width="580" Margin="10,0,0,10" />
-        <Button Content="Send" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="100" Margin="0,0,10,10" Click="SendButton_Click"/>
+        <TextBox x:Name="chatHistory" 
+                 HorizontalAlignment="Left" 
+                 Height="300" 
+                 VerticalAlignment="Top" 
+                 Width="290" 
+                 Margin="10,10,0,0" 
+                 IsReadOnly="True" 
+                 TextWrapping="Wrap" />
+
+        <TextBox x:Name="messageBox" 
+                 HorizontalAlignment="Left" 
+                 Height="50" 
+                 VerticalAlignment="Bottom" 
+                 Width="290" 
+                 Margin="10,0,0,10" />
+
+        <Button Content="Send" 
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Bottom" 
+                Width="100" 
+                Margin="0,0,300,10" 
+                Click="SendButton_Click"/>
+
+        <TextBox x:Name="bikeDataTextBox"
+                 TextWrapping="Wrap" 
+                 Margin="305,10,10,74" 
+                 IsReadOnly="True" />
+
+        <Button Content="Start session" 
+                HorizontalAlignment="Left" 
+                VerticalAlignment="Bottom" 
+                Margin="305,324,152,40" 
+                Width="120"/>
+
+        <Button Content="Stop session" 
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Bottom" 
+                Margin="453,324,10,40" 
+                Width="120"/>
     </Grid>
 </Window>
