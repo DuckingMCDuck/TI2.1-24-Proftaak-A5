@@ -140,7 +140,25 @@ namespace HealthyFromHomeApp.Clients
                         string sender = splitMessage[0].Trim();
                         string receivedMessage = message.Substring(sender.Length + 1).Trim();
 
-                        await Dispatcher.InvokeAsync(() => TextChat.AppendText($"{sender}: {receivedMessage}\n"));
+                        if (receivedMessage == "start_session")
+                        {
+                            if (!bikeConnected)
+                            {
+                                SendMessageToServer("chat:send_to:Doctor:The bike is not connected.");
+                            }
+                            else
+                            {
+                                isSessionActive = true;
+                            }
+                        }
+                        else if (receivedMessage == "stop_session")
+                        {
+                            isSessionActive = false;
+                        }
+                        else
+                        {
+                            await Dispatcher.InvokeAsync(() => TextChat.AppendText($"{sender}: {receivedMessage}\n"));
+                        }
                     }
                 }
             }
