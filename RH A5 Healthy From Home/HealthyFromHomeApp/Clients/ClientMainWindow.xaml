@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HealthyFromHomeApp.Clients"
         mc:Ignorable="d"
-        Title="Client Main Window" Height="450" Width="800" Loaded="MainWindow_Loaded">
+        Title="Client Main Window" Height="450" Width="800" Loaded="MainWindow_Loaded" ResizeMode="NoResize">
     <Grid Background="White" OpacityMask="#FF001FFF" Height="434" VerticalAlignment="Center" HorizontalAlignment="Right" Width="800">
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>

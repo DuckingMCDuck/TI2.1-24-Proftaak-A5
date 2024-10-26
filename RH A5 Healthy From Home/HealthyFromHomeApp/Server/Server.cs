@@ -193,6 +193,10 @@ namespace HealthyFromHomeApp.Server
                 string clientMessage = message.Substring("chat:send_to:Doctor:".Length);
                 ForwardToDoctor(senderName, clientMessage);
             }
+            else if (!isDoctor && message.StartsWith("bike_data:"))
+            {
+                ForwardToDoctor(senderName, message);
+            }
         }
 
         private static void BroadcastMessageToAllClients(string message)

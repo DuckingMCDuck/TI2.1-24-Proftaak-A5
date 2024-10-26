@@ -42,6 +42,15 @@ namespace HealthyFromHomeApp.Doctor
                 messageBox.Clear(); 
             }
         }
+        private void StartSessionButton_Click(object sender, RoutedEventArgs e)
+        {
+            SendMessageToClient(clientName, "start_session");
+        }
+
+        private void StopSessionButton_Click(object sender, RoutedEventArgs e)
+        {
+            SendMessageToClient(clientName, "stop_session");
+        }
 
         private async void SendMessageToClient(string client, string message)
         {
@@ -55,9 +64,26 @@ namespace HealthyFromHomeApp.Doctor
             }
         }
 
+        // Public method to add received messages to chat history
         public void AppendMessage(string message)
         {
             chatHistory.AppendText($"{clientName}:{message}\n");
+        }
+
+        public void AppendBikeData(string data)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                bikeDataTextBox.AppendText($"{data}\n");
+                bikeDataTextBox.ScrollToEnd();
+            });
+        }
+        public void NotifyBikeNotConnected()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                MessageBox.Show("The bike is not connected on the client side. Please check the client connection.", "Bike Not Connected", MessageBoxButton.OK, MessageBoxImage.Warning);
+            });
         }
     }
 }
