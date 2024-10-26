@@ -12,6 +12,7 @@ using HealthyFromHomeApp.Common;
 using BikeLibrary;
 using Microsoft.VisualBasic;
 using System.Text.RegularExpressions;
+using Client;
 
 namespace HealthyFromHomeApp.Clients
 {
@@ -48,6 +49,7 @@ namespace HealthyFromHomeApp.Clients
         public static List<Tuple<string, byte[]>> sessionData = new List<Tuple<string, byte[]>>();
         public Simulator simulator;
         public NetworkStream stream;
+        private VRServer vrServer;
 
         // Privates:
         private static bool sessionRunning = false;
@@ -73,15 +75,18 @@ namespace HealthyFromHomeApp.Clients
             this.stream = networkStream;
             this.simulator = new Simulator(this);
             this.bikeHelper = new BikeHelper();
+            this.vrServer = new VRServer(this);
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             TextBoxBikeData = TxtBikeData;
             TextChat = TxtChat;
             TxtChat.AppendText($"Connected as: {clientName}\n");
 
-            Task.Run(() => ListenForMessages());
+            await Task.Run(() => ListenForMessages());
+
+            await VRServer.Start();
         }
 
         // Toggle the simulator on/off, Turning it on and off

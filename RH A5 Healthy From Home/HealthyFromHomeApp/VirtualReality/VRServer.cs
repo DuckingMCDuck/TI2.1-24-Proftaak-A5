@@ -1,6 +1,8 @@
 using Client.Virtual_Reality;
+using HealthyFromHomeApp.Clients;
 using Newtonsoft.Json;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -22,8 +24,9 @@ namespace Client
         public static string hostName = Environment.MachineName;
         public static string sessionId;
         public static string tunnelId;
+        private static ClientMainWindow clientInstance;
 
-        public VRServer() { }
+        public VRServer(ClientMainWindow client) { clientInstance = client; }
 
         /// <summary>
         /// Starts the VRServer and changes the environment
@@ -47,11 +50,11 @@ namespace Client
             }
             catch (SocketException)
             {
-                MainWindow.TextChat.Text += "Error connection to the VRServer!\n";
+                clientInstance.chatText += "Error connection to the VRServer!\n";
                 return;
             }
             stream = vrServer.GetStream();
-            MainWindow.TextChat.Text += "Connected to VR Server!\n";
+            clientInstance.chatText += "Connected to VR Server!\n";
 
             // Start listening for packets
             await PacketHandlerAsync();
@@ -63,14 +66,14 @@ namespace Client
         /// </summary>
         public static async void ShutdownServer()
         {
-            MainWindow.TextChat.Text += "An error has occured, shutting down VRServer...\n";
+            clientInstance.chatText += "An error has occured, shutting down VRServer...\n";
             stream.Close();
             vrServer.Close();
             vrServer.Dispose();
 
             // Automatically restart the VRServer after 10 seconds (pause this Thread)
             await Task.Delay(10000);
-            MainWindow.TextChat.Text += "Trying to restart VRServer...\n";
+            clientInstance.chatText += "Trying to restart VRServer...\n";
             await Start();
         }
 
@@ -80,12 +83,12 @@ namespace Client
         public static async Task PacketHandlerAsync()
         {
             // Send scene configuration commands
-            MainWindow.TextBoxBikeData.Text += "Setting up the environment...";
+            clientInstance.chatText += "Setting up the environment...";
 
             // Get the sessionID
             string sessionIdData = await SendStartingPacket();
             sessionId = GetId(sessionIdData);
-            Console.WriteLine($"Received session ID: {sessionId}");
+            Debug.WriteLine($"Received session ID: {sessionId}");
 
             // Check if sessionId is valid
             if (string.IsNullOrEmpty(sessionId))
@@ -97,7 +100,7 @@ namespace Client
             // Get the tunnelID
             string tunnelIdData = await SendSessionIdPacket(sessionId);
             tunnelId = GetId(tunnelIdData);
-            Console.WriteLine($"Received tunnel ID: {tunnelId}");
+            Debug.WriteLine($"Received tunnel ID: {tunnelId}");
 
             // Check if tunnelId is valid
             if (string.IsNullOrEmpty(tunnelId))
@@ -111,7 +114,7 @@ namespace Client
             await SendTunnelCommand("scene/reset", JsonBuilder.EmptyObjectData());
             // Get scene data:
             string getSceneData = await SendTunnelCommand("scene/get", null);
-            Console.WriteLine("ALL SCENE DATA: " + getSceneData);
+            Debug.WriteLine("ALL SCENE DATA: " + getSceneData);
 
             // REQUIRED:
             // SkyBox set time:
@@ -138,7 +141,7 @@ namespace Client
             {
                 // Get camera node
                 string cameraNodeId = GetUuid(getCameraNodeData);
-                Console.WriteLine("Camera Node ID: " + cameraNodeId);
+                Debug.WriteLine("Camera Node ID: " + cameraNodeId);
                 // Let the camera follow the route:
                 await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2));
             }
@@ -149,7 +152,7 @@ namespace Client
             {
                 // Get camera node
                 string groundPlaneId = GetUuid(getGroundplaneNodeData);
-                Console.WriteLine("Groundplane ID: " + groundPlaneId);
+                Debug.WriteLine("Groundplane ID: " + groundPlaneId);
                 await SendTunnelCommand("scene/node/delete", JsonBuilder.DeleteNodeData(groundPlaneId));
             }
 
@@ -175,7 +178,6 @@ namespace Client
             byte[] combinedArray = new byte[prepend.Length + data.Length];
             Array.Copy(prepend, 0, combinedArray, 0, prepend.Length);
             Array.Copy(data, 0, combinedArray, prepend.Length, data.Length);
-            Console.WriteLine(Encoding.ASCII.GetString(combinedArray));
             stream.Write(combinedArray, 0, combinedArray.Length);
         }
 
@@ -194,7 +196,7 @@ namespace Client
                 int bytesRead = await stream.ReadAsync(prependBuffer, totalBytesRead, 4 - totalBytesRead);
                 if (bytesRead == 0)
                 {
-                    Console.WriteLine("Error: Connection closed before reading the full length.");
+                    Debug.WriteLine("Error: Connection closed before reading the full length.");
                     return null; //Error: Return null
                 }
                 totalBytesRead += bytesRead;
@@ -202,7 +204,7 @@ namespace Client
 
             // Get length of incoming data (decrypt prepend)
             int dataLength = BitConverter.ToInt32(prependBuffer, 0);
-            Console.WriteLine("datalenght: " + dataLength);
+            Debug.WriteLine("datalenght: " + dataLength);
             totalBytesRead = 0;
 
             // Extract other data from the buffer
@@ -213,7 +215,7 @@ namespace Client
                 int bytesRead = await stream.ReadAsync(dataBuffer, totalBytesRead, dataLength - totalBytesRead);
                 if (bytesRead == 0)
                 {
-                    Console.WriteLine("Error: Connection closed before reading the full packet.");
+                    Debug.WriteLine("Error: Connection closed before reading the full packet.");
                     return null; //Error: Return null
                 }
                 totalBytesRead += bytesRead;
@@ -221,7 +223,7 @@ namespace Client
 
             // Get string of data (decrypt data)
             dataString = Encoding.UTF8.GetString(dataBuffer);
-            Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
+            Debug.WriteLine($"Received data [Length {dataLength}]: " + dataString);
 
             return dataString;
         }
@@ -251,12 +253,12 @@ namespace Client
                         // SessionID of current client is in the previous clientinfo data!
                         sessionId = Regex.Match(splitted[i - 1], pattern).Value;
                         sessionFound = true;
-                        Console.WriteLine($"Session ID: {sessionId}");
+                        Debug.WriteLine($"Session ID: {sessionId}");
                     }
                 }
                 if (!sessionFound)
                 {
-                    Console.WriteLine("Error: Session Id not found!");
+                    Debug.WriteLine("Error: Session Id not found!");
                     return null; //Error: Return null
                 }
                 return sessionId;
@@ -265,7 +267,6 @@ namespace Client
             {
                 //Set the Json in a tree structure 
                 var jsonDocument = JsonDocument.Parse(data);
-                Console.WriteLine("JsonDoc: " + jsonDocument);
 
                 // Just search for the Id, which can be inside of an array or object, so we have 2 cases:
                 if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataElement) &&
@@ -283,7 +284,7 @@ namespace Client
                     string errorMessage = jsonNode.ToString();
                     if (errorMessage.Contains("does not support tunnel"))
                     {
-                        Console.WriteLine("Error: JsonObject does not contain an Id!");
+                        Debug.WriteLine("Error: JsonObject does not contain an Id!");
                         return null; //Error: Return null
                     }
 
@@ -350,7 +351,6 @@ namespace Client
         {
             //Set the Json in a tree structure 
             var jsonDocument = JsonDocument.Parse(data);
-            Console.WriteLine("JsonDoc: " + jsonDocument);
 
             // Get the data object in the Json Document
             if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
@@ -362,7 +362,7 @@ namespace Client
                 string errorMessage = jsonNode.ToString();
                 if (errorMessage.Contains("does not support tunnel"))
                 {
-                    Console.WriteLine("Error: JsonObject does not contain a UUID!");
+                    Debug.WriteLine("Error: JsonObject does not contain a UUID!");
                     return null; //Error: Return null
                 }
 
