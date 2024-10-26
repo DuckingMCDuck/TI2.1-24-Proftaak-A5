@@ -50,8 +50,8 @@ namespace Client
         public static TcpClient tcpClient = new TcpClient();
         public static List<Tuple<string, byte[]>> sessionData = new List<Tuple<string, byte[]>>();
         public static Simulator simulator = new Simulator();
+        private static VRServer vrServer = new VRServer();
         public static NetworkStream stream;
-        //private static VRServer vRServer = new VRServer();
 
         // Privates:
         private static bool sessionRunning = false;
@@ -70,7 +70,7 @@ namespace Client
             client = this; // Initialize class 'Client' property
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // Connect to the server
             tcpClient.Connect("localhost", 12345);
@@ -80,8 +80,8 @@ namespace Client
             TextBoxBikeData = TxtBikeData;
             TextChat = TxtChat;
 
-            // Initialize VR Server
-            //vrServer = new VRServer();
+            // Start VR Server
+            await VRServer.Start();
 
             #region Connecting via bike (FietsDemo code)
             //UsingBicycle();
@@ -158,14 +158,10 @@ namespace Client
             TextChat.AppendText("Simulator turned " + (simulating ? "ON" : "OFF") + "!\n");
             if (simulating)
             {
-                //Task.Run(() => { StartSimulator(); } );
-                Thread simulatorThread = new Thread(() =>
+                Task.Run(() => 
                 {
                     StartSimulator();
                 });
-                // Threads running in the background close if the application closes
-                simulatorThread.IsBackground = true;
-                simulatorThread.Start();
             }
         }
 
