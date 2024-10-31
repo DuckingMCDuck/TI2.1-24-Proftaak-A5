@@ -1,11 +1,11 @@
-﻿<Window x:Class="Client.MainWindow"
+﻿<Window x:Class="HealthyFromHomeApp.Clients.ClientMainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Client"
+        xmlns:local="clr-namespace:HealthyFromHomeApp.Clients"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Loaded="MainWindow_Loaded">
+        Title="Client Main Window" Height="450" Width="800" Loaded="MainWindow_Loaded" ResizeMode="NoResize">
     <Grid Background="White" OpacityMask="#FF001FFF" Height="434" VerticalAlignment="Center" HorizontalAlignment="Right" Width="800">
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -14,14 +14,12 @@
             <RowDefinition Height="17*"/>
             <RowDefinition Height="45*"/>
         </Grid.RowDefinitions>
-
         <TextBox x:Name="TxtChat" Margin="0,0,413,111" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Height="279" TextChanged="TxtChat_TextChanged" IsReadOnly="True" Grid.RowSpan="2" HorizontalAlignment="Right" Width="377"/>
-        <TextBox x:Name="TxtBikeData" Margin="405,0,0,136" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Height="114" TextChanged="TxtBikeData_TextChanged"  PreviewMouseDown="TxtBikeData_PreviewMouseDown" IsReadOnly="True" VerticalScrollBarVisibility="Visible" ScrollViewer.CanContentScroll="True" HorizontalAlignment="Left" Width="360" Grid.Row="1"/>
+        <TextBox x:Name="TxtBikeData" Margin="405,0,0,136" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Height="114" TextChanged="TxtBikeData_TextChanged" IsReadOnly="True" VerticalScrollBarVisibility="Visible" HorizontalAlignment="Left" Width="360" Grid.Row="1"/>
         <TextBox x:Name="TxtTypeBar" HorizontalAlignment="Center" Margin="0,219,0,53" TextWrapping="Wrap" Text="" Width="754" Grid.Row="1" />
         <Button x:Name="BtnSendMessage" Content="Send" Margin="0,281,180,0" Click="BtnSendMessage_Click" Grid.Row="1" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Width="430"/>
-        <Button x:Name="BtnSimulate" Content="Start/ Stop Simulating" HorizontalAlignment="Left" Margin="405,184,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360" Click="BtnSimulate_Click"/>
-        <Button x:Name="BtnConnect" Content="Connect" HorizontalAlignment="Left" Margin="405,40,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="0.507,0.515" Width="360" Click="BtnConnect_Click"/>
-        <TextBox x:Name="TxtName" HorizontalAlignment="Left" Margin="405,42,0,0" TextWrapping="Wrap" Text="Input name.." VerticalAlignment="Top" Width="360" Height="112" Grid.RowSpan="2" />
-
+        <Button x:Name="BtnSimulate" Content="Start/Stop Simulating" HorizontalAlignment="Left" Margin="405,184,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360" Click="BtnSimulate_Click"/>
+        <Button x:Name="BtnConnect" Content="Connect to Bike (Simulate)" HorizontalAlignment="Left" Margin="405,40,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360" Click="BtnConnectBike_Click"/>
+        <TextBox x:Name="TxtBikeStatus" HorizontalAlignment="Left" Margin="405,44,0,0" TextWrapping="Wrap" Text="Bike connection status..." VerticalAlignment="Top" Width="360" Height="110" Grid.RowSpan="2" IsReadOnly="True"/>
     </Grid>
 </Window>

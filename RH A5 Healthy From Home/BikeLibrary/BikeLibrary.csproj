@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="BLELibrary">
+      <HintPath>Libraries\BLELibrary.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

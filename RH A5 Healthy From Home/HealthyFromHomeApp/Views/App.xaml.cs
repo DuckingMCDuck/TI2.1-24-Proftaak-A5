@@ -1,13 +1,8 @@
-﻿using System;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
+﻿using System.Configuration;
 using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
-namespace DokterClient
+namespace HealthyFromHomeApp
 {
     /// <summary>
     /// Interaction logic for App.xaml
@@ -15,4 +10,5 @@ namespace DokterClient
     public partial class App : Application
     {
     }
+
 }

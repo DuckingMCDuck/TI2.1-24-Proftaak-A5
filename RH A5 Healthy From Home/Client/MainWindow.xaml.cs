@@ -57,6 +57,7 @@ namespace Client
         private static bool sessionRunning = false;
         private static bool debugScrolling = true;
         private static bool simulating = true;
+        private static string clientName;
 
         // Toolbox-Items:
         public static TextBox TextBoxBikeData;
@@ -64,6 +65,7 @@ namespace Client
 
         public MainWindow()
         {
+            Thread.Sleep(1000);
             InitializeComponent();
             client = this; // Initialize class 'Client' property
         }
@@ -71,7 +73,7 @@ namespace Client
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // Connect to the server
-            tcpClient.Connect("localhost", 15243);
+            tcpClient.Connect("localhost", 12345);
             stream = tcpClient.GetStream();
 
             // Create public variables for items in the Toolbox (Schrijf volledig uit: Txt -> TextBox, Btn -> Button etc.)
@@ -147,7 +149,7 @@ namespace Client
             // Update chat
             TextChat.AppendText("Using Simulator!\n");
             // Use Simulator
-            simulating = true;
+            simulating = false;
             ToggleSimulator();
         }
 
@@ -190,7 +192,7 @@ namespace Client
 
                     // You may want to make this a proper async method with retries
                     tcpClient = new TcpClient();
-                    tcpClient.Connect("localhost", 15243); // Use your appropriate IP and port
+                    tcpClient.Connect("localhost", 12345); // Use your appropriate IP and port
                     client.Dispatcher.Invoke(() => {
                         TextChat.AppendText("Reconnected successfully.\n");
                     });
@@ -260,10 +262,13 @@ namespace Client
         private void BtnSendMessage_Click(object sender, RoutedEventArgs e)
         {
             // Get written message and send it to the chat (server)
-            string message = TxtTypeBar.Text;
+            string message = "send_to:Doctor:"+TxtTypeBar.Text;
+            string rawMessage = TxtTypeBar.Text;
+            string rawClient = clientName.Substring("client:".Length);
             if (!string.IsNullOrEmpty(message))
             {
                 SendMessageToServer(message);
+                TxtChat.AppendText($"{rawClient}:{rawMessage}\n");
                 TxtTypeBar.Clear();
             }
         }
@@ -271,22 +276,34 @@ namespace Client
         private async void SendMessageToServer(string message)
         {
             if (stream.CanWrite)
-            //using (NetworkStream stream = tcpClient.GetStream())
             {
                 byte[] data = Encoding.ASCII.GetBytes("chat:" + message);
                 await stream.WriteAsync(data, 0, data.Length);
+                stream.Flush(); 
             }
         }
 
-        private void ListenForMessages()
+        private async void ListenForMessages()
         {
-            //NetworkStream stream = tcpClient.GetStream();
             byte[] buffer = new byte[1500];
-            while (true)
-            { 
-                int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                Dispatcher.Invoke(() => TxtChat.AppendText(message + "\n"));
+            try
+            {
+                while (true)
+                {
+                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    if (bytesRead == 0)
+                    {
+                        TxtChat.AppendText("Disconnected from the server.\n");
+                        break;
+                    }
+
+                    string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                    Dispatcher.Invoke(() => TxtChat.AppendText(message + "\n"));
+                }
+            }
+            catch (Exception ex)
+            {
+                TxtChat.AppendText($"Error: {ex.Message}\n");
             }
         }
 
@@ -302,92 +319,21 @@ namespace Client
             ToggleSimulator();
         }
 
+        private void BtnConnect_Click(object sender, RoutedEventArgs e)
+        {
+            clientName = "client:" + TxtName.Text; 
+            if (!string.IsNullOrEmpty(clientName))
+            {
+                byte[] nameData = Encoding.ASCII.GetBytes(clientName);
+                stream.Write(nameData, 0, nameData.Length);
+                TxtChat.AppendText("Connected as: " + clientName + "\n");
 
-        // EXAMPLE CODE:
-
-        //// LET OP: username moet gelijk zijn aan password om correct te werken
-        //private static string password;
-        //private static TcpClient client;
-        //private static NetworkStream stream;
-        //private static byte[] buffer = new byte[1024];
-        //private static string totalBuffer;
-        //private static string username;
-
-        //private static bool loggedIn = false;
-
-        //static void Main(string[] args)
-        //{
-        //    Console.WriteLine("Hello Client!");
-        //    Console.WriteLine("Wat is je gebruikersnaam? ");
-        //    username = Console.ReadLine();
-        //    Console.WriteLine("Wat is je wachtwoord? ");
-        //    password = Console.ReadLine();
-
-        //    client = new TcpClient();
-        //    client.BeginConnect("localhost", 15243, new AsyncCallback(OnConnect), null);
-
-        //    while (true)
-        //    {
-        //        Console.WriteLine("Voer een chatbericht in:");
-        //        string newChatMessage = Console.ReadLine();
-        //        if (loggedIn)
-        //            write($"chat\r\n{newChatMessage}");
-        //        else
-        //            Console.WriteLine("Je bent nog niet ingelogd");
-        //    }
-        //}
-
-        //private static void OnConnect(IAsyncResult ar)
-        //{
-        //    client.EndConnect(ar);
-        //    Console.WriteLine("Verbonden!");
-        //    stream = client.GetStream();
-        //    stream.BeginRead(buffer, 0, buffer.Length, new AsyncCallback(OnRead), null);
-        //    write($"login\r\n{username}\r\n{password}");
-        //}
-
-        //private static void OnRead(IAsyncResult ar)
-        //{
-        //    int receivedBytes = stream.EndRead(ar);
-        //    string receivedText = System.Text.Encoding.ASCII.GetString(buffer, 0, receivedBytes);
-        //    totalBuffer += receivedText;
-
-        //    while (totalBuffer.Contains("\r\n\r\n"))
-        //    {
-        //        string packet = totalBuffer.Substring(0, totalBuffer.IndexOf("\r\n\r\n"));
-        //        totalBuffer = totalBuffer.Substring(totalBuffer.IndexOf("\r\n\r\n") + 4);
-        //        string[] packetData = Regex.Split(packet, "\r\n");
-        //        handleData(packetData);
-        //    }
-        //    stream.BeginRead(buffer, 0, buffer.Length, new AsyncCallback(OnRead), null);
-        //}
-        //private static void write(string data)
-        //{
-        //    var dataAsBytes = System.Text.Encoding.ASCII.GetBytes(data + "\r\n\r\n");
-        //    stream.Write(dataAsBytes, 0, dataAsBytes.Length);
-        //    stream.Flush();
-        //}
-
-        //private static void handleData(string[] packetData)
-        //{
-        //    Console.WriteLine($"Packet ontvangen: {packetData[0]}");
-
-        //    switch (packetData[0])
-        //    {
-        //        case "login":
-        //            if (packetData[1] == "ok")
-        //            {
-        //                Console.WriteLine("Logged in!");
-        //                loggedIn = true;
-        //            }
-        //            else
-        //                Console.WriteLine(packetData[1]);
-        //            break;
-        //        case "chat":
-        //            Console.WriteLine($"Chat ontvangen: '{packetData[1]}'");
-        //            break;
-        //    }
-
-        //}
+                Task.Run(() => ListenForMessages());
+            }
+            else
+            {
+                TxtChat.AppendText("Please enter a valid name before connecting.\n");
+            }
+        }
     }
 }
