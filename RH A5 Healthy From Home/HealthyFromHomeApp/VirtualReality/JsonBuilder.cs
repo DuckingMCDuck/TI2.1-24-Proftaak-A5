@@ -54,11 +54,22 @@ namespace Client.Virtual_Reality
                 heights = heights.Cast<float>().ToArray() };
         }
 
-        public static object CreateComponentData(string nameComponent, int[] positions)
+        public static object CreateTerrainData(string nameComponent, int[] positions)
         {
             return new { name = nameComponent, components = new {
                 transform = new { position = positions, scale = 1 },
                 terrain = new { } } };
+        }
+
+        public static object CreatePanelData(string nameComponent, int[] positions)
+        {
+            return new { name = nameComponent, components = new {
+                panel = new { size = new[] { 2, 2 }, resolution = new[] { 512, 512 }, background = new[] { 1, 1, 1, 1 }, castShadow = true } } };
+        }
+
+        public static object SetPanelColorData(string panelId, int[] rgbColor)
+        {
+            return new { id = panelId, color = rgbColor };
         }
 
         public static object AddRoadsData(string routeUUID)
@@ -73,10 +84,10 @@ namespace Client.Virtual_Reality
                 model = new { file = fileName, cullbackfaces = true } } };
         }
 
-        public static object LetItemFollowRouteData(string routeUUID, string itemGUID, string rotatation, int speedObject)
+        public static object LetItemFollowRouteData(string routeUUID, string itemGUID, string rotatation, int speedObject, int[] rotationsOffset, int[] positionsOffset)
         {
             return new { route = routeUUID,  node = itemGUID, speed = speedObject, offset = 0.0, rotate = rotatation, smoothing = 1.0, 
-                followHeight = true, rotateOffset = new[] { 0, 0, 0 }, positionOffset = new[] { 0, 0, 0 } };
+                followHeight = true, rotateOffset = rotationsOffset, positionOffset = positionsOffset};
         }
 
         public static object FindNodeData(string nodeName)
@@ -87,6 +98,11 @@ namespace Client.Virtual_Reality
         public static object DeleteNodeData(string nodeId)
         {
             return new { id = nodeId };
+        }
+
+        public static object DrawTextOnPanelData(string panelId, string setText, double[] textPosition)
+        {
+            return new { id = panelId, text = setText, position = textPosition, size = 32.0, color = new[] { 0, 0, 0, 1 }, font = "verdana" };
         }
 
         public static object GetRouteData()
