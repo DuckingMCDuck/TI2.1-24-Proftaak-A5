@@ -94,7 +94,7 @@ namespace HealthyFromHomeApp.Doctor
                 string encryptedMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
                 string message = EncryptHelper.Decrypt(encryptedMessage);
 
-                Console.WriteLine("Received message from server: " + message);
+                Console.WriteLine("DOCTORMAINWINDOW: Received message from server: " + message);
 
                 if (message.StartsWith("clients_update:"))
                 {
