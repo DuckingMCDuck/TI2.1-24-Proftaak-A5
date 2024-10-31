@@ -72,6 +72,11 @@ namespace Client.Virtual_Reality
             return new { id = panelId, color = rgbColor };
         }
 
+        public static object DrawTextOnPanelData(string panelId, string setText, double[] textPosition)
+        {
+            return new { id = panelId, text = setText, position = textPosition };
+        }
+
         public static object AddRoadsData(string routeUUID)
         {
             return new { route = routeUUID };
@@ -98,11 +103,6 @@ namespace Client.Virtual_Reality
         public static object DeleteNodeData(string nodeId)
         {
             return new { id = nodeId };
-        }
-
-        public static object DrawTextOnPanelData(string panelId, string setText, double[] textPosition)
-        {
-            return new { id = panelId, text = setText, position = textPosition, size = 32.0, color = new[] { 0, 0, 0, 1 }, font = "verdana" };
         }
 
         public static object GetRouteData()
