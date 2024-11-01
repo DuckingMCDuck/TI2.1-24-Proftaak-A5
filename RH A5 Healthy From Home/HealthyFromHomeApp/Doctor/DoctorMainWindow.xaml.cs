@@ -32,6 +32,8 @@ namespace HealthyFromHomeApp.Doctor
         // Track selected client and the open chat windows
         private string selectedClient = null;
         private Dictionary<string, ClientChatWindow> openClientWindows = new Dictionary<string, ClientChatWindow>();
+
+        public ChartWindow chartWindow;
         public DoctorMainWindow(TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
@@ -112,8 +114,13 @@ namespace HealthyFromHomeApp.Doctor
                     // Check if there is an open chat window for the client
                     if (openClientWindows.ContainsKey(clientName))
                     {
+                       
                         // Forward the bike data to the specific ClientChatWindow instance
                         Dispatcher.Invoke(() => openClientWindows[clientName].AppendBikeData(bikeData));
+                        if (chartWindow != null)
+                        {
+                            Dispatcher.Invoke(() => chartWindow.AppendBikeData(clientName, bikeData));
+                        }
                     }
                 }
                 else
@@ -212,5 +219,42 @@ namespace HealthyFromHomeApp.Doctor
         {
 
         }
+        private void WriteToFile(string clientName, string bikeData)
+        {
+            string filePath = $"{clientName}_data.txt";
+            using (StreamWriter writer = new StreamWriter(filePath, true))
+            { 
+                writer.WriteLine(bikeData); 
+            }
+        }
+
+        private string ReadFile(string clientName) 
+        {
+            string filePath = $"{clientName}_data.txt";
+            using (StreamReader reader = new StreamReader(filePath)) 
+            {
+                return reader.ReadToEnd();
+            }
+        }
+
+        private void OpenChartsWindowButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (chartWindow == null)
+            {
+                chartWindow = new ChartWindow();
+                chartWindow.Closed += ChartWindow_Closed;
+                chartWindow.Show();
+            }
+            else
+            {
+                chartWindow.Activate();
+            }
+        }
+        private void ChartWindow_Closed(object sender, EventArgs e)
+        {
+            chartWindow = null;
+        }
+
+
     }
 }

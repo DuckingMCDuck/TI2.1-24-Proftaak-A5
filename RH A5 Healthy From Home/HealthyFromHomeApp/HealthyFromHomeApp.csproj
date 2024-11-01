@@ -13,11 +13,21 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <COMReference Include="{215d64d2-031c-33c7-96e3-61794cd1ee61}">
+	    <WrapperTool>tlbimp</WrapperTool>
+	    <VersionMinor>4</VersionMinor>
+	    <VersionMajor>2</VersionMajor>
+	    <Guid>215d64d2-031c-33c7-96e3-61794cd1ee61</Guid>
+	  </COMReference>
+	</ItemGroup>
+
+	<ItemGroup>
 		<Folder Include="Views\" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	  <PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
 	  <PackageReference Include="System.Text.Json" Version="8.0.5" />
 	</ItemGroup>
 
@@ -30,6 +40,9 @@
 			<HintPath>Libraries\BLELibrary.dll</HintPath>
 		</Reference>
 		<Reference Include="Microsoft.VisualBasic" />
+		<Reference Include="System.Windows.Forms" />
+		<Reference Include="System.Windows.Forms.DataVisualization" />
+		<Reference Include="WindowsFormsIntegration" />
 	</ItemGroup>
 
 	<ItemGroup>
