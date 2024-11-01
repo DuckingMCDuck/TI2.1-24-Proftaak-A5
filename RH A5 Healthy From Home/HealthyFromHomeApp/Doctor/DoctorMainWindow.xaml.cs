@@ -104,11 +104,11 @@ namespace HealthyFromHomeApp.Doctor
                     string clientsList = message.Replace("clients_update:", "");
                     UpdateClientList(clientsList.Split(','));
                 }
-                else if (message.StartsWith("bike_data:"))
+                else if (message.Contains("bike_data:"))
                 {
                     // Handle incoming bike data and call AppendBikeData method
                     string[] messageParts = message.Split(':');
-                    string clientName = messageParts[1]; // Assuming the format is "bike_data:clientName:data"
+                    string clientName = messageParts[0]; // Assuming the format is "clientName:bike_data:data"
                     string bikeData = string.Join(":", messageParts.Skip(2));
 
                     // Check if there is an open chat window for the client

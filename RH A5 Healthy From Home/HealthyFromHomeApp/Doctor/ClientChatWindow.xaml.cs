@@ -68,6 +68,7 @@ namespace HealthyFromHomeApp.Doctor
         public void AppendMessage(string message)
         {
             chatHistory.AppendText($"{clientName}:{message}\n");
+            chatHistory.ScrollToEnd();
         }
 
         public void AppendBikeData(string data)
