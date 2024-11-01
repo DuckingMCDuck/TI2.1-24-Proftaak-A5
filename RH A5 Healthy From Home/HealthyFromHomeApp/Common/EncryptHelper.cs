@@ -19,7 +19,7 @@ namespace HealthyFromHomeApp.Common
 
             using (Aes aes = Aes.Create())
             {
-                Console.WriteLine(key);
+                Console.WriteLine("ENCRYPT: " + key);
                 aes.Key = key;
                 aes.GenerateIV(); 
                 iv = aes.IV; 

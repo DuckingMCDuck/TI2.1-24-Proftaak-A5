@@ -18,20 +18,20 @@ namespace HealthyFromHomeApp.Server
 
         public void Start()
         {
-            Console.WriteLine("Server starting...");
+            Console.WriteLine("SERVER: Server starting...");
 
             listener = new TcpListener(IPAddress.Any, 12345);
             listener.Start();
-            Console.WriteLine("Server started and waiting for connections...");
+            Console.WriteLine("SERVER: Server started and waiting for connections...");
 
             listener.BeginAcceptTcpClient(OnConnect, null);
 
             while (true)
             {
-                Console.WriteLine("Press 'q' to quit.");
+                Console.WriteLine("SERVER: Press 'q' to quit.");
                 if (Console.ReadLine()?.ToLower() == "q")
                 {
-                    Console.WriteLine("Server is shutting down.");
+                    Console.WriteLine("SERVER: Server is shutting down.");
                     break;
                 }
             }
@@ -63,7 +63,7 @@ namespace HealthyFromHomeApp.Server
                     if (doctorClient == null)  
                     {
                         doctorClient = tcpClient;
-                        Console.WriteLine("Doctor logged in successfully.");
+                        Console.WriteLine("SERVER: Doctor logged in successfully.");
 
                         SendMessage(doctorClient, "login_success");
 
@@ -74,7 +74,7 @@ namespace HealthyFromHomeApp.Server
                     {
                         SendMessage(tcpClient, "login_failure");
                         tcpClient.Close(); 
-                        Console.WriteLine("Doctor login attempt rejected: another doctor is already connected.");
+                        Console.WriteLine("SERVER: Doctor login attempt rejected: another doctor is already connected.");
                     }
                 }
                 else
@@ -90,7 +90,7 @@ namespace HealthyFromHomeApp.Server
                 if (!clients.ContainsKey(clientName))
                 {
                     clients.Add(clientName, tcpClient);
-                    Console.WriteLine($"Client registered: {clientName}");
+                    Console.WriteLine($"SERVER: Client registered: {clientName}");
 
                     NotifyDoctorOfClients();
 
@@ -104,7 +104,7 @@ namespace HealthyFromHomeApp.Server
             }
             else
             {
-                Console.WriteLine("Invalid connection message received, closing the connection.");
+                Console.WriteLine("SERVER: Invalid connection message received, closing the connection.");
                 tcpClient.Close();
             }
         }
@@ -133,29 +133,29 @@ namespace HealthyFromHomeApp.Server
 
                     if (message == null)
                     {
-                        Console.WriteLine($"{senderName} disconnected.");
+                        Console.WriteLine($"SERVER: {senderName} disconnected.");
                         DisconnectClient(tcpClient, senderName);
                         return;
                     }
 
-                    Console.WriteLine($"Received message from {senderName}: {message}");
+                    Console.WriteLine($"SERVER: Received message from {senderName}: {message}");
 
                     ProcessMessage(senderName, message, isDoctor);
                 }
             }
             catch (IOException ex)
             {
-                Console.WriteLine($"{senderName} connection error: {ex.Message}");
+                Console.WriteLine($"SERVER: {senderName} connection error: {ex.Message}");
                 DisconnectClient(tcpClient, senderName);
             }
             catch (SocketException ex)
             {
-                Console.WriteLine($"Socket error with {senderName}: {ex.Message}");
+                Console.WriteLine($"SERVER: Socket error with {senderName}: {ex.Message}");
                 DisconnectClient(tcpClient, senderName);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unexpected error with {senderName}: {ex.Message}");
+                Console.WriteLine($"SERVER: Unexpected error with {senderName}: {ex.Message}");
                 DisconnectClient(tcpClient, senderName);
             }
         }
@@ -219,12 +219,12 @@ namespace HealthyFromHomeApp.Server
         {
             if (clients.TryGetValue(clientName, out TcpClient targetClient))
             {
-                Console.WriteLine($"Sending message to {clientName} via TcpClient: {targetClient.Client.RemoteEndPoint}");
+                Console.WriteLine($"SERVER: Sending message to {clientName} via TcpClient: {targetClient.Client.RemoteEndPoint}");
                 SendMessage(targetClient, message);
             }
             else
             {
-                Console.WriteLine($"Client {clientName} not found.");
+                Console.WriteLine($"SERVER: Client {clientName} not found.");
             }
         }
 
@@ -240,7 +240,7 @@ namespace HealthyFromHomeApp.Server
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to send message: {ex.Message}");
+                Console.WriteLine($"SERVER: Failed to send message: {ex.Message}");
             }
         }
 
@@ -248,7 +248,7 @@ namespace HealthyFromHomeApp.Server
         {
             if (clients.Remove(clientName))
             {
-                Console.WriteLine($"Client {clientName} disconnected.");
+                Console.WriteLine($"SERVER: Client {clientName} disconnected.");
                 NotifyDoctorOfClients();
             }
         }
