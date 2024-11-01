@@ -129,10 +129,17 @@ namespace HealthyFromHomeApp.Clients
                         break;
                     }
 
-                    string encryptedMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                        string encryptedMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
                     string message = EncryptHelper.Decrypt(encryptedMessage);
 
-                    string[] splitMessage = message.Split(':');
+                    if (message.Contains("Resistance changed to "))
+                    {
+                        string[] parts = message.Split(' ');
+                        BikeHelper.SendDataToBike(bikeHelper.BLE, int.Parse(parts[4]));
+
+                    }
+
+                        string[] splitMessage = message.Split(':');
                     if (splitMessage.Length > 1)
                     {
                         string sender = splitMessage[0].Trim();

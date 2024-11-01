@@ -17,6 +17,8 @@ namespace BikeLibrary
             bleHeart = new BLE();
         }
 
+        public BLE BLE { get { return bleBike; } }
+
         // List available devices
         public void ListAvailableDevices()
         {
