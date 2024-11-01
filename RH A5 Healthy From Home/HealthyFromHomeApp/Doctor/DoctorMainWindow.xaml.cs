@@ -114,13 +114,12 @@ namespace HealthyFromHomeApp.Doctor
                     // Check if there is an open chat window for the client
                     if (openClientWindows.ContainsKey(clientName))
                     {
-                       
+
                         // Forward the bike data to the specific ClientChatWindow instance
                         Dispatcher.Invoke(() => openClientWindows[clientName].AppendBikeData(bikeData));
-                        if (chartWindow != null)
-                        {
-                            Dispatcher.Invoke(() => chartWindow.AppendBikeData(clientName, bikeData));
-                        }
+
+                        //write bike data of specific client to File
+                        WriteToFile(clientName, bikeData);
                     }
                 }
                 else
@@ -175,13 +174,20 @@ namespace HealthyFromHomeApp.Doctor
         }
 
         // When doc clicks a client in the combobox, open a chatscreen
-        private void CmbClientsForDoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void CmbClientsForDoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             selectedClient = (string)CmbClientsForDoc.SelectedItem;
             if (selectedClient != null)
             {
                 OpenClientChatWindow(selectedClient);
+
+                if (chartWindow != null)
+                {
+                    chartWindow.ClearChart();
+                  await chartWindow.LoadDataFromFileAsync(selectedClient);
+                }
             }
+
         }
 
         // Open a chat window with specific client
