@@ -162,13 +162,32 @@ namespace HealthyFromHomeApp.Clients
                     difDataInt.Add(decValue);
                 }
 
-                if (difDataInt.Count > 4 && difDataInt[4] == 16)
+                if (difDataInt[4] == 16)
                 {
+                    int lsbValue = 0;
+                    int msbValue = 0;
+                    Boolean calcSpeed = false;
                     for (int i = 0; i < difDataInt.Count; i++)
                     {
                         string name = Enum.GetName(typeof(DataNames16), i);
+                        if (name == "Speed_LSB")
+                        {
+                            lsbValue = difDataInt[i];
+                        }
+                        else if (name == "Speed_MSB" && lsbValue != 0)
+                        {
+                            msbValue = difDataInt[i];
+                            calcSpeed = true;
+                        }
                         (string, int) tuple = (name, difDataInt[i]);
                         dataWithNames.Add(tuple);
+                        if (calcSpeed == true)
+                        {
+                            double speed = ((msbValue << 8) | lsbValue) / 1000 * 3.6;
+                            (string, int) speedTuple = ("Speed", (int)Math.Round(speed));
+                            dataWithNames.Add(speedTuple);
+                            calcSpeed = false;
+                        }
                     }
                 }
                 else if (difDataInt.Count > 4 && difDataInt[4] == 25)
