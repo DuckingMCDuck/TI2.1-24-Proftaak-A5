@@ -17,6 +17,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	  <PackageReference Include="System.Text.Json" Version="8.0.5" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\BikeLibrary\BikeLibrary.csproj" />
 	</ItemGroup>
 
@@ -24,6 +29,7 @@
 		<Reference Include="BLELibrary">
 			<HintPath>Libraries\BLELibrary.dll</HintPath>
 		</Reference>
+		<Reference Include="Microsoft.VisualBasic" />
 	</ItemGroup>
 
 	<ItemGroup>

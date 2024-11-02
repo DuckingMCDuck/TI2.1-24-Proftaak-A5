@@ -10,6 +10,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using HealthyFromHomeApp.Common;
 using BikeLibrary;
+using Microsoft.VisualBasic;
+using System.Text.RegularExpressions;
+using Client;
 
 namespace HealthyFromHomeApp.Clients
 {
@@ -46,6 +49,7 @@ namespace HealthyFromHomeApp.Clients
         public static List<Tuple<string, byte[]>> sessionData = new List<Tuple<string, byte[]>>();
         public Simulator simulator;
         public NetworkStream stream;
+        private VRServer vrServer;
 
         // Privates:
         private static bool sessionRunning = false;
@@ -71,15 +75,18 @@ namespace HealthyFromHomeApp.Clients
             this.stream = networkStream;
             this.simulator = new Simulator(this);
             this.bikeHelper = new BikeHelper();
+            this.vrServer = new VRServer(this);
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             TextBoxBikeData = TxtBikeData;
             TextChat = TxtChat;
             TxtChat.AppendText($"Connected as: {clientName}\n");
 
-            Task.Run(() => ListenForMessages());
+            await Task.Run(() => ListenForMessages());
+
+            await VRServer.Start();
         }
 
         // Toggle the simulator on/off, Turning it on and off
@@ -145,7 +152,25 @@ namespace HealthyFromHomeApp.Clients
                         string sender = splitMessage[0].Trim();
                         string receivedMessage = message.Substring(sender.Length + 1).Trim();
 
-                        await Dispatcher.InvokeAsync(() => TextChat.AppendText($"{sender}: {receivedMessage}\n"));
+                        if (receivedMessage == "start_session")
+                        {
+                            if (!bikeConnected)
+                            {
+                                SendMessageToServer("chat:send_to:Doctor:The bike is not connected.");
+                            }
+                            else
+                            {
+                                isSessionActive = true;
+                            }
+                        }
+                        else if (receivedMessage == "stop_session")
+                        {
+                            isSessionActive = false;
+                        }
+                        else
+                        {
+                            await Dispatcher.InvokeAsync(() => TextChat.AppendText($"{sender}: {receivedMessage}\n"));
+                        }
                     }
                 }
             }
@@ -197,6 +222,19 @@ namespace HealthyFromHomeApp.Clients
         // Event handler to connect to the bike
         private async void BtnConnectBike_Click(object sender, RoutedEventArgs e)
         {
+            string enterdText = Interaction.InputBox("Enter the last 5 digits of the serial-number of the bike to continue: ", "Enter bike details", "");
+            if (enterdText.Length > 5)
+            {
+                MessageBox.Show("This message is too long!");
+                return;
+            }
+            string pattern = "[0-9]{5}";
+            string match = Regex.Match(enterdText, pattern).Value;
+            if (match == null || match == "")
+            {
+                MessageBox.Show("No bike details were specified, please try again.");
+                return;
+            }
             if (isSessionActive)
             {
                 MessageBox.Show("A session is already running. Please stop the current session before starting a new one.", "Session Already Running", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -214,14 +252,14 @@ namespace HealthyFromHomeApp.Clients
             }
 
             // Try to connect to specified bike (Todo: grab and use specified serialcode)
-            bool bikeConnected = await bikeHelper.ConnectToBike("Tacx Flux 00472");
+            bool bikeConnected = await bikeHelper.ConnectToBike("Tacx Flux " + match);
             if (bikeConnected)
             {
                 TxtBikeStatus.Text += "Bike connected successfully!\n";
                 this.bikeConnected = true;
 
                 // Open new bike session window
-                BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(bikeHelper);
+                BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(bikeHelper, tcpClient, clientName);
                 bikeSessionWindow.Closed += (s, args) =>
                 {
                     isSessionActive = false;
