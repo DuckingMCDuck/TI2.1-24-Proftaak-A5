@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,6 +32,8 @@ namespace HealthyFromHomeApp.Doctor
         // Track selected client and the open chat windows
         private string selectedClient = null;
         private Dictionary<string, ClientChatWindow> openClientWindows = new Dictionary<string, ClientChatWindow>();
+
+        public int resistance = 0;
 
         public ChartWindow chartWindow;
         public DoctorMainWindow(TcpClient client, NetworkStream networkStream)
@@ -262,5 +264,29 @@ namespace HealthyFromHomeApp.Doctor
         }
 
 
+
+        private void Button_Click_ResistanceMin(object sender, RoutedEventArgs e)
+        {
+            resistance--;
+            resistanceInputField.Text = resistance.ToString();
+            SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
+        }
+
+        private void Button_Click_ResistancePlus(object sender, RoutedEventArgs e)
+        {
+            resistance++;
+            resistanceInputField.Text = resistance.ToString();
+            SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
+
+        }
+
+        private void Key_Down_ResistanceInputField(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                resistance = Int32.Parse(resistanceInputField.Text);
+                SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -41,6 +42,7 @@ namespace HealthyFromHomeApp.Clients
             Debug.WriteLine("RESULT 16: " + result16);
             clientWindow.debugText = $"\n{result16}\n";
             DataDecoder.DecodeAndSend(simulatedMessage16, clientWindow);
+            File.AppendAllText("simulatedData.txt", result16 + "\n");
 
             randomHexPart25 = GenerateDataPage25(rand);
             string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
@@ -48,6 +50,7 @@ namespace HealthyFromHomeApp.Clients
             Debug.WriteLine("RESULT 25: " + result25);
             clientWindow.debugText = $"\n{result25}\n";
             DataDecoder.DecodeAndSend(simulatedMessage25, clientWindow);
+            File.AppendAllText("simulatedData.txt", result25 + "\n");
 
             if (dataPagePrintCount == 2)
             {

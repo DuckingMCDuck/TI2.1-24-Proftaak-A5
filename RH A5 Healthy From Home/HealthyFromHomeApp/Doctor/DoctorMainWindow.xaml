@@ -1,4 +1,4 @@
-﻿<Window x:Class="HealthyFromHomeApp.Doctor.DoctorMainWindow"
+<Window x:Class="HealthyFromHomeApp.Doctor.DoctorMainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -11,6 +11,10 @@
         <TextBox x:Name="chatBar" HorizontalAlignment="Left" Margin="10,311,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="311" RenderTransformOrigin="0.502,0.535" Height="41" TextChanged="chatBar_TextChanged" />
         <Button x:Name="sendButton" Content="Send" HorizontalAlignment="Left" Margin="10,357,0,0" VerticalAlignment="Top" Height="19" Width="311" Click="sendButton_Click"/>
         <ComboBox x:Name="CmbClientsForDoc" HorizontalAlignment="Left" Margin="652,23,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="CmbClientsForDoc_SelectionChanged"/>
+        <Button Click="Button_Click_ResistancePlus" Content="+" HorizontalAlignment="Left" Margin="484,357,0,0" VerticalAlignment="Top" Height="19" Width="16"/>
+        <Button Click="Button_Click_ResistanceMin" Content="-" HorizontalAlignment="Left" Margin="463,357,0,0" VerticalAlignment="Top" Height="19" Width="16"/>
+        <TextBox Name="resistanceInputField" KeyDown="Key_Down_ResistanceInputField" HorizontalAlignment="Left" Margin="338,357,0,0" TextWrapping="Wrap" Text="resistance..." VerticalAlignment="Top" Width="120" Height="19"/>
+
         <Button Content="Open Charts Window" Click="OpenChartsWindowButton_Click" Width="150" Height="30" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="10"/>
         
     </Grid>

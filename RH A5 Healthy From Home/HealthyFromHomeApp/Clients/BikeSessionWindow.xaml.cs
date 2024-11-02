@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +20,13 @@ namespace HealthyFromHomeApp.Clients
         private NetworkStream stream;
 
         private string clientName;
+
+        public string speed = String.Empty;
+        public string distance_Traveled = String.Empty;
+        public string elapsed_Time = String.Empty;
+        public string accumulated_Power = String.Empty;
+        public string instantaneous_Power = String.Empty;
+        private bool isReceivingHeartRateData = false;
 
         // Constructor 
         public BikeSessionWindow(BikeHelper bikeHelper, TcpClient tcpClient, string clientName)
@@ -49,13 +57,39 @@ namespace HealthyFromHomeApp.Clients
         {
             if (isReceivingData)
             {
-                // Decode the incoming bike data
-                var decodedData = DataDecoder.Decode(bikeData);
-                string decodedString = DataDecoder.MakeString(decodedData);
+                try
+                {
+                    // Decode the incoming bike data
+                    List<(string, int)> decodedData = DataDecoder.Decode(bikeData);
+                    if (decodedData[4].Item2 == 16)
+                    {
+                        int elapsed_TimeInt = decodedData[6].Item2 / 4;
+                        elapsed_Time = elapsed_TimeInt.ToString();
+                        distance_Traveled = decodedData[7].Item2.ToString();
+                        speed = decodedData[10].Item2.ToString();
+                    }
+                    if (decodedData[4].Item2 == 25)
+                    {
+                        accumulated_Power = decodedData[9].Item2.ToString();
+                        instantaneous_Power = decodedData[13].Item2.ToString();
+                    }
+                } catch (Exception e)
+                {
+
+                }
+
+                string decodedString = $"Current Measurements:\n" +
+                    $"Speed: {speed} km/h \n" +
+                    $"Distance Traveled: {distance_Traveled} m\n" +
+                    $"Elapsed Time: {elapsed_Time} sec\n" +
+                    $"Accumulated Power: {accumulated_Power} Watt\n" +
+                    $"Instantanious Power: {instantaneous_Power} Watt";
+                //string decodedString = DataDecoder.MakeString(decodedData);
 
                 // Update the UI with the decoded data, running on the UI thread using the Dispatcher
                 Dispatcher.Invoke(() =>
                 {
+                    TxtBikeData.Clear();
                     TxtBikeData.AppendText($"{decodedString}"); // Append the decoded data to the TextBox
                     TxtBikeData.ScrollToEnd();
                 });
@@ -84,6 +118,29 @@ namespace HealthyFromHomeApp.Clients
                     });
                 }
             }
+
+            if (isReceivingHeartRateData)
+            {
+                List<(string, int)> decodedData = DataDecoder.Decode(data);
+                for (int i = 0; i < decodedData.Count; i++)
+                {
+                    if (decodedData[i].Item1 == "HeartRate")
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            TxtHeartrateData.Clear();
+                            TxtHeartrateData.Text = decodedData[i].Item2.ToString();
+                        });
+                    }
+                }
+            }
+        }
+
+        private async void HeartRateButton_Click(object sender, RoutedEventArgs e)
+        {
+            await bikeHelper.ConnectToHeartRateMonitor("Decathlon Dual HR");
+            isReceivingHeartRateData = true;
+
         }
     }
 }
