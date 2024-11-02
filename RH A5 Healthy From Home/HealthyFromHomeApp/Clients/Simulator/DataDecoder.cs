@@ -236,7 +236,7 @@ namespace HealthyFromHomeApp.Clients
                             int bitFieldInt = Convert.ToInt32(bitField, 2);
 
 
-                            (string, int) tuplePower = ("Instantaneous_Power", instantaneousValue);
+                            (string, int) tuplePower = ("Instantaneous_Power_MSB", instantaneousValue);
                             dataWithNames.Add(tuplePower);
                             (string, int) tupleBitField = ("Trainer_Status_Bit_Field", bitFieldInt);
                             dataWithNames.Add(tupleBitField);

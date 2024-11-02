@@ -121,7 +121,7 @@ namespace HealthyFromHomeApp.Clients
 
             if (isReceivingHeartRateData)
             {
-                List<(string, int)> decodedData = DataDecoder.Decode(bikeData);
+                List<(string, int)> decodedData = DataDecoder.Decode(data);
                 for (int i = 0; i < decodedData.Count; i++)
                 {
                     if (decodedData[i].Item1 == "HeartRate")
