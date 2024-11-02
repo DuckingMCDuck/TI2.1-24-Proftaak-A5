@@ -118,7 +118,6 @@ namespace HealthyFromHomeApp.Clients
                     });
                 }
             }
-            }
 
             if (isReceivingHeartRateData)
             {
