@@ -176,18 +176,18 @@ namespace HealthyFromHomeApp.Doctor
         }
 
         // When doc clicks a client in the combobox, open a chatscreen
-        private async void CmbClientsForDoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void CmbClientsForDoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             selectedClient = (string)CmbClientsForDoc.SelectedItem;
             if (selectedClient != null)
             {
                 OpenClientChatWindow(selectedClient);
 
-                if (chartWindow != null)
-                {
-                    chartWindow.ClearChart();
-                  await chartWindow.LoadDataFromFileAsync(selectedClient);
-                }
+                //if (chartWindow != null)
+                //{
+                //    chartWindow.ClearChart();
+                //    await chartWindow.LoadDataFromFileAsync(selectedClient);
+                //}
             }
 
         }
