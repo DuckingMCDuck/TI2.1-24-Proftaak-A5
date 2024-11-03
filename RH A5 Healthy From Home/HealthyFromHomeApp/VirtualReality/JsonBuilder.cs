@@ -111,6 +111,11 @@ namespace Client.Virtual_Reality
             return new { id = nodeId };
         }
 
+        public static object UpdateNodeSpeed(string nodeId, double newSpeed)
+        {
+            return new { node = nodeId, speed = newSpeed };
+        }
+
         public static object GetRouteData()
         {
             return new {

@@ -117,7 +117,7 @@ namespace Client
                 ShutdownServer();
                 return;
             }
-           
+
             // Always Reset the scene:
             await SendTunnelCommand("scene/reset", JsonBuilder.EmptyObjectData());
             // Get scene data:
@@ -142,7 +142,7 @@ namespace Client
             await SendTunnelCommand("scene/terrain/add", JsonBuilder.GetTerrainData(terrainSize));
 
             // Create terrain node:
-            await SendTunnelCommand("scene/node/add", JsonBuilder.CreateTerrainData("floorterrain",new int[] {-16, 0, -16}));
+            await SendTunnelCommand("scene/node/add", JsonBuilder.CreateTerrainData("floorterrain", new int[] { -16, 0, -16 }));
 
             // Create route (F1 Monza Circuit) & get route UUID:
             string routeData = await SendTunnelCommand("route/add", JsonBuilder.GetRouteData());
@@ -171,8 +171,9 @@ namespace Client
 
                     if (panelId != null)
                     {
-                        // Set panel color:
+                        // Set panel color & clear before usage:
                         await SendTunnelCommand("scene/panel/setclearcolor", JsonBuilder.SetPanelColorData(panelId, new int[] { 1, 1, 1, 1 }));
+                        await ClearPanel();
 
                         // Let the Camera (-> parent of Bike -? parent of Panel) follow the route:
                         await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2, new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
@@ -204,16 +205,20 @@ namespace Client
         /// </summary>
         public static async Task RouteFollowingAsync()
         {
-            // Clear the panel before drawing on it (IMPORTANT):
-            await SendTunnelCommand("scene/panel/clear", JsonBuilder.GeneralPanelData(panelId));
+            // Handle setting of resistance and updating of the speed
+            while (true)
+            {
+                // TODO: update the bike speed based on the current route point
+                //await UpdateBikeSpeedAsync();?
 
-            // Draw teqlt on the panel:
-            await SendTunnelCommand("scene/panel/drawtext", JsonBuilder.DrawTextOnPanelData(panelId, "Speed: 10", new double[] { 10.0, 20.0 }));
 
-            // Swap the buffer of the panel (This updates the panel with the new text):
-            await SendTunnelCommand("scene/panel/swap", JsonBuilder.GeneralPanelData(panelId));
 
-            // TODO: handle setting of resistance and updating the bike speed
+                //HELPER METHODS
+                // Draw text on the panel & update the panel:
+                await SendTunnelCommand("scene/panel/drawtext", JsonBuilder.DrawTextOnPanelData(panelId, "Speed: 10", new double[] { 10.0, 20.0 }));
+                await UpdatePanelText();
+                await SendTunnelCommand("route/follow/speed", JsonBuilder.UpdateNodeSpeed(cameraNodeId, 2.0));
+            }
         }
 
         /// <summary>
@@ -446,6 +451,22 @@ namespace Client
                 }
             }
             return null; //If we even get here -> Error: Return null
+        }
+
+        /// <summary>
+        /// Clear the panel before drawing on it (IMPORTANT)
+        /// </summary>
+        public static async Task<string> ClearPanel()
+        {
+            return await SendTunnelCommand("scene/panel/clear", JsonBuilder.GeneralPanelData(panelId));
+        }
+
+        /// <summary>
+        /// Swap the buffer of the panel (This updates the panel with the new text)
+        /// </summary>
+        public static async Task<string> UpdatePanelText()
+        {
+            return await SendTunnelCommand("scene/panel/swap", JsonBuilder.GeneralPanelData(panelId));
         }
 
     }
