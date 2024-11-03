@@ -1,6 +1,8 @@
 using Client.Virtual_Reality;
 using HealthyFromHomeApp.Clients;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -214,10 +216,10 @@ namespace Client
 
 
                 //HELPER METHODS
-                // Draw text on the panel & update the panel:
-                await SendTunnelCommand("scene/panel/drawtext", JsonBuilder.DrawTextOnPanelData(panelId, "Speed: 10", new double[] { 10.0, 20.0 }));
-                await UpdatePanelText();
-                await SendTunnelCommand("route/follow/speed", JsonBuilder.UpdateNodeSpeed(cameraNodeId, 2.0));
+                await UpdatePanelText("Speed: 20", new double[] { 10.0, 20.0 });
+                await UpdateSpeed(2.0);
+                // Prevent overflowing the Server with data
+                await Task.Delay(2000);
             }
         }
 
@@ -462,11 +464,31 @@ namespace Client
         }
 
         /// <summary>
-        /// Swap the buffer of the panel (This updates the panel with the new text)
+        /// Draw text on the Panel & Swap the buffer of the Panel (This updates the panel with the new text)
         /// </summary>
-        public static async Task<string> UpdatePanelText()
+        /// <param name="text"></param>
+        /// <param name="positions"></param>
+        public static async Task<string> UpdatePanelText(string text, double[] positions)
         {
-            return await SendTunnelCommand("scene/panel/swap", JsonBuilder.GeneralPanelData(panelId));
+            if (cameraNodeId != null && guidBike != null && panelId != null)
+            {
+                await SendTunnelCommand("scene/panel/drawtext", JsonBuilder.DrawTextOnPanelData(panelId, text, positions));
+                return await SendTunnelCommand("scene/panel/swap", JsonBuilder.GeneralPanelData(panelId));
+            }
+            return null; // Error -> return null
+        }
+
+        /// <summary>
+        /// Updates the speed of the Camera Node (-> parent of Bike node -> parent of Panel)
+        /// </summary>
+        /// <param name="newSpeed"></param>
+        public static async Task<string> UpdateSpeed(double newSpeed)
+        {
+            if (cameraNodeId != null && guidBike != null && panelId != null)
+            {
+                return await SendTunnelCommand("route/follow/speed", JsonBuilder.UpdateNodeSpeed(cameraNodeId, newSpeed));
+            }
+            return null; // Error -> return null
         }
 
     }
