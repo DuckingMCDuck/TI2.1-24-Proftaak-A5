@@ -11,6 +11,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 
@@ -18,13 +19,21 @@ namespace Client
 {
     internal class VRServer
     {
-        public static TcpClient vrServer; //TcpClient?
-        public static NetworkStream stream; //NetworkStream?
+        private static ClientMainWindow clientInstance; // To access GUI elements
+
+        // General objects:
+        public static TcpClient vrServer;
+        public static NetworkStream stream;
         public static string receivedData;
         public static string hostName = Environment.MachineName;
+
+        // Specific (string) objects:
         public static string sessionId;
         public static string tunnelId;
-        private static ClientMainWindow clientInstance;
+        public static string routeUuid;
+        public static string panelId;
+        public static string guidBike;
+        public static string cameraNodeId;
 
         public VRServer(ClientMainWindow client) { clientInstance = client; }
 
@@ -108,63 +117,108 @@ namespace Client
                 ShutdownServer();
                 return;
             }
-           
-            // OPTIONAL:
-            // Reset scene:
+
+            // Always Reset the scene:
             await SendTunnelCommand("scene/reset", JsonBuilder.EmptyObjectData());
             // Get scene data:
             string getSceneData = await SendTunnelCommand("scene/get", null);
             Debug.WriteLine("ALL SCENE DATA: " + getSceneData);
 
-            // REQUIRED:
             // SkyBox set time:
-            await SendTunnelCommand("scene/skybox/settime", JsonBuilder.GetSkyBoxTimeData(12));
+            await SendTunnelCommand("scene/skybox/settime", JsonBuilder.GetSkyBoxTimeData(8));
+
+            // Find groundplane node:
+            string getGroundplaneNodeData = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNodeData("GroundPlane"));
+            if (getGroundplaneNodeData != null)
+            {
+                // Get groundplane ID & delete groundplane node:
+                string groundPlaneId = GetUuid(getGroundplaneNodeData);
+                Debug.WriteLine("Groundplane ID: " + groundPlaneId);
+                await SendTunnelCommand("scene/node/delete", JsonBuilder.DeleteNodeData(groundPlaneId));
+            }
 
             // Create terrain:
             int terrainSize = 128;
             await SendTunnelCommand("scene/terrain/add", JsonBuilder.GetTerrainData(terrainSize));
 
             // Create terrain node:
-            await SendTunnelCommand("scene/node/add", JsonBuilder.CreateComponentData("floor",new int[] {-16, 0, -16}));
+            await SendTunnelCommand("scene/node/add", JsonBuilder.CreateTerrainData("floorterrain", new int[] { -16, 0, -16 }));
 
-
-            // Create route (F1 Monza Circuit):
+            // Create route (F1 Monza Circuit) & get route UUID:
             string routeData = await SendTunnelCommand("route/add", JsonBuilder.GetRouteData());
-            string routeUuid = GetUuid(routeData);
+            routeUuid = GetUuid(routeData);
 
             // Add roads to the route:
             await SendTunnelCommand("scene/road/add", JsonBuilder.AddRoadsData(routeUuid));
 
             // Find camera node:
             string getCameraNodeData = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNodeData("Camera"));
-            if (getCameraNodeData != null)
+            // Get camera node UUID:
+            cameraNodeId = GetUuid(getCameraNodeData);
+            Debug.WriteLine("Camera Node ID: " + cameraNodeId);
+
+            if (cameraNodeId != null)
             {
-                // Get camera node
-                string cameraNodeId = GetUuid(getCameraNodeData);
-                Debug.WriteLine("Camera Node ID: " + cameraNodeId);
-                // Let the camera follow the route:
-                await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2));
+                // Create bike model node & get bike model UUID:
+                string guidBikeData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreateModelData("data/NetworkEngine/models/bike/bike.fbx", "bike", cameraNodeId, new int[] { 0, 0, 0 }, new int[] { 0, 270, 0 }));
+                guidBike = GetUuid(guidBikeData);
+
+                if (guidBike != null)
+                {
+                    // Create panel node & get panel UUID:
+                    string panelData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreatePanelData("panel", guidBike, new int[] { -2, 2, -2 }, new int[] { 0, 45, 0 }));
+                    panelId = GetUuid(panelData);
+
+                    if (panelId != null)
+                    {
+                        // Set panel color & clear before usage:
+                        await SendTunnelCommand("scene/panel/setclearcolor", JsonBuilder.SetPanelColorData(panelId, new int[] { 1, 1, 1, 1 }));
+                        await ClearPanel();
+
+                        // Let the Camera (-> parent of Bike -? parent of Panel) follow the route:
+                        await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2, new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
+
+                        // Start the route following:
+                        await RouteFollowingAsync();
+                    }
+                    else
+                    {
+                        ShutdownServer();
+                        return;
+                    }
+                }
+                else
+                {
+                    ShutdownServer();
+                    return;
+                }
             }
-
-            // Find groundplane node:
-            string getGroundplaneNodeData = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNodeData("GroundPlane"));
-            if (getGroundplaneNodeData != null)
+            else
             {
-                // Get camera node
-                string groundPlaneId = GetUuid(getGroundplaneNodeData);
-                Debug.WriteLine("Groundplane ID: " + groundPlaneId);
-                await SendTunnelCommand("scene/node/delete", JsonBuilder.DeleteNodeData(groundPlaneId));
+                ShutdownServer();
+                return;
             }
+        }
 
-            // Create bike model node:
-            string GuidBikeData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreateModelData("data/NetworkEngine/models/bike/bike.fbx", "bike", new int[] { 0,0,0}, new int[] { 0,0,0}));
-            string GuidBike = GetUuid(GuidBikeData);
-            if (GuidBike != null)
+        /// <summary>
+        /// While we follow the route we update the scene-data in here
+        /// </summary>
+        public static async Task RouteFollowingAsync()
+        {
+            // Handle setting of resistance and updating of the speed
+            while (true)
             {
-                // Let the bike follow the route:
-                await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, GuidBike, "XYZ", 2));
-            };
+                // TODO: update the bike speed based on the current route point
+                //await UpdateBikeSpeedAsync();?
 
+
+
+                //HELPER METHODS
+                // Draw text on the panel & update the panel:
+                await SendTunnelCommand("scene/panel/drawtext", JsonBuilder.DrawTextOnPanelData(panelId, "Speed: 10", new double[] { 10.0, 20.0 }));
+                await UpdatePanelText();
+                await SendTunnelCommand("route/follow/speed", JsonBuilder.UpdateNodeSpeed(cameraNodeId, 2.0));
+            }
         }
 
         /// <summary>
@@ -376,6 +430,12 @@ namespace Client
                     if (dataDataObject.TryGetProperty("data", out JsonElement dataDataDataObject) &&
                         dataDataDataObject.ValueKind == JsonValueKind.Object)
                     {
+                        if (dataDataDataObject.ValueKind.ToString() == "Undefined") // Undefined
+                            return null; // Error: Return null
+                        if (dataDataDataObject.ValueKind == JsonValueKind.Object &&
+                            dataDataDataObject.TryGetProperty("button", out JsonElement wrongElement)) // Trigger buttons
+                            return null; // Error: Return null
+
                         // Get the UUID property from the data object in the data object in the data object in the Json Document
                         return dataDataDataObject.GetProperty("uuid").GetString();
                     }
@@ -391,6 +451,22 @@ namespace Client
                 }
             }
             return null; //If we even get here -> Error: Return null
+        }
+
+        /// <summary>
+        /// Clear the panel before drawing on it (IMPORTANT)
+        /// </summary>
+        public static async Task<string> ClearPanel()
+        {
+            return await SendTunnelCommand("scene/panel/clear", JsonBuilder.GeneralPanelData(panelId));
+        }
+
+        /// <summary>
+        /// Swap the buffer of the panel (This updates the panel with the new text)
+        /// </summary>
+        public static async Task<string> UpdatePanelText()
+        {
+            return await SendTunnelCommand("scene/panel/swap", JsonBuilder.GeneralPanelData(panelId));
         }
 
     }
