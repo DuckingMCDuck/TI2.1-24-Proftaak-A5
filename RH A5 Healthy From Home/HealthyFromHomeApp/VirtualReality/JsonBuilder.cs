@@ -61,10 +61,16 @@ namespace Client.Virtual_Reality
                 terrain = new { } } };
         }
 
-        public static object CreatePanelData(string nameComponent, int[] positions)
+        public static object CreatePanelData(string nameComponent, string parentId, int[] positions, int[] rotations)
         {
-            return new { name = nameComponent, components = new {
-                panel = new { size = new[] { 2, 2 }, resolution = new[] { 512, 512 }, background = new[] { 1, 1, 1, 1 }, castShadow = true } } };
+            return new { name = nameComponent, parent = parentId, components = new {
+                transform = new { position = positions, scale = 1, rotation = rotations },
+                panel = new { size = new[] { 1, 1 }, resolution = new[] { 512, 512 }, background = new[] { 1, 1, 1, 1 }, castShadow = true } } };
+        }
+
+        public static object GeneralPanelData(string panelId)
+        {
+            return new { id = panelId };
         }
 
         public static object SetPanelColorData(string panelId, int[] rgbColor)
@@ -82,9 +88,9 @@ namespace Client.Virtual_Reality
             return new { route = routeUUID };
         }
 
-        public static object CreateModelData(string fileName, string nameCreation, int[] positions, int[] rotations)
+        public static object CreateModelData(string fileName, string nameCreation, string parentId, int[] positions, int[] rotations)
         {
-            return new { name = nameCreation, components = new { 
+            return new { name = nameCreation, parent = parentId, components = new { 
                 transform = new { position = positions, scale = 1, rotation = rotations },
                 model = new { file = fileName, cullbackfaces = true } } };
         }

@@ -151,34 +151,33 @@ namespace Client
             // Add roads to the route:
             await SendTunnelCommand("scene/road/add", JsonBuilder.AddRoadsData(routeUuid));
 
-            // Create panel node & get panel UUID:
-            string panelData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreatePanelData("panel", new int[] { -16, 0, -16 }));
-            panelId = GetUuid(panelData);
-            if (panelId != null)
-            {
-                // Set panel color:
-                await SendTunnelCommand("scene/panel/setclearcolor", JsonBuilder.SetPanelColorData(panelId, new int[] { 1, 1, 1, 1 }));
+            // Find camera node:
+            string getCameraNodeData = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNodeData("Camera"));
+            // Get camera node UUID:
+            cameraNodeId = GetUuid(getCameraNodeData);
+            Debug.WriteLine("Camera Node ID: " + cameraNodeId);
 
+            if (cameraNodeId != null)
+            {
                 // Create bike model node & get bike model UUID:
-                string guidBikeData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreateModelData("data/NetworkEngine/models/bike/bike.fbx", "bike", new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
+                string guidBikeData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreateModelData("data/NetworkEngine/models/bike/bike.fbx", "bike", cameraNodeId, new int[] { 0, 0, 0 }, new int[] { 0, 270, 0 }));
                 guidBike = GetUuid(guidBikeData);
+
                 if (guidBike != null)
                 {
-                    // Find camera node:
-                    string getCameraNodeData = await SendTunnelCommand("scene/node/find", JsonBuilder.FindNodeData("Camera"));
-                    // Get camera node UUID:
-                    cameraNodeId = GetUuid(getCameraNodeData);
-                    Debug.WriteLine("Camera Node ID: " + cameraNodeId);
+                    // Create panel node & get panel UUID:
+                    string panelData = await SendTunnelCommand("scene/node/add", JsonBuilder.CreatePanelData("panel", guidBike, new int[] { -2, 2, -2 }, new int[] { 0, 45, 0 }));
+                    panelId = GetUuid(panelData);
 
-                    if (cameraNodeId != null)
+                    if (panelId != null)
                     {
-                        // Let the panel follow the route:
-                        //await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, panelId, "XYZ", 2, new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
-                        // Let the camera follow the route:
-                        //await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2, new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
-                        // Let the bike follow the route:
-                        await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, guidBike, "XYZ", 2, new int[] { 0, 11, 0 }, new int[] { 0, 0, 0 }));
-                        
+                        // Set panel color:
+                        await SendTunnelCommand("scene/panel/setclearcolor", JsonBuilder.SetPanelColorData(panelId, new int[] { 1, 1, 1, 1 }));
+
+                        // Let the Camera (-> parent of Bike -? parent of Panel) follow the route:
+                        await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2, new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
+
+                        // Start the route following:
                         await RouteFollowingAsync();
                     }
                     else
@@ -198,7 +197,6 @@ namespace Client
                 ShutdownServer();
                 return;
             }
-
         }
 
         /// <summary>
@@ -206,7 +204,14 @@ namespace Client
         /// </summary>
         public static async Task RouteFollowingAsync()
         {
-            await SendTunnelCommand("scene/panel/drawtext", JsonBuilder.DrawTextOnPanelData(panelId, "Speed: 10", new double[] { 10.0, 10.0 }));
+            // Clear the panel before drawing on it (IMPORTANT):
+            await SendTunnelCommand("scene/panel/clear", JsonBuilder.GeneralPanelData(panelId));
+
+            // Draw teqlt on the panel:
+            await SendTunnelCommand("scene/panel/drawtext", JsonBuilder.DrawTextOnPanelData(panelId, "Speed: 10", new double[] { 10.0, 20.0 }));
+
+            // Swap the buffer of the panel (This updates the panel with the new text):
+            await SendTunnelCommand("scene/panel/swap", JsonBuilder.GeneralPanelData(panelId));
 
             // TODO: handle setting of resistance and updating the bike speed
         }
