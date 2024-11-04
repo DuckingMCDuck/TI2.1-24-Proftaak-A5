@@ -230,19 +230,21 @@ namespace HealthyFromHomeApp.Doctor
         private void WriteToFile(string clientName, string bikeData)
         {
             string filePath = $"{clientName}_data.txt";
-            using (StreamWriter writer = new StreamWriter(filePath, true))
-            { 
-                writer.WriteLine(bikeData); 
-            }
+            //using (StreamWriter writer = new StreamWriter(filePath, true))
+            //{ 
+            //    writer.WriteLine(bikeData); 
+            //}
+            File.WriteAllText(filePath, bikeData);
         }
 
         private string ReadFile(string clientName) 
         {
             string filePath = $"{clientName}_data.txt";
-            using (StreamReader reader = new StreamReader(filePath)) 
-            {
-                return reader.ReadToEnd();
-            }
+            //using (StreamReader reader = new StreamReader(filePath)) 
+            //{
+            //    return reader.ReadToEnd();
+            //}
+           return File.ReadAllText(filePath);
         }
 
         private void OpenChartsWindowButton_Click(object sender, RoutedEventArgs e)

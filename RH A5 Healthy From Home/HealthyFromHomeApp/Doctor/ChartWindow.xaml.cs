@@ -38,7 +38,7 @@ namespace HealthyFromHomeApp.Doctor
             ChartArea chartArea = new ChartArea();
             chart.ChartAreas.Add(chartArea);
             windowsFormsHost.Child = chart;
-
+            //initialize chart series
             heartRateSeries = new Series("Heartrate");
             heartRateSeries.Label = "HeartRate";
             heartRateSeries.ChartType = SeriesChartType.Line;
@@ -153,18 +153,21 @@ namespace HealthyFromHomeApp.Doctor
         {
             string filePath = $"{clientName}_data.txt";
             string fileOfsimulation = "simulatedData.txt";
-
+            //check if file exists
             if (File.Exists(filePath))
             {
                 using (StreamReader reader = new StreamReader(filePath))
                 {
                     string line;
+                    //peeks if there isn't any bytes in de file of the client.
                     if (reader.Peek() == -1)
                     {
                         if (File.Exists(fileOfsimulation))
                         {
+                            //if there is no data in real time data file then use simulated file
                             using (StreamReader simReader = new StreamReader(fileOfsimulation))
                             {
+                                //awaits every line
                                 while ((line = await simReader.ReadLineAsync()) != null)
                                 {
                                     AppendBikeData(clientName, line);
@@ -180,6 +183,7 @@ namespace HealthyFromHomeApp.Doctor
             }
             else
             {
+                //if there is no file of the client use simulated file
                 using (StreamReader simReader = new StreamReader(fileOfsimulation))
                 {
                     string line;
@@ -190,7 +194,6 @@ namespace HealthyFromHomeApp.Doctor
                 }
             }
         }
-
         public void ClearChart()
         {
             heartRateSeries.Points.Clear();
