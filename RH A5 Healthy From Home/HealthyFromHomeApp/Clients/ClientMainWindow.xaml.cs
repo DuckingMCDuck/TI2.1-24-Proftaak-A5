@@ -19,8 +19,10 @@ namespace HealthyFromHomeApp.Clients
 {
     public partial class ClientMainWindow : Window
     {
-        private bool isSessionActive = false; // Track if a bike session is active
+        // Tracks if a bike session is currently active
+        private bool isSessionActive = false;
 
+        // Static reference to the main client window
         internal static ClientMainWindow client;
 
         // Properties for getting and setting text to debug or chat textboxes
@@ -79,14 +81,17 @@ namespace HealthyFromHomeApp.Clients
             this.vrServer = new VRServer(this);
         }
 
+        // Event handler for when the main window loads
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             TextBoxBikeData = TxtBikeData;
             TextChat = TxtChat;
             TxtChat.AppendText($"Connected as: {clientName}\n");
 
+            // Start listening for messages in a background task
             await Task.Run(() => ListenForMessages());
 
+            // Start the VR server in a background task
             await Task.Run(() => VRServer.Start());
         }
 
@@ -124,12 +129,13 @@ namespace HealthyFromHomeApp.Clients
         // Constant messagelistener
         private async void ListenForMessages()
         {
-            byte[] buffer = new byte[1500];
+            byte[] buffer = new byte[1500]; // Buffer for receiving data
 
             try
             {
                 while (true)
                 {
+                    // Read incoming data asynchronously
                     int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
                     if (bytesRead == 0)
                     {
@@ -137,9 +143,11 @@ namespace HealthyFromHomeApp.Clients
                         break;
                     }
 
-                        string encryptedMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                    // Decrypt and process the received message
+                    string encryptedMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
                     string message = EncryptHelper.Decrypt(encryptedMessage);
 
+                    // Handle specific commands within the received message
                     if (message.Contains("Resistance changed to "))
                     {
                         string[] parts = message.Split(' ');
@@ -147,7 +155,8 @@ namespace HealthyFromHomeApp.Clients
 
                     }
 
-                        string[] splitMessage = message.Split(':');
+                    // Split the message to identify sender and message content
+                    string[] splitMessage = message.Split(':');
                     if (splitMessage.Length > 1)
                     {
                         string sender = splitMessage[0].Trim();
@@ -196,7 +205,7 @@ namespace HealthyFromHomeApp.Clients
                 return;
             }
 
-            // Prepare message
+            // Encrypt and send message to the server
             string message = "chat:send_to:Doctor:" + TxtTypeBar.Text;
             string rawMessage = TxtTypeBar.Text;
             string rawClient = clientName.Substring("client:".Length);
@@ -209,7 +218,7 @@ namespace HealthyFromHomeApp.Clients
 
         }
 
-        // Helper method to send it to the server
+        // Helper method to send a message to the server
         private async void SendMessageToServer(string message)
         {
             if (stream.CanWrite)
@@ -229,6 +238,8 @@ namespace HealthyFromHomeApp.Clients
                 MessageBox.Show("This message is too long!");
                 return;
             }
+
+            // Validate the entered text to match 5 digits
             string pattern = "[0-9]{5}";
             string match = Regex.Match(enterdText, pattern).Value;
             if (match == null || match == "")
@@ -252,7 +263,7 @@ namespace HealthyFromHomeApp.Clients
                 TxtBikeStatus.Text += $"Device: {device}\n";
             }
 
-            // Try to connect to specified bike (Todo: grab and use specified serialcode)
+            // Attempt to connect to the bike
             bool bikeConnected = await bikeHelper.ConnectToBike("Tacx Flux " + match);
             if (bikeConnected)
             {
@@ -275,16 +286,19 @@ namespace HealthyFromHomeApp.Clients
             }
         }
 
+        // Event handler to auto-scroll chat text box to the latest message
         private void TxtChat_TextChanged(object sender, TextChangedEventArgs e)
         {
             TxtChat.ScrollToEnd();
         }
 
+        // Event handler to toggle debug text scrolling
         private void TxtBikeData_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             debugScrolling = !debugScrolling;
         }
 
+        // Event handler to handle auto-scrolling and line count in the debug text box
         private void TxtBikeData_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (debugScrolling)
