@@ -86,7 +86,7 @@ namespace HealthyFromHomeApp.Clients
 
             await Task.Run(() => ListenForMessages());
 
-            //await VRServer.Start();
+            //await Task.Run(() => VRServer.Start());
         }
 
         // Toggle the simulator on/off, Turning it on and off
