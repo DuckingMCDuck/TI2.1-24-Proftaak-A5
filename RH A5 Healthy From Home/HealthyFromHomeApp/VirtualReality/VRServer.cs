@@ -180,7 +180,7 @@ namespace Client.Virtual_Reality
                         await ClearPanel();
 
                         // Let the Camera (-> parent of Bike -? parent of Panel) follow the route:
-                        await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2, new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
+                        await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 0, new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
                     }
                     else
                     {
@@ -450,6 +450,7 @@ namespace Client.Virtual_Reality
         {
             if (cameraNodeId != null && guidBike != null && panelId != null)
             {
+                await ClearPanel();
                 await SendTunnelCommand("scene/panel/drawtext", JsonBuilder.DrawTextOnPanelData(panelId, text, positions));
                 return await SendTunnelCommand("scene/panel/swap", JsonBuilder.GeneralPanelData(panelId));
             }
@@ -465,11 +466,9 @@ namespace Client.Virtual_Reality
             if (cameraNodeId != null && guidBike != null && panelId != null)
             {
                 // Update Panel Text with new speed
-                await UpdatePanelText("Speed: " + newSpeed, new double[] { 10.0, 20.0 });
+                await UpdatePanelText("Speed: " + newSpeed, new double[] { 20.0, 90.0 });
                 // Update speed on Route
-                await SendTunnelCommand("route/follow/speed", JsonBuilder.UpdateNodeSpeed(cameraNodeId, newSpeed));
-                // Prevent overflowing the Server with data
-                await Task.Delay(2000);
+                await SendTunnelCommand("route/follow/speed", JsonBuilder.UpdateNodeSpeed(cameraNodeId, newSpeed/3));
             }
         }
 

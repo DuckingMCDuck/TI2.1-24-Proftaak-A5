@@ -30,6 +30,8 @@ namespace HealthyFromHomeApp.Clients
         private bool isReceivingHeartRateData = false;
 
         private bool isConnectedToVRServer = false;
+        private int sendToVRCounter = 0;
+        private bool sendToVRServerOnce = false; 
 
         // Constructor 
         public BikeSessionWindow(BikeHelper bikeHelper, TcpClient tcpClient, string clientName)
@@ -61,6 +63,7 @@ namespace HealthyFromHomeApp.Clients
             isConnectedToVRServer = VRServer.IsConnected();
             if (isReceivingData)
             {
+                sendToVRServerOnce = true; // If we stop the session, update the VRServer speed once
                 try
                 {
                     // Decode the incoming bike data
@@ -71,10 +74,16 @@ namespace HealthyFromHomeApp.Clients
                         elapsed_Time = elapsed_TimeInt.ToString();
                         distance_Traveled = decodedData[7].Item2.ToString();
                         speed = decodedData[10].Item2.ToString();
-                        double newSpeed = double.Parse(speed);
-                        if (newSpeed > 0 && isConnectedToVRServer)
+
+                        sendToVRCounter++;
+                        if (sendToVRCounter == 4)
                         {
-                            VRServer.UpdateSpeed(newSpeed);
+                            double newSpeed = double.Parse(speed);
+                            if (isConnectedToVRServer)
+                            {
+                                VRServer.UpdateSpeed(newSpeed);
+                            }
+                            sendToVRCounter = 0;
                         }
                     }
                     if (decodedData[4].Item2 == 25)
@@ -105,6 +114,14 @@ namespace HealthyFromHomeApp.Clients
 
                 string prefixedData = $"bike_data:{clientName}:{decodedString}";
                 SendDataToServer(prefixedData);
+            } 
+            else
+            {
+                if (sendToVRServerOnce) // Stops movement in the NetworkEngine
+                {
+                    VRServer.UpdateSpeed(0.0);
+                    sendToVRServerOnce = false; // When we start the session we can update the speed once again
+                }
             }
         }
 
