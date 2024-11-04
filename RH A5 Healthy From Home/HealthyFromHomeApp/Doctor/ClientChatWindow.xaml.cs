@@ -69,10 +69,6 @@ namespace HealthyFromHomeApp.Doctor
                 await stream.WriteAsync(data, 0, data.Length);
                 stream.Flush();
             }
-            else
-            {
-                // Handle the case where tcpClient is null or not connected
-            }
         }
 
         // Method to append a received message to the chat history in the UI

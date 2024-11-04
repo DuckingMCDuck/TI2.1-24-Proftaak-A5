@@ -61,7 +61,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Client Selection Section -->
+            <!-- Client Selection Section-->
             <StackPanel Grid.Row="0" Margin="0,0,0,10">
                 <TextBlock Text="Select Client" 
                           FontWeight="SemiBold" 
@@ -73,15 +73,16 @@
                          HorizontalAlignment="Left"/>
             </StackPanel>
 
+
             <!-- Space for additional client information or controls -->
             <Border Grid.Row="1" 
                     BorderBrush="#FFCCCCCC" 
                     BorderThickness="1" 
                     Margin="0,10,0,0">
-                <TextBlock Text="Client Information Panel" 
+                <TextBlock x:Name="ClientInfoTextBlock" 
                           Foreground="#FF666666" 
-                          HorizontalAlignment="Center" 
-                          VerticalAlignment="Center"/>
+                          HorizontalAlignment="Left" 
+                          VerticalAlignment="Top" Margin="25,9,0,0" Width="424" Height="307"/>
             </Border>
         </Grid>
     </Grid>

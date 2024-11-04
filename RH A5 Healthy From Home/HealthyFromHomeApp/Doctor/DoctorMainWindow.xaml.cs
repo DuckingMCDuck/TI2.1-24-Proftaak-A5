@@ -38,6 +38,8 @@ namespace HealthyFromHomeApp.Doctor
         public int resistance = 0;
 
         // Constructor initializing TCP client and network stream, set up UI components
+       private Dictionary<string, StringBuilder> fileContentBuffers = new Dictionary<string, StringBuilder>();
+
         public DoctorMainWindow(TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
@@ -112,6 +114,16 @@ namespace HealthyFromHomeApp.Doctor
                     string clientsList = message.Replace("clients_update:", "");
                     UpdateClientList(clientsList.Split(','));
                 }
+                else if (message.Contains(":file_chunk:"))
+                {
+                    // Handle incoming file chunk
+                    HandleFileChunk(message);
+                }
+                else if (message.Contains(":file_transfer_complete"))
+                {
+                    // Complete the file transfer and display accumulated content
+                    CompleteFileTransfer(message);
+                }
                 else if (message.Contains("bike_data:"))
                 {
                     // Handle incoming bike data and call AppendBikeData method
@@ -122,10 +134,12 @@ namespace HealthyFromHomeApp.Doctor
                     // Check if there is an open chat window for the client
                     if (openClientWindows.ContainsKey(clientName))
                     {
+
+                        Console.WriteLine("in Bike_Data");
                         // Forward the bike data to the specific ClientChatWindow instance
                         Dispatcher.Invoke(() => openClientWindows[clientName].AppendBikeData(bikeData));
                     }
-                }
+                } 
                 else
                 {
                     // Handle incoming messages from specific client
@@ -147,7 +161,43 @@ namespace HealthyFromHomeApp.Doctor
             }
         }
 
-        // Notifies the doctor of a new message from a client if no chat window is open
+        private void HandleFileChunk(string message)
+        {
+            // Parse the message to get client name and chunk content
+            string[] parts = message.Split(new[] { ':' }, 4); // Split into [clientName, "file_chunk", chunkNumber, chunkContent]
+            if (parts.Length < 4) return;
+
+            string clientName = parts[1];
+            string chunkContent = parts[3];
+
+            // Initialize or append to the file content buffer for this client
+            if (!fileContentBuffers.ContainsKey(clientName))
+            {
+                fileContentBuffers[clientName] = new StringBuilder();
+            }
+            fileContentBuffers[clientName].Append(chunkContent);
+        }
+
+        private void CompleteFileTransfer(string message)
+        {
+            string[] parts = message.Split(':');
+            string clientName = parts[0];
+
+            if (fileContentBuffers.ContainsKey(clientName))
+            {
+                // Retrieve the complete content for this client
+                string completeContent = fileContentBuffers[clientName].ToString();
+
+                // Display in ClientInfoTextBlock
+                Dispatcher.Invoke(() => {
+                    ClientInfoTextBlock.Text = completeContent;
+                });
+
+                // Clear the buffer for the client as file transfer is complete
+                fileContentBuffers.Remove(clientName);
+            }
+        }
+
         private void NotifyDoctorOfNewMessage(string clientName, string message)
         {
             MessageBoxResult result = MessageBox.Show(
@@ -179,7 +229,7 @@ namespace HealthyFromHomeApp.Doctor
         }
 
         // When doc clicks a client in the combobox, open a chatscreen
-        private void CmbClientsForDoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        public void CmbClientsForDoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             selectedClient = (string)CmbClientsForDoc.SelectedItem;
             if (selectedClient != null)
@@ -225,23 +275,31 @@ namespace HealthyFromHomeApp.Doctor
         // Method to handle cleanup when a chat window is closed
         private void CloseClientChatWindow(string client)
         {
+
+        }
+
+        public async void RequestFileFromServer(string clientName) 
+        {
+            if (tcpClient != null && tcpClient.Connected)
             if (openClientWindows.ContainsKey(client))
             {
+                string packet = $"request_file:{clientName}";
+                string encryptedPacket = EncryptHelper.Encrypt(packet);
+                byte[] data = Encoding.ASCII.GetBytes(encryptedPacket);
+                await stream.WriteAsync(data, 0, data.Length);
+                stream.Flush();
                 openClientWindows.Remove(client);
             }
         }
 
+        private void HistoryDataOfClient_Click(object sender, RoutedEventArgs e)
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            RequestFileFromServer(selectedClient);
             Task.Run(() => ListenForUpdates()); // Start listening for updates from server on a background task
 
             ChatReadOnly = chatReadOnly; // Reference chat history text box
             ComboBoxClientsForDoc = CmbClientsForDoc; // Reference clients dropdown
-        }
-
-        private void chatBar_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
         }
     }
 }

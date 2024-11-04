@@ -15,6 +15,7 @@ namespace HealthyFromHomeApp.Clients
     public class Simulator
     {
         private ClientMainWindow clientWindow;
+
         private int elapsedTime = 0;
         private int distanceTraveled = 0;
         private int updateEventCount = 0;
