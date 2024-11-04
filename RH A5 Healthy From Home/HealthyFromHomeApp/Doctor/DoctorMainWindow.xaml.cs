@@ -38,7 +38,7 @@ namespace HealthyFromHomeApp.Doctor
         public int resistance = 0;
 
         // Constructor initializing TCP client and network stream, set up UI components
-       private Dictionary<string, StringBuilder> fileContentBuffers = new Dictionary<string, StringBuilder>();
+        private Dictionary<string, StringBuilder> fileContentBuffers = new Dictionary<string, StringBuilder>();
 
         public DoctorMainWindow(TcpClient client, NetworkStream networkStream)
         {
@@ -63,7 +63,7 @@ namespace HealthyFromHomeApp.Doctor
             {
                 BroadcastMessage(message);
                 ChatReadOnly.AppendText($"Doctor (Broadcast): {message}\n");
-                chatBar.Clear();  
+                chatBar.Clear();
             }
         }
 
@@ -89,7 +89,7 @@ namespace HealthyFromHomeApp.Doctor
                 string encryptedPacket = EncryptHelper.Encrypt(packet);
                 byte[] data = Encoding.ASCII.GetBytes(encryptedPacket);
                 await stream.WriteAsync(data, 0, data.Length);
-                stream.Flush(); 
+                stream.Flush();
             }
         }
 
@@ -139,7 +139,7 @@ namespace HealthyFromHomeApp.Doctor
                         // Forward the bike data to the specific ClientChatWindow instance
                         Dispatcher.Invoke(() => openClientWindows[clientName].AppendBikeData(bikeData));
                     }
-                } 
+                }
                 else
                 {
                     // Handle incoming messages from specific client
@@ -189,7 +189,8 @@ namespace HealthyFromHomeApp.Doctor
                 string completeContent = fileContentBuffers[clientName].ToString();
 
                 // Display in ClientInfoTextBlock
-                Dispatcher.Invoke(() => {
+                Dispatcher.Invoke(() =>
+                {
                     ClientInfoTextBlock.Text = completeContent;
                 });
 
@@ -272,34 +273,28 @@ namespace HealthyFromHomeApp.Doctor
             }
         }
 
-        // Method to handle cleanup when a chat window is closed
-        private void CloseClientChatWindow(string client)
-        {
-
-        }
-
-        public async void RequestFileFromServer(string clientName) 
+        public async void RequestFileFromServer(string clientName)
         {
             if (tcpClient != null && tcpClient.Connected)
-            if (openClientWindows.ContainsKey(client))
             {
                 string packet = $"request_file:{clientName}";
                 string encryptedPacket = EncryptHelper.Encrypt(packet);
                 byte[] data = Encoding.ASCII.GetBytes(encryptedPacket);
                 await stream.WriteAsync(data, 0, data.Length);
                 stream.Flush();
-                openClientWindows.Remove(client);
             }
         }
 
         private void HistoryDataOfClient_Click(object sender, RoutedEventArgs e)
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             RequestFileFromServer(selectedClient);
-            Task.Run(() => ListenForUpdates()); // Start listening for updates from server on a background task
-
-            ChatReadOnly = chatReadOnly; // Reference chat history text box
-            ComboBoxClientsForDoc = CmbClientsForDoc; // Reference clients dropdown
+        }
+        private void CloseClientChatWindow(string client)
+        {
+            if (openClientWindows.ContainsKey(client))
+            {
+                openClientWindows.Remove(client);
+            }
         }
     }
 }
