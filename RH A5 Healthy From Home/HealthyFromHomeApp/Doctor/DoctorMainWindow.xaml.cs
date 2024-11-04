@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -104,11 +104,11 @@ namespace HealthyFromHomeApp.Doctor
                     string clientsList = message.Replace("clients_update:", "");
                     UpdateClientList(clientsList.Split(','));
                 }
-                else if (message.StartsWith("bike_data:"))
+                else if (message.Contains("bike_data:"))
                 {
                     // Handle incoming bike data and call AppendBikeData method
                     string[] messageParts = message.Split(':');
-                    string clientName = messageParts[1]; // Assuming the format is "bike_data:clientName:data"
+                    string clientName = messageParts[0]; // Assuming the format is "name:bike_data:clientName:data"
                     string bikeData = string.Join(":", messageParts.Skip(2));
 
                     // Check if there is an open chat window for the client
@@ -189,6 +189,7 @@ namespace HealthyFromHomeApp.Doctor
                 {
                     ClientChatWindow chatWindow = new ClientChatWindow(client, tcpClient, stream);
                     chatWindow.Show();
+                    chatWindow.Closed += (sender, args) => CloseClientChatWindow(client);
                     openClientWindows.Add(client, chatWindow);
                 });
             }
@@ -199,6 +200,24 @@ namespace HealthyFromHomeApp.Doctor
                 {
                     openClientWindows[client].Activate();
                 });
+            }
+        }
+
+        private void CmbClientsForDoc_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (CmbClientsForDoc.SelectedItem != null)
+            {
+                selectedClient = (string)CmbClientsForDoc.SelectedItem;
+                OpenClientChatWindow(selectedClient);
+            }
+        }
+
+        // Method to handle cleanup when a chat window is closed
+        private void CloseClientChatWindow(string client)
+        {
+            if (openClientWindows.ContainsKey(client))
+            {
+                openClientWindows.Remove(client);
             }
         }
 

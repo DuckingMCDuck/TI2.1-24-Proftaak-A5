@@ -1,6 +1,8 @@
 using Client.Virtual_Reality;
 using HealthyFromHomeApp.Clients;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -15,7 +17,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 
-namespace Client
+namespace Client.Virtual_Reality
 {
     internal class VRServer
     {
@@ -26,6 +28,7 @@ namespace Client
         public static NetworkStream stream;
         public static string receivedData;
         public static string hostName = Environment.MachineName;
+        public static bool isConnected = false;
 
         // Specific (string) objects:
         public static string sessionId;
@@ -64,6 +67,7 @@ namespace Client
             }
             stream = vrServer.GetStream();
             clientInstance.chatText += "Connected to VR Server!\n";
+            isConnected = true;
 
             // Start listening for packets
             await PacketHandlerAsync();
@@ -176,10 +180,7 @@ namespace Client
                         await ClearPanel();
 
                         // Let the Camera (-> parent of Bike -? parent of Panel) follow the route:
-                        await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2, new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
-
-                        // Start the route following:
-                        await RouteFollowingAsync();
+                        await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 0, new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
                     }
                     else
                     {
@@ -197,27 +198,6 @@ namespace Client
             {
                 ShutdownServer();
                 return;
-            }
-        }
-
-        /// <summary>
-        /// While we follow the route we update the scene-data in here
-        /// </summary>
-        public static async Task RouteFollowingAsync()
-        {
-            // Handle setting of resistance and updating of the speed
-            while (true)
-            {
-                // TODO: update the bike speed based on the current route point
-                //await UpdateBikeSpeedAsync();?
-
-
-
-                //HELPER METHODS
-                // Draw text on the panel & update the panel:
-                await SendTunnelCommand("scene/panel/drawtext", JsonBuilder.DrawTextOnPanelData(panelId, "Speed: 10", new double[] { 10.0, 20.0 }));
-                await UpdatePanelText();
-                await SendTunnelCommand("route/follow/speed", JsonBuilder.UpdateNodeSpeed(cameraNodeId, 2.0));
             }
         }
 
@@ -462,12 +442,39 @@ namespace Client
         }
 
         /// <summary>
-        /// Swap the buffer of the panel (This updates the panel with the new text)
+        /// Draw text on the Panel & Swap the buffer of the Panel (This updates the panel with the new text)
         /// </summary>
-        public static async Task<string> UpdatePanelText()
+        /// <param name="text"></param>
+        /// <param name="positions"></param>
+        public static async Task<string> UpdatePanelText(string text, double[] positions)
         {
-            return await SendTunnelCommand("scene/panel/swap", JsonBuilder.GeneralPanelData(panelId));
+            if (cameraNodeId != null && guidBike != null && panelId != null)
+            {
+                await ClearPanel();
+                await SendTunnelCommand("scene/panel/drawtext", JsonBuilder.DrawTextOnPanelData(panelId, text, positions));
+                return await SendTunnelCommand("scene/panel/swap", JsonBuilder.GeneralPanelData(panelId));
+            }
+            return null; // Error -> return null
         }
 
+        /// <summary>
+        /// Updates the speed of the Camera Node (-> parent of Bike node -> parent of Panel)
+        /// </summary>
+        /// <param name="newSpeed"></param>
+        public static async void UpdateSpeed(double newSpeed)
+        {
+            if (cameraNodeId != null && guidBike != null && panelId != null)
+            {
+                // Update Panel Text with new speed
+                await UpdatePanelText("Speed: " + newSpeed, new double[] { 20.0, 90.0 });
+                // Update speed on Route
+                await SendTunnelCommand("route/follow/speed", JsonBuilder.UpdateNodeSpeed(cameraNodeId, newSpeed/3));
+            }
+        }
+
+        internal static bool IsConnected()
+        {
+            return isConnected; // Send connection status
+        }
     }
 }

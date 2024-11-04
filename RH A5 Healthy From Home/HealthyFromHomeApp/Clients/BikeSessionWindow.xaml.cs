@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using BikeLibrary;
+using Client.Virtual_Reality;
 using HealthyFromHomeApp.Common;
 
 namespace HealthyFromHomeApp.Clients
@@ -28,6 +29,10 @@ namespace HealthyFromHomeApp.Clients
         public string accumulated_Power = String.Empty;
         public string instantaneous_Power = String.Empty;
         private bool isReceivingHeartRateData = false;
+
+        private bool isConnectedToVRServer = false;
+        private int sendToVRCounter = 0;
+        private bool sendToVRServerOnce = false; 
 
         // Constructor 
         public BikeSessionWindow(BikeHelper bikeHelper, TcpClient tcpClient, string clientName)
@@ -56,11 +61,12 @@ namespace HealthyFromHomeApp.Clients
         // Method that handles receiving real bike data from the bike
         private async Task OnBikeDataReceivedAsync(string bikeData)
         {
+            isConnectedToVRServer = VRServer.IsConnected();
             if (isReceivingData)
             {
+                sendToVRServerOnce = true; // If we stop the session, update the VRServer speed once
                 try
                 {
-                    
                     // Decode the incoming bike data
                     List<(string, int)> decodedData = await DataDecoder.Decode(bikeData);
                     if (decodedData != null)
@@ -69,8 +75,8 @@ namespace HealthyFromHomeApp.Clients
                         {
                             for (int i = 0; i < decodedData.Count; i++)
                             {
-                                if (decodedData[i].Item1 == "HeartRateFromMonitor")
                                 {
+                                if (decodedData[i].Item1 == "HeartRateFromMonitor")
                                     Dispatcher.Invoke(() =>
                                     {
                                         TxtHeartrateData.Clear();
@@ -86,6 +92,17 @@ namespace HealthyFromHomeApp.Clients
                             elapsed_Time = elapsed_TimeInt.ToString();
                             distance_Traveled = decodedData[7].Item2.ToString();
                             speed = decodedData[10].Item2.ToString();
+
+                            sendToVRCounter++;
+                            if (sendToVRCounter == 4)
+                            {
+                                double newSpeed = double.Parse(speed);
+                                if (isConnectedToVRServer)
+                                {
+                                    VRServer.UpdateSpeed(newSpeed);
+                                }
+                                sendToVRCounter = 0;
+                            }
                         }
                         else if (decodedData[4].Item2 == 25)
                         {
@@ -119,7 +136,6 @@ namespace HealthyFromHomeApp.Clients
             {
                 try
                 {
-
                     // Decode the incoming bike data
                     List<(string, int)> decodedData = await DataDecoder.Decode(bikeData);
                     if (decodedData != null)
@@ -143,7 +159,14 @@ namespace HealthyFromHomeApp.Clients
 
                 }
             }
-            
+            else
+            {
+                if (sendToVRServerOnce) // Stops movement in the NetworkEngine & sends stop data
+                {
+                    VRServer.UpdateSpeed(0.0);
+                    sendToVRServerOnce = false; // When we start the session we can update the speed once again
+                }
+            }
         }
 
         private async void SendDataToServer(string data)
