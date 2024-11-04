@@ -117,7 +117,7 @@ namespace HealthyFromHomeApp.Clients
             } 
             else
             {
-                if (sendToVRServerOnce) // Stops movement in the NetworkEngine
+                if (sendToVRServerOnce) // Stops movement in the NetworkEngine & sends stop data
                 {
                     VRServer.UpdateSpeed(0.0);
                     sendToVRServerOnce = false; // When we start the session we can update the speed once again
