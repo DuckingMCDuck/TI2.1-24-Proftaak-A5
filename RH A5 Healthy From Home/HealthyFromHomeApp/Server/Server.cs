@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using HealthyFromHomeApp.Common;
+using Client.Virtual_Reality;
 
 namespace HealthyFromHomeApp.Server
 {

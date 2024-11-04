@@ -13,6 +13,7 @@ using BikeLibrary;
 using Microsoft.VisualBasic;
 using System.Text.RegularExpressions;
 using Client;
+using Client.Virtual_Reality;
 
 namespace HealthyFromHomeApp.Clients
 {

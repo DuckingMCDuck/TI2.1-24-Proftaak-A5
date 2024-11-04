@@ -47,11 +47,11 @@ namespace Client
             }
             catch (SocketException)
             {
-                MainWindow.TextChat.Text += "Error connection to the VRServer!\n";
+                await MainWindow.TextChat.Text += "Error connection to the VRServer!\n";
                 return;
             }
             stream = vrServer.GetStream();
-            MainWindow.TextChat.Text += "Connected to VR Server!\n";
+            await MainWindow.TextChat.Text += "Connected to VR Server!\n";
 
             // Start listening for packets
             await PacketHandlerAsync();
@@ -70,7 +70,7 @@ namespace Client
 
             // Automatically restart the VRServer after 10 seconds (pause this Thread)
             await Task.Delay(10000);
-            MainWindow.TextChat.Text += "Trying to restart VRServer...\n";
+            await MainWindow.TextChat.Text += "Trying to restart VRServer...\n";
             await Start();
         }
 
@@ -80,12 +80,12 @@ namespace Client
         public static async Task PacketHandlerAsync()
         {
             // Send scene configuration commands
-            MainWindow.TextBoxBikeData.Text += "Setting up the environment...";
+            await MainWindow.TextBoxBikeData.Text += "Setting up the environment...";
 
             // Get the sessionID
             string sessionIdData = await SendStartingPacket();
             sessionId = GetId(sessionIdData);
-            Console.WriteLine($"Received session ID: {sessionId}");
+            await Console.WriteLine($"Received session ID: {sessionId}");
 
             // Check if sessionId is valid
             if (string.IsNullOrEmpty(sessionId))
@@ -97,7 +97,7 @@ namespace Client
             // Get the tunnelID
             string tunnelIdData = await SendSessionIdPacket(sessionId);
             tunnelId = GetId(tunnelIdData);
-            Console.WriteLine($"Received tunnel ID: {tunnelId}");
+            await Console.WriteLine($"Received tunnel ID: {tunnelId}");
 
             // Check if tunnelId is valid
             if (string.IsNullOrEmpty(tunnelId))
@@ -111,7 +111,7 @@ namespace Client
             await SendTunnelCommand("scene/reset", JsonBuilder.EmptyObjectData());
             // Get scene data:
             string getSceneData = await SendTunnelCommand("scene/get", null);
-            Console.WriteLine("ALL SCENE DATA: " + getSceneData);
+            await Console.WriteLine("ALL SCENE DATA: " + getSceneData);
 
             // REQUIRED:
             // SkyBox set time:
@@ -138,7 +138,7 @@ namespace Client
             {
                 // Get camera node
                 string cameraNodeId = GetUuid(getCameraNodeData);
-                Console.WriteLine("Camera Node ID: " + cameraNodeId);
+                await Console.WriteLine("Camera Node ID: " + cameraNodeId);
                 // Let the camera follow the route:
                 await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2));
             }
@@ -149,7 +149,7 @@ namespace Client
             {
                 // Get camera node
                 string groundPlaneId = GetUuid(getGroundplaneNodeData);
-                Console.WriteLine("Groundplane ID: " + groundPlaneId);
+                await Console.WriteLine("Groundplane ID: " + groundPlaneId);
                 await SendTunnelCommand("scene/node/delete", JsonBuilder.DeleteNodeData(groundPlaneId));
             }
 
@@ -175,7 +175,7 @@ namespace Client
             byte[] combinedArray = new byte[prepend.Length + data.Length];
             Array.Copy(prepend, 0, combinedArray, 0, prepend.Length);
             Array.Copy(data, 0, combinedArray, prepend.Length, data.Length);
-            Console.WriteLine(Encoding.ASCII.GetString(combinedArray));
+            await Console.WriteLine(Encoding.ASCII.GetString(combinedArray));
             stream.Write(combinedArray, 0, combinedArray.Length);
         }
 
@@ -194,7 +194,7 @@ namespace Client
                 int bytesRead = await stream.ReadAsync(prependBuffer, totalBytesRead, 4 - totalBytesRead);
                 if (bytesRead == 0)
                 {
-                    Console.WriteLine("Error: Connection closed before reading the full length.");
+                    await Console.WriteLine("Error: Connection closed before reading the full length.");
                     return null; //Error: Return null
                 }
                 totalBytesRead += bytesRead;
@@ -202,7 +202,7 @@ namespace Client
 
             // Get length of incoming data (decrypt prepend)
             int dataLength = BitConverter.ToInt32(prependBuffer, 0);
-            Console.WriteLine("datalenght: " + dataLength);
+            await Console.WriteLine("datalenght: " + dataLength);
             totalBytesRead = 0;
 
             // Extract other data from the buffer
@@ -213,7 +213,7 @@ namespace Client
                 int bytesRead = await stream.ReadAsync(dataBuffer, totalBytesRead, dataLength - totalBytesRead);
                 if (bytesRead == 0)
                 {
-                    Console.WriteLine("Error: Connection closed before reading the full packet.");
+                    await Console.WriteLine("Error: Connection closed before reading the full packet.");
                     return null; //Error: Return null
                 }
                 totalBytesRead += bytesRead;
@@ -221,7 +221,7 @@ namespace Client
 
             // Get string of data (decrypt data)
             dataString = Encoding.UTF8.GetString(dataBuffer);
-            Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
+            await Console.WriteLine($"Received data [Length {dataLength}]: " + dataString);
 
             return dataString;
         }
@@ -251,12 +251,12 @@ namespace Client
                         // SessionID of current client is in the previous clientinfo data!
                         sessionId = Regex.Match(splitted[i - 1], pattern).Value;
                         sessionFound = true;
-                        Console.WriteLine($"Session ID: {sessionId}");
+                        await Console.WriteLine($"Session ID: {sessionId}");
                     }
                 }
                 if (!sessionFound)
                 {
-                    Console.WriteLine("Error: Session Id not found!");
+                    await Console.WriteLine("Error: Session Id not found!");
                     return null; //Error: Return null
                 }
                 return sessionId;
@@ -265,7 +265,7 @@ namespace Client
             {
                 //Set the Json in a tree structure 
                 var jsonDocument = JsonDocument.Parse(data);
-                Console.WriteLine("JsonDoc: " + jsonDocument);
+                await Console.WriteLine("JsonDoc: " + jsonDocument);
 
                 // Just search for the Id, which can be inside of an array or object, so we have 2 cases:
                 if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataElement) &&
@@ -283,7 +283,7 @@ namespace Client
                     string errorMessage = jsonNode.ToString();
                     if (errorMessage.Contains("does not support tunnel"))
                     {
-                        Console.WriteLine("Error: JsonObject does not contain an Id!");
+                        await Console.WriteLine("Error: JsonObject does not contain an Id!");
                         return null; //Error: Return null
                     }
 
@@ -350,7 +350,7 @@ namespace Client
         {
             //Set the Json in a tree structure 
             var jsonDocument = JsonDocument.Parse(data);
-            Console.WriteLine("JsonDoc: " + jsonDocument);
+            await Console.WriteLine("JsonDoc: " + jsonDocument);
 
             // Get the data object in the Json Document
             if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataObject) &&
@@ -362,7 +362,7 @@ namespace Client
                 string errorMessage = jsonNode.ToString();
                 if (errorMessage.Contains("does not support tunnel"))
                 {
-                    Console.WriteLine("Error: JsonObject does not contain a UUID!");
+                    await Console.WriteLine("Error: JsonObject does not contain a UUID!");
                     return null; //Error: Return null
                 }
 
