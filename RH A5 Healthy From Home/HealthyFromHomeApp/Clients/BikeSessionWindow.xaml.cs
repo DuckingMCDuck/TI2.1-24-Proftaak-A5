@@ -67,7 +67,6 @@ namespace HealthyFromHomeApp.Clients
                 sendToVRServerOnce = true; // If we stop the session, update the VRServer speed once
                 try
                 {
-                    
                     // Decode the incoming bike data
                     List<(string, int)> decodedData = await DataDecoder.Decode(bikeData);
                     if (decodedData != null)
@@ -89,21 +88,21 @@ namespace HealthyFromHomeApp.Clients
                         }
                         if (decodedData[4].Item2 == 16)
                         {
-                        int elapsed_TimeInt = decodedData[6].Item2 / 4;
-                        elapsed_Time = elapsed_TimeInt.ToString();
-                        distance_Traveled = decodedData[7].Item2.ToString();
-                        speed = decodedData[10].Item2.ToString();
+                            int elapsed_TimeInt = decodedData[6].Item2 / 4;
+                            elapsed_Time = elapsed_TimeInt.ToString();
+                            distance_Traveled = decodedData[7].Item2.ToString();
+                            speed = decodedData[10].Item2.ToString();
 
-                        sendToVRCounter++;
-                        if (sendToVRCounter == 4)
-                        {
-                            double newSpeed = double.Parse(speed);
-                            if (isConnectedToVRServer)
+                            sendToVRCounter++;
+                            if (sendToVRCounter == 4)
                             {
-                                VRServer.UpdateSpeed(newSpeed);
+                                double newSpeed = double.Parse(speed);
+                                if (isConnectedToVRServer)
+                                {
+                                    VRServer.UpdateSpeed(newSpeed);
+                                }
+                                sendToVRCounter = 0;
                             }
-                            sendToVRCounter = 0;
-                        }
                         }
                         else if (decodedData[4].Item2 == 25)
                         {
@@ -132,20 +131,11 @@ namespace HealthyFromHomeApp.Clients
 
                 string prefixedData = $"bike_data:{clientName}:{decodedString}";
                 SendDataToServer(prefixedData);
-            } 
-            else
-            {
-                if (sendToVRServerOnce) // Stops movement in the NetworkEngine & sends stop data
-                {
-                    VRServer.UpdateSpeed(0.0);
-                    sendToVRServerOnce = false; // When we start the session we can update the speed once again
-                }
             }
             else if (isReceivingHeartRateData)
             {
                 try
                 {
-
                     // Decode the incoming bike data
                     List<(string, int)> decodedData = await DataDecoder.Decode(bikeData);
                     if (decodedData != null)
@@ -169,7 +159,14 @@ namespace HealthyFromHomeApp.Clients
 
                 }
             }
-            
+            else
+            {
+                if (sendToVRServerOnce) // Stops movement in the NetworkEngine & sends stop data
+                {
+                    VRServer.UpdateSpeed(0.0);
+                    sendToVRServerOnce = false; // When we start the session we can update the speed once again
+                }
+            }
         }
 
         private async void SendDataToServer(string data)
