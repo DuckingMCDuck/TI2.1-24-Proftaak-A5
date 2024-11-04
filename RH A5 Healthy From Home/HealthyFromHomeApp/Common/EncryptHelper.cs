@@ -8,18 +8,17 @@ namespace HealthyFromHomeApp.Common
     internal class EncryptHelper
     {
         //hardcoded voor nu
-        private static readonly string encryptionKey = "A54Lifepadpadpad"; 
+        private static readonly string encryptionKey = "A54LifepadpadpadA54Lifepadpadpad"; 
 
         // AES encryption
         public static string Encrypt(string plainText)
         {
             // Convert encryption key to byte array
-            byte[] key = Encoding.UTF8.GetBytes(encryptionKey.PadRight(32));
+            byte[] key = Encoding.UTF8.GetBytes(encryptionKey);
             byte[] iv; // Initialization vector
 
             using (Aes aes = Aes.Create())
             {
-                Console.WriteLine(key);
                 aes.Key = key;
                 aes.GenerateIV(); 
                 iv = aes.IV; 

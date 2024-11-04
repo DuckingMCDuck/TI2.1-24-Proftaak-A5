@@ -138,7 +138,6 @@ namespace HealthyFromHomeApp.Server
                         return;
                     }
 
-                    WriteToFile(message, senderName);
 
                     Console.WriteLine($"Received message from {senderName}: {message}");
 
@@ -217,6 +216,7 @@ namespace HealthyFromHomeApp.Server
                 return null;
             }
         }
+
         private static async Task<string> ReceiveMessage(TcpClient tcpClient)
         {
             NetworkStream stream = tcpClient.GetStream();
@@ -228,6 +228,49 @@ namespace HealthyFromHomeApp.Server
             string encryptedMessage = Encoding.UTF8.GetString(buffer, 0, byteCount).Trim();
             string decrypted = EncryptHelper.Decrypt(encryptedMessage);
             return decrypted;
+        }
+
+        public static async Task SendFileInChunks(string clientName)
+        {
+            string projectPath = AppDomain.CurrentDomain.BaseDirectory;
+            string clientDataPath = Path.Combine(projectPath, "ClientData");
+            string filePath = Path.Combine(clientDataPath, $"{clientName}_data.txt");
+
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"File not found: {filePath}");
+                ForwardFileToDoctor(clientName, $"{clientName}:error:File not found.");
+                return;
+            }
+
+            try
+            {
+                using (StreamReader reader = new StreamReader(filePath))
+                {
+                    int chunkSize = 1000;
+                    char[] buffer = new char[chunkSize];
+                    int bytesRead;
+                    int chunkNumber = 1;
+
+                    // Read and send file in 1000 character chunks
+                    while ((bytesRead = await reader.ReadAsync(buffer, 0, chunkSize)) > 0)
+                    {
+                        string chunkContent = new string(buffer, 0, bytesRead);
+                        string message = $"file_content:{clientName}:file_chunk:{chunkNumber}:{chunkContent}";
+
+                        // Forward each chunk message to the doctor
+                        ForwardFileToDoctor(clientName, message);
+                        chunkNumber++;
+                    }
+
+                    // Notify that file sending is complete
+                    ForwardFileToDoctor(clientName, $"{clientName}:file_transfer_complete");
+                }
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine($"Error reading file for {clientName}: {e.Message}");
+            }
         }
 
         private static void ProcessMessage(string senderName, string message, bool isDoctor)
@@ -249,16 +292,8 @@ namespace HealthyFromHomeApp.Server
             {
                 string clientFileName = message.Substring("request_file:".Length);
                 Console.WriteLine($"Requested file: {clientFileName}");
-                string clientData = ReadFileOfClient(clientFileName).GetAwaiter().GetResult();
 
-                if (clientData != null)
-                {
-                    ForwardToDoctor(senderName, clientData);
-                }
-                else
-                {
-                    Console.WriteLine("Failed to read client data.");
-                }
+                Task.Run(() => SendFileInChunks(clientFileName));
             }
             else if (!isDoctor && message.StartsWith("chat:send_to:Doctor:"))
             {
@@ -267,6 +302,7 @@ namespace HealthyFromHomeApp.Server
             }
             else if (!isDoctor && message.StartsWith("bike_data:"))
             {
+                WriteToFile(message, senderName);
                 ForwardToDoctor(senderName, message);
             }
         }
@@ -284,6 +320,14 @@ namespace HealthyFromHomeApp.Server
             if (doctorClient != null)
             {
                 SendMessage(doctorClient, $"{clientName}: {message}");
+            }
+        }
+
+        private static void ForwardFileToDoctor(string clientName, string message)
+        {
+            if (doctorClient != null)
+            {
+                SendMessage(doctorClient, $"{message}");
             }
         }
 

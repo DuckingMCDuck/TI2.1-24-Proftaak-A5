@@ -35,7 +35,8 @@ namespace HealthyFromHomeApp.Doctor
 
         public int resistance = 0;
 
-       
+       private Dictionary<string, StringBuilder> fileContentBuffers = new Dictionary<string, StringBuilder>();
+
         public DoctorMainWindow(TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
@@ -106,14 +107,15 @@ namespace HealthyFromHomeApp.Doctor
                     string clientsList = message.Replace("clients_update:", "");
                     UpdateClientList(clientsList.Split(','));
                 }
-                else if (message.StartsWith("Doctor: file_content:")) 
+                else if (message.Contains(":file_chunk:"))
                 {
-                    Console.WriteLine("FIleCONTEN RECEIVEd");
-                    string[] parts = message.Split(new[] { ':' },3);
-                    string clientName = parts[1];
-                    string fileContent = parts[2];
-                    DisplayClientData(fileContent);
-
+                    // Handle incoming file chunk
+                    HandleFileChunk(message);
+                }
+                else if (message.Contains(":file_transfer_complete"))
+                {
+                    // Complete the file transfer and display accumulated content
+                    CompleteFileTransfer(message);
                 }
                 else if (message.Contains("bike_data:"))
                 {
@@ -150,13 +152,44 @@ namespace HealthyFromHomeApp.Doctor
                 }
             }
         }
-        private void DisplayClientData(string fileContent) 
+
+        private void HandleFileChunk(string message)
         {
-            Dispatcher.Invoke(() => {
-                ClientInfoTextBlock.Text = fileContent;
-            });
-            
+            // Parse the message to get client name and chunk content
+            string[] parts = message.Split(new[] { ':' }, 4); // Split into [clientName, "file_chunk", chunkNumber, chunkContent]
+            if (parts.Length < 4) return;
+
+            string clientName = parts[1];
+            string chunkContent = parts[3];
+
+            // Initialize or append to the file content buffer for this client
+            if (!fileContentBuffers.ContainsKey(clientName))
+            {
+                fileContentBuffers[clientName] = new StringBuilder();
+            }
+            fileContentBuffers[clientName].Append(chunkContent);
         }
+
+        private void CompleteFileTransfer(string message)
+        {
+            string[] parts = message.Split(':');
+            string clientName = parts[0];
+
+            if (fileContentBuffers.ContainsKey(clientName))
+            {
+                // Retrieve the complete content for this client
+                string completeContent = fileContentBuffers[clientName].ToString();
+
+                // Display in ClientInfoTextBlock
+                Dispatcher.Invoke(() => {
+                    ClientInfoTextBlock.Text = completeContent;
+                });
+
+                // Clear the buffer for the client as file transfer is complete
+                fileContentBuffers.Remove(clientName);
+            }
+        }
+
         private void NotifyDoctorOfNewMessage(string clientName, string message)
         {
             MessageBoxResult result = MessageBox.Show(
@@ -245,6 +278,7 @@ namespace HealthyFromHomeApp.Doctor
                 stream.Flush();
             }
         }
+
         private void HistoryDataOfClient_Click(object sender, RoutedEventArgs e)
         {
             RequestFileFromServer(selectedClient);
