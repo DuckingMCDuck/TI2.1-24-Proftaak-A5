@@ -71,6 +71,7 @@ namespace HealthyFromHomeApp.Clients
                     List<(string, int)> decodedData = await DataDecoder.Decode(bikeData);
                     if (decodedData != null)
                     {
+                        // Process heart rate data if flag is set
                         if (isReceivingHeartRateData)
                         {
                             for (int i = 0; i < decodedData.Count; i++)
@@ -86,13 +87,15 @@ namespace HealthyFromHomeApp.Clients
                                 }
                             }
                         }
-                        if (decodedData[4].Item2 == 16)
+                        // Process specific bike data parameters
+                        if (decodedData[4].Item2 == 16) //Datapage 16
                         {
                             int elapsed_TimeInt = decodedData[6].Item2 / 4;
                             elapsed_Time = elapsed_TimeInt.ToString();
                             distance_Traveled = decodedData[7].Item2.ToString();
                             speed = decodedData[10].Item2.ToString();
 
+                            // Update VR server speed periodically
                             sendToVRCounter++;
                             if (sendToVRCounter == 4)
                             {
@@ -104,7 +107,7 @@ namespace HealthyFromHomeApp.Clients
                                 sendToVRCounter = 0;
                             }
                         }
-                        else if (decodedData[4].Item2 == 25)
+                        else if (decodedData[4].Item2 == 25) //Datapage 25
                         {
                             accumulated_Power = decodedData[9].Item2.ToString();
                             instantaneous_Power = decodedData[13].Item2.ToString();
@@ -169,12 +172,14 @@ namespace HealthyFromHomeApp.Clients
             }
         }
 
+        // Method to send data to the server securely
         private async void SendDataToServer(string data)
         {
             if (tcpClient.Connected)
             {
                 try
                 {
+                    // Encrypt data before sending
                     string encryptedData = EncryptHelper.Encrypt(data);
                     byte[] dataBytes = Encoding.UTF8.GetBytes(encryptedData);
                     await stream.WriteAsync(dataBytes, 0, dataBytes.Length);
@@ -182,6 +187,7 @@ namespace HealthyFromHomeApp.Clients
                 }
                 catch (Exception ex)
                 {
+                    // Display error message in UI if data send fails
                     Dispatcher.Invoke(() =>
                     {
                         TxtBikeData.AppendText($"Error sending data to server: {ex.Message}\n");
@@ -190,6 +196,7 @@ namespace HealthyFromHomeApp.Clients
             }
         }
 
+        // Event handler for the Heart Rate button to connect to the heart rate monitor
         private async void HeartRateButton_Click(object sender, RoutedEventArgs e)
         {
             isReceivingHeartRateData = await bikeHelper.ConnectToHeartRateMonitor("Decathlon Dual HR");

@@ -23,9 +23,11 @@ namespace HealthyFromHomeApp.Doctor
     /// </summary>
     public partial class DoctorMainWindow : Window
     {
+        // Fields for TCP client connection and network stream for communication
         TcpClient tcpClient = new TcpClient();
         public static NetworkStream stream;
 
+        // UI elements to display chat and list of connected clients
         public static TextBox ChatReadOnly;
         public static ComboBox ComboBoxClientsForDoc;
 
@@ -34,6 +36,8 @@ namespace HealthyFromHomeApp.Doctor
         private Dictionary<string, ClientChatWindow> openClientWindows = new Dictionary<string, ClientChatWindow>();
 
         public int resistance = 0;
+
+        // Constructor initializing TCP client and network stream, set up UI components
         public DoctorMainWindow(TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
@@ -41,13 +45,14 @@ namespace HealthyFromHomeApp.Doctor
             stream = networkStream;
         }
 
+        // Event handler to auto-scroll chat window to show the latest message
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             chatReadOnly.ScrollToEnd();
 
         }
 
-        // Event handler for the "Send" button to broadcast a message
+        // Event handler for the "Send" button to broadcast a message to all connected clients
         private void sendButton_Click(object sender, RoutedEventArgs e)
         {
             string message = chatBar.Text;
@@ -60,7 +65,7 @@ namespace HealthyFromHomeApp.Doctor
             }
         }
 
-        // Async broadcast message to all connected clients
+        // Async method to broadcast message to all clients
         private async void BroadcastMessage(string message)
         {
             if (tcpClient.Connected)
@@ -73,6 +78,7 @@ namespace HealthyFromHomeApp.Doctor
             }
         }
 
+        // Async method to send message to a specific client
         private async void SendMessageToClient(string client, string message)
         {
             if (tcpClient.Connected)
@@ -92,12 +98,14 @@ namespace HealthyFromHomeApp.Doctor
 
             while (true)
             {
+                // Read incoming data from the server
                 int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
                 string encryptedMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
                 string message = EncryptHelper.Decrypt(encryptedMessage);
 
                 Console.WriteLine("Received message from server: " + message);
 
+                // Update the list of connected clients
                 if (message.StartsWith("clients_update:"))
                 {
                     // Handle client list update (combobox)
@@ -139,6 +147,7 @@ namespace HealthyFromHomeApp.Doctor
             }
         }
 
+        // Notifies the doctor of a new message from a client if no chat window is open
         private void NotifyDoctorOfNewMessage(string clientName, string message)
         {
             MessageBoxResult result = MessageBox.Show(
@@ -149,7 +158,7 @@ namespace HealthyFromHomeApp.Doctor
 
             if (result == MessageBoxResult.Yes)
             {
-                OpenClientChatWindow(clientName);
+                OpenClientChatWindow(clientName); // Open a new chat window if doctor selects "Yes"
             }
         }
 
@@ -163,7 +172,7 @@ namespace HealthyFromHomeApp.Doctor
                 {
                     if (!string.IsNullOrEmpty(client))
                     {
-                        ComboBoxClientsForDoc.Items.Add(client);
+                        ComboBoxClientsForDoc.Items.Add(client); // Add each client to dropdown
                     }
                 }
             });
@@ -203,6 +212,7 @@ namespace HealthyFromHomeApp.Doctor
             }
         }
 
+        // Event handler for clicking the client combo box to open chat
         private void CmbClientsForDoc_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (CmbClientsForDoc.SelectedItem != null)
@@ -223,10 +233,10 @@ namespace HealthyFromHomeApp.Doctor
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            Task.Run(() => ListenForUpdates());
+            Task.Run(() => ListenForUpdates()); // Start listening for updates from server on a background task
 
-            ChatReadOnly = chatReadOnly;
-            ComboBoxClientsForDoc = CmbClientsForDoc;
+            ChatReadOnly = chatReadOnly; // Reference chat history text box
+            ComboBoxClientsForDoc = CmbClientsForDoc; // Reference clients dropdown
         }
 
         private void chatBar_TextChanged(object sender, TextChangedEventArgs e)
