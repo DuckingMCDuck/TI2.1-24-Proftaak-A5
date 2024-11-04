@@ -44,18 +44,44 @@ namespace HealthyFromHomeApp.Clients
             this.tcpClient = tcpClient;
             this.stream = tcpClient.GetStream();
             this.clientName = clientName;
+            Dispatcher.Invoke(() =>
+            {
+                BtnStartSession.IsEnabled = true;
+                BtnStopSession.IsEnabled = false;
+            });
+        }
+
+        
+        public void StartSession()
+        {
+            isReceivingData = true;
+            Dispatcher.Invoke(() =>
+            {
+                BtnStartSession.IsEnabled = false;
+                BtnStopSession.IsEnabled = true;
+            });
+        }
+
+        public void StopSession()
+        {
+            isReceivingData = false;
+            Dispatcher.Invoke(() =>
+            {
+                BtnStartSession.IsEnabled = true;
+                BtnStopSession.IsEnabled = false;
+            });
         }
 
         // Event handler for the Start Session button click event
         private void BtnStartSession_Click(object sender, RoutedEventArgs e)
         {
-            isReceivingData = true; // Set the flag to true to start receiving data
+            StartSession();
         }
 
         // Event handler for the Stop Session button click event
         private void BtnStopSession_Click(object sender, RoutedEventArgs e)
         {
-            isReceivingData = false; // Set the flag to false to stop receiving data
+            StopSession();
         }
 
         // Method that handles receiving real bike data from the bike
@@ -194,6 +220,11 @@ namespace HealthyFromHomeApp.Clients
         {
             isReceivingHeartRateData = await bikeHelper.ConnectToHeartRateMonitor("Decathlon Dual HR");
 
+        }
+
+        public void SetIsRecievingData(bool trueFlase)
+        {
+            isReceivingData = trueFlase;
         }
     }
 }

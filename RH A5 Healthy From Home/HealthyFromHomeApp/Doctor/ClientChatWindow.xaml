@@ -73,10 +73,10 @@
                         Margin="0,5,0,5">
                 <Button Content="Start session" 
                         Width="120"
-                        Margin="0,0,10,0"/>
+                        Margin="0,0,10,0" Click="StartSessionButton_Click"/>
                 <Button Content="Stop session" 
                         Width="120"
-                        Margin="10,0,0,0"/>
+                        Margin="10,0,0,0" Click="StopSessionButton_Click"/>
             </StackPanel>
             <!-- Resistance controls -->
             <StackPanel Grid.Row="1" 
