@@ -138,6 +138,8 @@ namespace HealthyFromHomeApp.Server
                         return;
                     }
 
+                    WriteToFile(message, senderName);
+
                     Console.WriteLine($"Received message from {senderName}: {message}");
 
                     ProcessMessage(senderName, message, isDoctor);
@@ -160,6 +162,15 @@ namespace HealthyFromHomeApp.Server
             }
         }
 
+        public static async void WriteToFile(string convertedData, string clientName)
+        {
+            string documentPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            using (StreamWriter outputToFile = new StreamWriter(Path.Combine(documentPath, $"{clientName}_data.txt"),true))
+            {
+                await outputToFile.WriteAsync(convertedData);
+            }
+        }
         private static async Task<string> ReceiveMessage(TcpClient tcpClient)
         {
             NetworkStream stream = tcpClient.GetStream();

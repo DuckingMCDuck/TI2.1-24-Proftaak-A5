@@ -74,6 +74,7 @@ namespace HealthyFromHomeApp.Doctor
         {
             Dispatcher.Invoke(() =>
             {
+                bikeDataTextBox.Clear();
                 bikeDataTextBox.AppendText($"{data}\n");
                 bikeDataTextBox.ScrollToEnd();
             });

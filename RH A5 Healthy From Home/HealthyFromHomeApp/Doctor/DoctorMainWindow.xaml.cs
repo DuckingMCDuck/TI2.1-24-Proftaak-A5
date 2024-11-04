@@ -106,23 +106,19 @@ namespace HealthyFromHomeApp.Doctor
                     string clientsList = message.Replace("clients_update:", "");
                     UpdateClientList(clientsList.Split(','));
                 }
-                else if (message.StartsWith("bike_data:"))
+                else if (message.Contains("bike_data:"))
                 {
                     // Handle incoming bike data and call AppendBikeData method
                     string[] messageParts = message.Split(':');
-                    string clientName = messageParts[1]; // Assuming the format is "bike_data:clientName:data"
+                    string clientName = messageParts[0]; // Assuming the format is "name:bike_data:clientName:data"
                     string bikeData = string.Join(":", messageParts.Skip(2));
 
-                    // Check if there is an open chat window for the client
                     if (openClientWindows.ContainsKey(clientName))
                     {
-
-                        // Forward the bike data to the specific ClientChatWindow instance
+                        
                         Dispatcher.Invoke(() => openClientWindows[clientName].AppendBikeData(bikeData));
-
-                        //write bike data of specific client to File
-                        WriteToFile(clientName, bikeData);
                     }
+
                 }
                 else
                 {
@@ -226,15 +222,6 @@ namespace HealthyFromHomeApp.Doctor
         private void chatBar_TextChanged(object sender, TextChangedEventArgs e)
         {
 
-        }
-        private void WriteToFile(string clientName, string bikeData)
-        {
-            string filePath = $"{clientName}_data.txt";
-            //using (StreamWriter writer = new StreamWriter(filePath, true))
-            //{ 
-            //    writer.WriteLine(bikeData); 
-            //}
-            File.WriteAllText(filePath, bikeData);
         }
 
         private string ReadFile(string clientName) 
