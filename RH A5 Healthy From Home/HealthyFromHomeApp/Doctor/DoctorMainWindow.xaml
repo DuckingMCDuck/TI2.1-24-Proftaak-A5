@@ -63,14 +63,15 @@
 
             <!-- Client Selection Section-->
             <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                <TextBlock Text="Select Client" 
-                          FontWeight="SemiBold" 
-                          Margin="0,0,0,5"/>
-                <ComboBox x:Name="CmbClientsForDoc" 
-                         SelectionChanged="CmbClientsForDoc_SelectionChanged"
-                         PreviewMouseDown="CmbClientsForDoc_PreviewMouseDown"
-                         Width="200"
-                         HorizontalAlignment="Left"/>
+                <TextBlock Text="Select Client" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox x:Name="CmbClientsForDoc" SelectionChanged="CmbClientsForDoc_SelectionChanged" Width="200" HorizontalAlignment="Left" Grid.Column="0"/>
+                    <Button x:Name="HistoryDataOfClient" Content="Load client History" FontWeight="SemiBold" Margin="10,0,0,0" Click="HistoryDataOfClient_Click" HorizontalAlignment="Left" Grid.Column="1"/>
+                </Grid>
             </StackPanel>
 
 

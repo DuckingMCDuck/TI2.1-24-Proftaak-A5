@@ -296,5 +296,17 @@ namespace HealthyFromHomeApp.Doctor
                 openClientWindows.Remove(client);
             }
         }
+        private void chatBar_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            Task.Run(() => ListenForUpdates());
+
+            ChatReadOnly = chatReadOnly;
+            ComboBoxClientsForDoc = CmbClientsForDoc;
+        }
     }
 }
