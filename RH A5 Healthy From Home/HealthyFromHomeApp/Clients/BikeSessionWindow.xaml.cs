@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using BikeLibrary;
+using Client.Virtual_Reality;
 using HealthyFromHomeApp.Common;
 
 namespace HealthyFromHomeApp.Clients
@@ -27,6 +28,8 @@ namespace HealthyFromHomeApp.Clients
         public string accumulated_Power = String.Empty;
         public string instantaneous_Power = String.Empty;
         private bool isReceivingHeartRateData = false;
+
+        private bool isConnectedToVRServer = false;
 
         // Constructor 
         public BikeSessionWindow(BikeHelper bikeHelper, TcpClient tcpClient, string clientName)
@@ -55,6 +58,7 @@ namespace HealthyFromHomeApp.Clients
         // Method that handles receiving real bike data from the bike
         private void OnBikeDataReceived(string bikeData)
         {
+            isConnectedToVRServer = VRServer.IsConnected();
             if (isReceivingData)
             {
                 try
@@ -67,6 +71,11 @@ namespace HealthyFromHomeApp.Clients
                         elapsed_Time = elapsed_TimeInt.ToString();
                         distance_Traveled = decodedData[7].Item2.ToString();
                         speed = decodedData[10].Item2.ToString();
+                        double newSpeed = double.Parse(speed);
+                        if (newSpeed > 0 && isConnectedToVRServer)
+                        {
+                            VRServer.UpdateSpeed(newSpeed);
+                        }
                     }
                     if (decodedData[4].Item2 == 25)
                     {

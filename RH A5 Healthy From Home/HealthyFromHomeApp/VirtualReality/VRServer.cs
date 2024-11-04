@@ -17,7 +17,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 
-namespace Client
+namespace Client.Virtual_Reality
 {
     internal class VRServer
     {
@@ -28,6 +28,7 @@ namespace Client
         public static NetworkStream stream;
         public static string receivedData;
         public static string hostName = Environment.MachineName;
+        public static bool isConnected = false;
 
         // Specific (string) objects:
         public static string sessionId;
@@ -66,6 +67,7 @@ namespace Client
             }
             stream = vrServer.GetStream();
             clientInstance.chatText += "Connected to VR Server!\n";
+            isConnected = true;
 
             // Start listening for packets
             await PacketHandlerAsync();
@@ -179,9 +181,6 @@ namespace Client
 
                         // Let the Camera (-> parent of Bike -? parent of Panel) follow the route:
                         await SendTunnelCommand("route/follow", JsonBuilder.LetItemFollowRouteData(routeUuid, cameraNodeId, "XYZ", 2, new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 }));
-
-                        // Start the route following:
-                        await RouteFollowingAsync();
                     }
                     else
                     {
@@ -199,27 +198,6 @@ namespace Client
             {
                 ShutdownServer();
                 return;
-            }
-        }
-
-        /// <summary>
-        /// While we follow the route we update the scene-data in here
-        /// </summary>
-        public static async Task RouteFollowingAsync()
-        {
-            // Handle setting of resistance and updating of the speed
-            while (true)
-            {
-                // TODO: update the bike speed based on the current route point
-                //await UpdateBikeSpeedAsync();?
-
-
-
-                //HELPER METHODS
-                await UpdatePanelText("Speed: 20", new double[] { 10.0, 20.0 });
-                await UpdateSpeed(2.0);
-                // Prevent overflowing the Server with data
-                await Task.Delay(2000);
             }
         }
 
@@ -482,14 +460,22 @@ namespace Client
         /// Updates the speed of the Camera Node (-> parent of Bike node -> parent of Panel)
         /// </summary>
         /// <param name="newSpeed"></param>
-        public static async Task<string> UpdateSpeed(double newSpeed)
+        public static async void UpdateSpeed(double newSpeed)
         {
             if (cameraNodeId != null && guidBike != null && panelId != null)
             {
-                return await SendTunnelCommand("route/follow/speed", JsonBuilder.UpdateNodeSpeed(cameraNodeId, newSpeed));
+                // Update Panel Text with new speed
+                await UpdatePanelText("Speed: " + newSpeed, new double[] { 10.0, 20.0 });
+                // Update speed on Route
+                await SendTunnelCommand("route/follow/speed", JsonBuilder.UpdateNodeSpeed(cameraNodeId, newSpeed));
+                // Prevent overflowing the Server with data
+                await Task.Delay(2000);
             }
-            return null; // Error -> return null
         }
 
+        internal static bool IsConnected()
+        {
+            return isConnected; // Send connection status
+        }
     }
 }
