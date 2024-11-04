@@ -189,6 +189,7 @@ namespace HealthyFromHomeApp.Doctor
                 {
                     ClientChatWindow chatWindow = new ClientChatWindow(client, tcpClient, stream);
                     chatWindow.Show();
+                    chatWindow.Closed += (sender, args) => CloseClientChatWindow(client);
                     openClientWindows.Add(client, chatWindow);
                 });
             }
@@ -199,6 +200,24 @@ namespace HealthyFromHomeApp.Doctor
                 {
                     openClientWindows[client].Activate();
                 });
+            }
+        }
+
+        private void CmbClientsForDoc_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (CmbClientsForDoc.SelectedItem != null)
+            {
+                selectedClient = (string)CmbClientsForDoc.SelectedItem;
+                OpenClientChatWindow(selectedClient);
+            }
+        }
+
+        // Method to handle cleanup when a chat window is closed
+        private void CloseClientChatWindow(string client)
+        {
+            if (openClientWindows.ContainsKey(client))
+            {
+                openClientWindows.Remove(client);
             }
         }
 
