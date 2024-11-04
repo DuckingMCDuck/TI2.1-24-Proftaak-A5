@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace HealthyFromHomeApp.Clients
 {
@@ -10,7 +11,7 @@ namespace HealthyFromHomeApp.Clients
 
         public static List<(string, int)> listForToString = new List<(string, int)>();
 
-        public static List<(string, int)> Decode(string data)
+        public static Task<List<(string, int)>> Decode(string data)
         {
             try
             {
@@ -96,7 +97,7 @@ namespace HealthyFromHomeApp.Clients
                             string bitField = binaryString.Substring(0, 4);
                             int bitFieldInt = Convert.ToInt32(bitField, 2);
 
-                            
+
                             (string, int) tuplePower = ("Instantaneous_Power_MSB", instantaneousMsbValue);
                             dataWithNames.Add(tuplePower);
                             (string, int) tupleBitField = ("Trainer_Status_Bit_Field", bitFieldInt);
@@ -110,7 +111,7 @@ namespace HealthyFromHomeApp.Clients
                             (string, int) tuple = (name, difDataInt[i]);
                             dataWithNames.Add(tuple);
                         }
-                        
+
 
                         if (calcAccumulatedPower)
                         {
@@ -130,25 +131,25 @@ namespace HealthyFromHomeApp.Clients
                             dataWithNames.Add(instantaneousPowerTuple);
                             calcInstantaneousPower = false;
                         }
-                        
+
                     }
                 }
-                else if (difDataInt.Count >= 1 && difDataInt.Count <= 10)
+                else if (difDataInt[0] == 22)
                 {
-                    string name = "Heartrate";
+                    string name = "HeartRateFromMonitor";
                     (string, int) tuple = (name, difDataInt[1]);
                     dataWithNames.Add(tuple);
                 }
                 listForToString = dataWithNames;
-                return dataWithNames;
+                return Task.FromResult(dataWithNames);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
-                return null;
+                return Task.FromResult<List<(string, int)>>(null);
             }
         }
 
-        public static List<(string, int)> DecodeAndSend(string data, ClientMainWindow clientInstance)
+        public static async Task<List<(string, int)>> DecodeAndSend(string data, ClientMainWindow clientInstance)
         {
             try
             {
@@ -272,9 +273,9 @@ namespace HealthyFromHomeApp.Clients
 
                     }
                 }
-                else if (difDataInt.Count >= 1 && difDataInt.Count <= 10)
+                else if (difDataInt[0] == 22)
                 {
-                    string name = "Heartrate";
+                    string name = "HeartRateFromMonitor";
                     (string, int) tuple = (name, difDataInt[1]);
                     dataWithNames.Add(tuple);
                 }
@@ -285,7 +286,7 @@ namespace HealthyFromHomeApp.Clients
                     clientInstance.debugText = MakeString(dataWithNames);
                 }
 
-                return dataWithNames;
+                return await Task.FromResult(dataWithNames);
             }
             catch (Exception e)
             {

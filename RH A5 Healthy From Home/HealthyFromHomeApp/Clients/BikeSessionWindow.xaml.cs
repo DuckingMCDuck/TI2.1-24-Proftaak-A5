@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using BikeLibrary;
 using HealthyFromHomeApp.Common;
 
@@ -33,7 +34,7 @@ namespace HealthyFromHomeApp.Clients
         {
             InitializeComponent();
             this.bikeHelper = bikeHelper;
-            this.bikeHelper.OnBikeDataReceived += OnBikeDataReceived;
+            this.bikeHelper.OnBikeDataReceived += async (data) => await OnBikeDataReceivedAsync(data);
             this.decoder = new DataDecoder();
             this.tcpClient = tcpClient;
             this.stream = tcpClient.GetStream();
@@ -53,38 +54,43 @@ namespace HealthyFromHomeApp.Clients
         }
 
         // Method that handles receiving real bike data from the bike
-        private void OnBikeDataReceived(string bikeData)
+        private async Task OnBikeDataReceivedAsync(string bikeData)
         {
             if (isReceivingData)
             {
                 try
                 {
+                    
                     // Decode the incoming bike data
-                    List<(string, int)> decodedData = DataDecoder.Decode(bikeData);
-                    if (decodedData[4].Item2 == 16)
+                    List<(string, int)> decodedData = await DataDecoder.Decode(bikeData);
+                    if (decodedData != null)
                     {
-                        int elapsed_TimeInt = decodedData[6].Item2 / 4;
-                        elapsed_Time = elapsed_TimeInt.ToString();
-                        distance_Traveled = decodedData[7].Item2.ToString();
-                        speed = decodedData[10].Item2.ToString();
-                    }
-                    if (decodedData[4].Item2 == 25)
-                    {
-                        accumulated_Power = decodedData[9].Item2.ToString();
-                        instantaneous_Power = decodedData[13].Item2.ToString();
-                    }
-                    if (isReceivingHeartRateData)
-                    {
-                        for (int i = 0; i < decodedData.Count; i++)
+                        if (isReceivingHeartRateData)
                         {
-                            if (decodedData[i].Item1 == "HeartRate")
+                            for (int i = 0; i < decodedData.Count; i++)
                             {
-                                Dispatcher.Invoke(() =>
+                                if (decodedData[i].Item1 == "HeartRateFromMonitor")
                                 {
-                                    TxtHeartrateData.Clear();
-                                    TxtHeartrateData.Text = decodedData[i].Item2.ToString();
-                                });
+                                    Dispatcher.Invoke(() =>
+                                    {
+                                        TxtHeartrateData.Clear();
+                                        TxtHeartrateData.Text = decodedData[i].Item2.ToString();
+                                    });
+                                    break;
+                                }
                             }
+                        }
+                        if (decodedData[4].Item2 == 16)
+                        {
+                            int elapsed_TimeInt = decodedData[6].Item2 / 4;
+                            elapsed_Time = elapsed_TimeInt.ToString();
+                            distance_Traveled = decodedData[7].Item2.ToString();
+                            speed = decodedData[10].Item2.ToString();
+                        }
+                        else if (decodedData[4].Item2 == 25)
+                        {
+                            accumulated_Power = decodedData[9].Item2.ToString();
+                            instantaneous_Power = decodedData[13].Item2.ToString();
                         }
                     }
                 } catch (Exception e)
@@ -98,9 +104,7 @@ namespace HealthyFromHomeApp.Clients
                     $"Elapsed Time: {elapsed_Time} sec\n" +
                     $"Accumulated Power: {accumulated_Power} Watt\n" +
                     $"Instantanious Power: {instantaneous_Power} Watt";
-                //string decodedString = DataDecoder.MakeString(decodedData);
 
-                // Update the UI with the decoded data, running on the UI thread using the Dispatcher
                 Dispatcher.Invoke(() =>
                 {
                     TxtBikeData.Clear();
@@ -110,6 +114,34 @@ namespace HealthyFromHomeApp.Clients
 
                 string prefixedData = $"bike_data:{clientName}:{decodedString}";
                 SendDataToServer(prefixedData);
+            }
+            else if (isReceivingHeartRateData)
+            {
+                try
+                {
+
+                    // Decode the incoming bike data
+                    List<(string, int)> decodedData = await DataDecoder.Decode(bikeData);
+                    if (decodedData != null)
+                    {
+                        for (int i = 0; i < decodedData.Count; i++)
+                        {
+                            if (decodedData[i].Item1 == "HeartRateFromMonitor")
+                            {
+                                Dispatcher.Invoke(() =>
+                                {
+                                    TxtHeartrateData.Clear();
+                                    TxtHeartrateData.Text = decodedData[i].Item2.ToString();
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+
+                }
             }
             
         }
@@ -131,22 +163,6 @@ namespace HealthyFromHomeApp.Clients
                     {
                         TxtBikeData.AppendText($"Error sending data to server: {ex.Message}\n");
                     });
-                }
-            }
-
-            if (isReceivingHeartRateData)
-            {
-                List<(string, int)> decodedData = DataDecoder.Decode(data);
-                for (int i = 0; i < decodedData.Count; i++)
-                {
-                    if (decodedData[i].Item1 == "HeartRate")
-                    {
-                        Dispatcher.Invoke(() =>
-                        {
-                            TxtHeartrateData.Clear();
-                            TxtHeartrateData.Text = decodedData[i].Item2.ToString();
-                        });
-                    }
                 }
             }
         }

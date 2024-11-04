@@ -234,49 +234,5 @@ namespace HealthyFromHomeApp.Doctor
         {
 
         }
-
-        private void OpenChartsWindowButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (chartWindow == null)
-            {
-                chartWindow = new ChartWindow();
-                chartWindow.Closed += ChartWindow_Closed;
-                chartWindow.Show();
-            }
-            else
-            {
-                chartWindow.Activate();
-            }
-        }
-        private void ChartWindow_Closed(object sender, EventArgs e)
-        {
-            chartWindow = null;
-        }
-
-        private void Button_Click_ResistanceMin(object sender, RoutedEventArgs e)
-        {
-            resistance--;
-            resistanceInputField.Text = resistance.ToString();
-            SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
-        }
-
-        private void Button_Click_ResistancePlus(object sender, RoutedEventArgs e)
-        {
-            resistance++;
-            resistanceInputField.Text = resistance.ToString();
-            SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
-
-        }
-
-        private void Key_Down_ResistanceInputField(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                resistance = Int32.Parse(resistanceInputField.Text);
-                SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
-            }
-        }
-
-      
     }
 }
