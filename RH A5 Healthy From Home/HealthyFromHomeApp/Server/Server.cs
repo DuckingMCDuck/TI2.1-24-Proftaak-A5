@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using HealthyFromHomeApp.Common;
+using System.Windows.Documents.Serialization;
 
 namespace HealthyFromHomeApp.Server
 {
@@ -137,7 +138,7 @@ namespace HealthyFromHomeApp.Server
                         DisconnectClient(tcpClient, senderName);
                         return;
                     }
-
+                    WriteToFile(message, senderName);
                     Console.WriteLine($"Received message from {senderName}: {message}");
 
                     ProcessMessage(senderName, message, isDoctor);
@@ -252,12 +253,11 @@ namespace HealthyFromHomeApp.Server
                 NotifyDoctorOfClients();
             }
         }
-
-        public async void WriteToFile(string convertedData)
+        public static async void WriteToFile(string convertedData, string clientName)
         {
             string documentPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-            using (StreamWriter outputToFile = new StreamWriter(Path.Combine(documentPath, "Async Data of Client.txt")))
+            using (StreamWriter outputToFile = new StreamWriter(Path.Combine(documentPath, $"{clientName}_data.txt")))
             {
                 await outputToFile.WriteAsync(convertedData);
             }

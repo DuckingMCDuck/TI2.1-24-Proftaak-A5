@@ -116,13 +116,12 @@ namespace HealthyFromHomeApp.Doctor
                     // Check if there is an open chat window for the client
                     if (openClientWindows.ContainsKey(clientName))
                     {
-
+                        Console.WriteLine("in Bike_Data");
                         // Forward the bike data to the specific ClientChatWindow instance
                         Dispatcher.Invoke(() => openClientWindows[clientName].AppendBikeData(bikeData));
-
-                        //write bike data of specific client to File
-                        WriteToFile(clientName, bikeData);
                     }
+                    //show data in chart
+                    Dispatcher.Invoke(() => chartWindow.AppendBikeData(clientName, bikeData));
                 }
                 else
                 {
@@ -143,7 +142,7 @@ namespace HealthyFromHomeApp.Doctor
                     }
                 }
             }
-        }
+        }   
 
         private void NotifyDoctorOfNewMessage(string clientName, string message)
         {
@@ -176,17 +175,24 @@ namespace HealthyFromHomeApp.Doctor
         }
 
         // When doc clicks a client in the combobox, open a chatscreen
-        private void CmbClientsForDoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        public void CmbClientsForDoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             selectedClient = (string)CmbClientsForDoc.SelectedItem;
             if (selectedClient != null)
             {
                 OpenClientChatWindow(selectedClient);
-
+                if (chartWindow == null)
+                {
+                    chartWindow = new ChartWindow();
+                    chartWindow.Closed += ChartWindow_Closed;
+                    chartWindow.Show();
+                }
+                chartWindow.SelectedClient = selectedClient;
+                chartWindow.UpdateChart(selectedClient);
                 //if (chartWindow != null)
                 //{
                 //    chartWindow.ClearChart();
-                //    await chartWindow.LoadDataFromFileAsync(selectedClient);
+                //     await chartWindow.LoadDataFromFileAsync(selectedClient);
                 //}
             }
 
@@ -227,25 +233,6 @@ namespace HealthyFromHomeApp.Doctor
         {
 
         }
-        private void WriteToFile(string clientName, string bikeData)
-        {
-            string filePath = $"{clientName}_data.txt";
-            //using (StreamWriter writer = new StreamWriter(filePath, true))
-            //{ 
-            //    writer.WriteLine(bikeData); 
-            //}
-            File.WriteAllText(filePath, bikeData);
-        }
-
-        private string ReadFile(string clientName) 
-        {
-            string filePath = $"{clientName}_data.txt";
-            //using (StreamReader reader = new StreamReader(filePath)) 
-            //{
-            //    return reader.ReadToEnd();
-            //}
-           return File.ReadAllText(filePath);
-        }
 
         private void OpenChartsWindowButton_Click(object sender, RoutedEventArgs e)
         {
@@ -264,8 +251,6 @@ namespace HealthyFromHomeApp.Doctor
         {
             chartWindow = null;
         }
-
-
 
         private void Button_Click_ResistanceMin(object sender, RoutedEventArgs e)
         {
@@ -290,5 +275,7 @@ namespace HealthyFromHomeApp.Doctor
                 SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
             }
         }
+
+      
     }
 }

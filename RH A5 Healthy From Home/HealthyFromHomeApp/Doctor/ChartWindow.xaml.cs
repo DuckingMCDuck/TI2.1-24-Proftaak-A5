@@ -13,9 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Forms.DataVisualization;
 using System.Windows.Forms.Integration;
-using System.Windows.Forms.DataVisualization.Charting;
+//using System.Windows.Forms.DataVisualization.Charting;
 using System.IO;
 using System.Drawing;
+using LiveCharts;
+using LiveCharts.Wpf;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+
 
 
 namespace HealthyFromHomeApp.Doctor
@@ -23,182 +28,169 @@ namespace HealthyFromHomeApp.Doctor
     /// <summary>
     /// Interaction logic for ChartWindow.xaml
     /// </summary>
-    public partial class ChartWindow : Window
+    public partial class ChartWindow : Window, INotifyPropertyChanged
     {
-       
-        private Chart chart;
-        private Series heartRateSeries;
-        private Series speedSeries;
-        private Series distanceSeries;
 
+        //private Chart chart;
+        //private Series heartRateSeries;
+        //private Series speedSeries;
+        //private Series distanceSeries;
+
+        public Dictionary<string, ChartValues<double>> ClientSpeedValues { get; set; }
+        public Dictionary<string, ChartValues<double>> ClientDistanceValues { get; set; }
+        public SeriesCollection seriesCollection { get; set; }
+        public ObservableCollection<string> labels { get; set; }
+        public string selectedClient;
+        public string SelectedClient
+        {
+            get
+            {
+                return selectedClient;
+            }
+            set
+            {
+                selectedClient = value;
+                OnPropertyChanged(nameof(SelectedClient)); 
+                UpdateChart(selectedClient);
+            }
+        }
         public ChartWindow()
         {
             InitializeComponent();
-            chart = new Chart();
-            ChartArea chartArea = new ChartArea();
-            chart.ChartAreas.Add(chartArea);
-            windowsFormsHost.Child = chart;
-            //initialize chart series
-            heartRateSeries = new Series("Heartrate");
-            heartRateSeries.Label = "HeartRate";
-            heartRateSeries.ChartType = SeriesChartType.Line;
-            heartRateSeries.Color =System.Drawing.Color.Red;
-            heartRateSeries.BorderWidth = 3;
-
-            speedSeries = new Series("Speed");
-            speedSeries.Label = "Speed";
-            speedSeries.ChartType = SeriesChartType.Line;
-            speedSeries.Color = System.Drawing.Color.Blue;
-            speedSeries.BorderWidth = 3;
-
-            distanceSeries = new Series("Afstand"); 
-            distanceSeries.ChartType = SeriesChartType.Line; 
-            distanceSeries.Color = System.Drawing.Color.Purple;
-            distanceSeries.BorderWidth = 3;
-
-            chart.Series.Add(heartRateSeries); 
-            chart.Series.Add(speedSeries);
-            chart.Series.Add(distanceSeries);
-
-            testChart();
+            //ClientSpeedValues = new Dictionary<string, ChartValues<double>>();
+            //ClientDistanceValues = new Dictionary<string, ChartValues<double>>();
+            //speedValues = new ChartValues<double>();
+            //distanceValues = new ChartValues<double>();
+            //DataContext = this;
+            seriesCollection = new SeriesCollection() {
+                new LineSeries
+                {
+                    Title = "Speed",
+                    Values = new ChartValues<double>{ }
+                },
+                new LineSeries
+                {
+                    Title = "Distance",
+                    Values = new ChartValues<double>{ }
+                }
+            };
+            labels = new ObservableCollection<string>();
+            ClientSpeedValues = new Dictionary<string, ChartValues<double>>(); 
+            ClientDistanceValues = new Dictionary<string, ChartValues<double>>();
+            DataContext = this;
         }
 
-        public void testChart() 
+        public void testChart()
         {
-            speedSeries.Points.AddXY(1, 10);
-            speedSeries.Points.AddXY(2, 20);
-            speedSeries.Points.AddXY(3, 30);
-            speedSeries.Points.AddXY(4, 40);
-            speedSeries.Points.AddXY(5, 50);
-            distanceSeries.Points.AddXY(1, 5);
-            distanceSeries.Points.AddXY(2, 10);
-            distanceSeries.Points.AddXY(3, 15);
-            distanceSeries.Points.AddXY(4, 20);
-            distanceSeries.Points.AddXY(5, 25);
+            //    speedSeries.Points.AddXY(1, 10);
+            //    speedSeries.Points.AddXY(2, 20);
+            //    speedSeries.Points.AddXY(3, 30);
+            //    speedSeries.Points.AddXY(4, 40);
+            //    speedSeries.Points.AddXY(5, 50);
+            //    distanceSeries.Points.AddXY(1, 5);
+            //    distanceSeries.Points.AddXY(2, 10);
+            //    distanceSeries.Points.AddXY(3, 15);
+            //    distanceSeries.Points.AddXY(4, 20);
+            //    distanceSeries.Points.AddXY(5, 25);
         }
+
 
         public void AppendBikeData(string clientName, string bikeData)
         {
-            //foreach (string dataPart in dataParts)
-            //{
-            //    if (dataPart.Contains("Elapsed Time"))
-            //    {
-            //        string[] keyValue = dataPart.Split(':');
-            //        elapsedTime = keyValue.Length > 1 ? keyValue[1].Trim() : string.Empty;
-            //    }
-            //    else if (dataPart.Contains("Speed"))
-            //    {
-            //        string[] keyValue = dataPart.Split(':');
-            //        if (keyValue.Length > 1)
-            //        {
-            //            double waarde = double.Parse(keyValue[1].Trim());
-            //            speedSeries.Points.AddXY(elapsedTime, waarde);
-            //        }
-            //    }
-            //    else if (dataPart.Contains("Distance Traveled"))
-            //    {
-            //        string[] keyValue = dataPart.Split(':');
-            //        if (keyValue.Length > 1)
-            //        {
-            //            double waarde = double.Parse(keyValue[1].Trim());
-            //            distanceSeries.Points.AddXY(elapsedTime, waarde);
-            //        }
-            //    }
-            //}
-            Task.Run(() =>
+            double speed = 0; double distance = 0; string elapsedTime = "";
+            var dataParts = bikeData.Split('\n'); foreach (var part in dataParts)
             {
-                string[] dataParts = bikeData.Split('\n');
-                string elapsedTime = string.Empty;
-
-                //foreach (string dataPart in dataParts)
-                //{
-                //if (dataPart.Contains("Elapsed Time"))
-                //{
-                //    string[] keyValue = dataPart.Split(':');
-                //    elapsedTime = keyValue.Length > 1 ? keyValue[1].Trim() : string.Empty;
-                //}
-                // if (dataPart.Contains("Speed"))
-                //{
-                //    string[] keyValue = dataPart.Split(':');
-                //    if (keyValue.Length > 1)
-                //    {
-                //        double waarde = double.Parse(keyValue[1].Replace(" km/h", "").Trim());
-                //        speedSeries.Points.AddXY(elapsedTime, waarde);
-                //    }
-                //}
-
-                //}
-                for (int i = 0; i < dataParts.Length; i++)
-                {
-                    string dataPart = dataParts[i]; 
-                    if (dataPart.Contains("Speed"))
-                    {
-                        string[] keyValue = dataPart.Split(':'); if (keyValue.Length > 1)
-                        {
-                            /*
-                             "Speed: 25 km/h": After splitting by :, keyValue will be ["Speed", " 25 km/h"]. The length is 2, so keyValue[1].Trim() returns "25 km/h".
-                        "Speed:": After splitting by :, keyValue will be ["Speed", ""]. The length is 2, so keyValue[1].Trim() returns an empty string.
-                        "Speed": After splitting by :, keyValue will be ["Speed"]. The length is 1, so the operator returns string.Empty.
-                             */
-                            double waarde = double.Parse(keyValue[1].Replace(" km/h", "").Trim());
-                            speedSeries.Points.AddXY(i, waarde);
-                            
-                        }
-                    }
+                if (part.Contains("speed")) 
+                { 
+                    speed = double.Parse(part.Split(' ')[1]); 
                 }
-            });
+                else if (part.Contains("distance")) 
+                { 
+                    distance = double.Parse(part.Split(' ')[1]); 
+                }
+                else if (part.Contains("elapsed time"))
+                {
+                    elapsedTime = part.Split(' ')[2];
+                }
+            }
+            seriesCollection[0].Values.Add(speed); seriesCollection[1].Values.Add(distance);
+            labels.Add(elapsedTime);
 
+            if (!ClientSpeedValues.ContainsKey(clientName)) 
+            { 
+                ClientSpeedValues[clientName] = new ChartValues<double>(); 
+            }
+            if (!ClientDistanceValues.ContainsKey(clientName)) 
+            { 
+                ClientDistanceValues[clientName] = new ChartValues<double>(); 
+            }
+                ClientSpeedValues[clientName].Add(speed);
+                ClientDistanceValues[clientName].Add(distance); 
+
+            if (selectedClient == clientName)
+            {
+                seriesCollection[0].Values = ClientSpeedValues[clientName]; seriesCollection[1].Values = ClientDistanceValues[clientName];
+                labels.Add(elapsedTime);
+            }
         }
-        public async Task LoadDataFromFileAsync(string clientName)
+
+
+
+        //public void AppendBikeData(string clientName, string bikeData)
+        //{
+
+        //    var dataPart = bikeData.Split(',');
+        //    foreach (var part in dataPart)
+        //    {
+        //        var keyValue = part.Split(':');
+        //        if (keyValue.Length == 2)
+        //        {
+        //            var key = keyValue[0].Trim();
+        //            Console.WriteLine("KEY:" + key);
+        //            var value = keyValue[1].Trim().Split(' ')[0];
+        //            if (double.TryParse(value, out double parsedValue))
+        //            {
+        //                if (key.Equals("speed", StringComparison.OrdinalIgnoreCase))
+        //                {
+        //                    if (!ClientSpeedValues.ContainsKey(clientName))
+        //                    {
+        //                        ClientSpeedValues[clientName] = new ChartValues<double>();
+        //                    }
+        //                    ClientSpeedValues[clientName].Add(parsedValue);
+        //                }
+        //                else if (key.Equals("distance", StringComparison.OrdinalIgnoreCase))
+        //                {
+        //                    if (!ClientDistanceValues.ContainsKey(clientName))
+        //                    {
+        //                        ClientDistanceValues[clientName] = new ChartValues<double>();
+        //                    }
+        //                    ClientDistanceValues[clientName].Add(parsedValue);
+        //                }
+        //            }
+        //        }
+        //    }
+
+
+        //}
+
+        public void UpdateChart(string clientName)
         {
-            string filePath = $"{clientName}_data.txt";
-            string fileOfsimulation = "simulatedData.txt";
-            //check if file exists
-            if (File.Exists(filePath))
+            if (ClientSpeedValues.ContainsKey(clientName) && ClientDistanceValues.ContainsKey(clientName))
             {
-                using (StreamReader reader = new StreamReader(filePath))
-                {
-                    string line;
-                    //peeks if there isn't any bytes in de file of the client.
-                    if (reader.Peek() == -1)
-                    {
-                        if (File.Exists(fileOfsimulation))
-                        {
-                            //if there is no data in real time data file then use simulated file
-                            using (StreamReader simReader = new StreamReader(fileOfsimulation))
-                            {
-                                //awaits every line
-                                while ((line = await simReader.ReadLineAsync()) != null)
-                                {
-                                    AppendBikeData(clientName, line);
-                                }
-                            }
-                        }
-                    }
-                    while ((line = await reader.ReadLineAsync()) != null)
-                    {
-                        AppendBikeData(clientName, line);
-                    }
-                }
+                seriesCollection[0].Values = ClientSpeedValues[clientName];
+                seriesCollection[1].Values = ClientDistanceValues[clientName];
+                DataContext = this;
+                Console.WriteLine("Chart updated for client: " + clientName);
             }
-            else
-            {
-                //if there is no file of the client use simulated file
-                using (StreamReader simReader = new StreamReader(fileOfsimulation))
-                {
-                    string line;
-                    while ((line = await simReader.ReadLineAsync()) != null)
-                    {
-                        AppendBikeData(clientName, line);
-                    }
-                }
-            }
+        }
+        public event PropertyChangedEventHandler PropertyChanged; 
+        protected void OnPropertyChanged(string propertyName) 
+        { 
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)); 
         }
         public void ClearChart()
         {
-            heartRateSeries.Points.Clear();
-            speedSeries.Points.Clear();
-            distanceSeries.Points.Clear();
+
         }
 
         private void ResetChartButton_Click(object sender, RoutedEventArgs e)
@@ -208,3 +200,4 @@ namespace HealthyFromHomeApp.Doctor
 
     }
 }
+
