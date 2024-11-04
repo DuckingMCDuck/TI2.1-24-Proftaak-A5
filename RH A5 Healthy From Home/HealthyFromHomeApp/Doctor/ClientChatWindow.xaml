@@ -54,13 +54,42 @@
                     Click="SendButton_Click"/>
         </Grid>
 
-        <!-- Right side - Bike data and controls -->
-        <TextBox x:Name="bikeDataTextBox"
-                 Grid.Column="1"
-                 Grid.Row="1"
-                 Margin="10,5,10,10"
-                 TextWrapping="Wrap" 
-                 IsReadOnly="True" />
+        <!-- Right side - Bike data, heart rate, and controls -->
+        <StackPanel Grid.Column="1" Grid.Row="1">
+            <TextBox x:Name="bikeDataTextBox"
+                     Height="120"
+                     Margin="10,5,10,5"
+                     TextWrapping="Wrap" 
+                     IsReadOnly="True" />
+
+            <!-- Heart Rate Section -->
+            <Grid Margin="10,5,10,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="heartRateConnectButton"
+                        Grid.Column="0"
+                        Content="Connect HR"
+                        Width="80"
+                        Height="30"
+                        Click="HeartRateConnect_Click" HorizontalAlignment="Left">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+                <TextBlock x:Name="heartRateDisplay"
+                          Grid.Column="1"
+                          Text="HR: --"
+                          VerticalAlignment="Center"
+                          HorizontalAlignment="Center"
+                          FontSize="16"
+                          FontWeight="Bold"/>
+            </Grid>
+        </StackPanel>
+
         <Grid Grid.Column="1" Grid.Row="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

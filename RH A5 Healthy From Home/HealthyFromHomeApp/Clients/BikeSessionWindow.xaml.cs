@@ -224,12 +224,11 @@ namespace HealthyFromHomeApp.Clients
         private async void HeartRateButton_Click(object sender, RoutedEventArgs e)
         {
             isReceivingHeartRateData = await bikeHelper.ConnectToHeartRateMonitor("Decathlon Dual HR");
-
         }
 
-        public void SetIsRecievingData(bool trueFlase)
+        public async void startHeartRateMonitor()
         {
-            isReceivingData = trueFlase;
+            isReceivingHeartRateData = await bikeHelper.ConnectToHeartRateMonitor("Decathlon Dual HR");
         }
     }
 }

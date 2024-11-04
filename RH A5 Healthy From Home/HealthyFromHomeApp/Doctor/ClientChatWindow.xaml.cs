@@ -121,5 +121,10 @@ namespace HealthyFromHomeApp.Doctor
             SendMessageToClient(clientName, "Resistance changed to " + resistance.ToString());
             SendMessageToClient(clientName, "EMERGENCY STOP!");
         }
+
+        private void HeartRateConnect_Click(object sender, RoutedEventArgs e)
+        {
+            SendMessageToClient(clientName, "start_heartrate");
+        }
     }
 }

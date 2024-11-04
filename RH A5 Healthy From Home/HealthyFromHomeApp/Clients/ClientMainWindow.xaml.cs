@@ -174,6 +174,13 @@ namespace HealthyFromHomeApp.Clients
                                 isSessionActive = false;
                             }
                         }
+                        else if (receivedMessage == "start_heartrate")
+                        {
+                            if (currentBikeSession != null)
+                            {
+                                Dispatcher.Invoke(() => currentBikeSession.startHeartRateMonitor());
+                            }
+                        }
                         else
                         {
                             await Dispatcher.InvokeAsync(() => TextChat.AppendText($"{sender}: {receivedMessage}\n"));
@@ -265,23 +272,16 @@ namespace HealthyFromHomeApp.Clients
                 TxtBikeStatus.Text += "Bike connected successfully!\n";
                 this.bikeConnected = true;
 
-                // Open new bike session window
-                if (bikeConnected)
+                // Create and store reference to BikeSessionWindow
+                currentBikeSession = new BikeSessionWindow(bikeHelper, tcpClient, clientName);
+                currentBikeSession.Closed += (s, args) =>
                 {
-                    TxtBikeStatus.Text += "Bike connected successfully!\n";
-                    this.bikeConnected = true;
+                    isSessionActive = false;
+                    currentBikeSession = null;
+                };
+                currentBikeSession.Show();
 
-                    // Create and store reference to BikeSessionWindow
-                    currentBikeSession = new BikeSessionWindow(bikeHelper, tcpClient, clientName);
-                    currentBikeSession.Closed += (s, args) =>
-                    {
-                        isSessionActive = false;
-                        currentBikeSession = null;
-                    };
-                    currentBikeSession.Show();
-
-                    isSessionActive = true;
-                }
+                isSessionActive = true;
             }
             else
             {
