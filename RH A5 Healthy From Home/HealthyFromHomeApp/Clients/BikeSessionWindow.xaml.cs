@@ -44,6 +44,7 @@ namespace HealthyFromHomeApp.Clients
             this.tcpClient = tcpClient;
             this.stream = tcpClient.GetStream();
             this.clientName = clientName;
+            this.Closed += BikeSessionWindow_Closed;
             Dispatcher.Invoke(() =>
             {
                 BtnStartSession.IsEnabled = true;
@@ -51,7 +52,11 @@ namespace HealthyFromHomeApp.Clients
             });
         }
 
-        
+        private void BikeSessionWindow_Closed(object sender, EventArgs e)
+        {
+            bikeHelper.BLE.CloseDevice();
+        }
+
         public void StartSession()
         {
             isReceivingData = true;
