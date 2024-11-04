@@ -61,6 +61,7 @@ namespace HealthyFromHomeApp.Clients
         private string clientName;
         private static bool isReconnecting = false;
         private bool bikeConnected = false;
+        private BikeSessionWindow currentBikeSession;
 
         // Toolbox-Items:
         public TextBox TextBoxBikeData;
@@ -168,14 +169,26 @@ namespace HealthyFromHomeApp.Clients
                             {
                                 SendMessageToServer("chat:send_to:Doctor:The bike is not connected.");
                             }
-                            else
+                            else if (currentBikeSession != null)
                             {
+                                Dispatcher.Invoke(() => currentBikeSession.StartSession());
                                 isSessionActive = true;
                             }
                         }
                         else if (receivedMessage == "stop_session")
                         {
-                            isSessionActive = false;
+                            if (currentBikeSession != null)
+                            {
+                                Dispatcher.Invoke(() => currentBikeSession.StopSession());
+                                isSessionActive = false;
+                            }
+                        }
+                        else if (receivedMessage == "start_heartrate")
+                        {
+                            if (currentBikeSession != null)
+                            {
+                                Dispatcher.Invoke(() => currentBikeSession.startHeartRateMonitor());
+                            }
                         }
                         else
                         {
@@ -270,13 +283,14 @@ namespace HealthyFromHomeApp.Clients
                 TxtBikeStatus.Text += "Bike connected successfully!\n";
                 this.bikeConnected = true;
 
-                // Open new bike session window
-                BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(bikeHelper, tcpClient, clientName);
-                bikeSessionWindow.Closed += (s, args) =>
+                // Create and store reference to BikeSessionWindow
+                currentBikeSession = new BikeSessionWindow(bikeHelper, tcpClient, clientName);
+                currentBikeSession.Closed += (s, args) =>
                 {
                     isSessionActive = false;
+                    currentBikeSession = null;
                 };
-                bikeSessionWindow.Show();
+                currentBikeSession.Show();
 
                 isSessionActive = true;
             }
