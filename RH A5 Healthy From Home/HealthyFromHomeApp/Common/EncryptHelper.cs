@@ -14,7 +14,7 @@ namespace HealthyFromHomeApp.Common
         public static string Encrypt(string plainText)
         {
             // Convert encryption key to byte array
-            byte[] key = Encoding.UTF8.GetBytes(encryptionKey);
+            byte[] key = Encoding.UTF8.GetBytes(encryptionKey.PadRight(32));
             byte[] iv; // Initialization vector
 
             using (Aes aes = Aes.Create())
@@ -54,7 +54,7 @@ namespace HealthyFromHomeApp.Common
         public static string Decrypt(string encryptedText)
         {
             // convert encryption key to byte array
-            byte[] key = Encoding.UTF8.GetBytes(encryptionKey);
+            byte[] key = Encoding.UTF8.GetBytes(encryptionKey.PadRight(32));
             byte[] fullCipher = Convert.FromBase64String(encryptedText);
 
             // create new instance of AES algorithm

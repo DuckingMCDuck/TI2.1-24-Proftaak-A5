@@ -112,7 +112,6 @@ namespace HealthyFromHomeApp.Server
 
         private static bool ValidateDoctorCredentials(string username, string password)
         {
-            // hardcoded voor nu
             return username == "doc" && password == "lol";
         }
 
@@ -165,11 +164,57 @@ namespace HealthyFromHomeApp.Server
 
         public static async void WriteToFile(string convertedData, string clientName)
         {
-            string documentPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-            using (StreamWriter outputToFile = new StreamWriter(Path.Combine(documentPath, $"{clientName}_data.txt"),true))
+            string projectPath = AppDomain.CurrentDomain.BaseDirectory;
+            string clientDataPath = Path.Combine(projectPath, "ClientData");
+
+            //create clientData folder if not exists
+            if (!Directory.Exists(clientDataPath)) 
+            { 
+                Directory.CreateDirectory(clientDataPath); 
+            }
+
+            string filePath = Path.Combine(clientDataPath, $"{clientName}_data.txt");
+            try
             {
-                await outputToFile.WriteAsync(convertedData);
+                using (StreamWriter outputToFile = new StreamWriter(filePath, true))
+                {
+                    await outputToFile.WriteAsync(convertedData);
+                }
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine(e + "fault at StreamWriter");
+            }
+        }
+
+        public static async Task<string> ReadFileOfClient(string clientName) 
+        {
+            string projectPath = AppDomain.CurrentDomain.BaseDirectory;
+            string clientDataPath = Path.Combine(projectPath, "ClientData"); 
+            string filePath = Path.Combine(clientDataPath, $"{clientName}_data.txt");
+
+            if (!File.Exists(Path.Combine(projectPath,filePath)))
+            {
+                Console.WriteLine($"File not found: " + $"{filePath}"); 
+                return null;
+            }
+            try
+            {
+                using (StreamReader streamReader = new StreamReader(filePath))
+                {
+                    int chuckSize = 1500;
+                    char[] buffer = new char[chuckSize];
+                    int bytesRead = await streamReader.ReadAsync(buffer,0,chuckSize);
+                    string content = new string(buffer, 0, bytesRead);
+                    Console.WriteLine($"File content read: {content}");
+                    return "file_content:" + content;
+                }
+            }
+            catch (IOException e) 
+            {
+                Console.WriteLine(e + "fault at StreamRider");
+                return null;
             }
         }
         private static async Task<string> ReceiveMessage(TcpClient tcpClient)
@@ -199,6 +244,21 @@ namespace HealthyFromHomeApp.Server
                 string targetClient = splitMessage[1];
                 string actualMessage = string.Join(":", splitMessage.Skip(2));
                 SendToClient(targetClient, $"{(isDoctor ? "Doctor" : senderName)}: {actualMessage}");
+            }
+            else if (isDoctor && message.StartsWith("request_file:")) 
+            {
+                string clientFileName = message.Substring("request_file:".Length);
+                Console.WriteLine($"Requested file: {clientFileName}");
+                string clientData = ReadFileOfClient(clientFileName).GetAwaiter().GetResult();
+
+                if (clientData != null)
+                {
+                    ForwardToDoctor(senderName, clientData);
+                }
+                else
+                {
+                    Console.WriteLine("Failed to read client data.");
+                }
             }
             else if (!isDoctor && message.StartsWith("chat:send_to:Doctor:"))
             {
@@ -262,15 +322,6 @@ namespace HealthyFromHomeApp.Server
             {
                 Console.WriteLine($"Client {clientName} disconnected.");
                 NotifyDoctorOfClients();
-            }
-        }
-        public static async void WriteToFile(string convertedData, string clientName)
-        {
-            string documentPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
-            using (StreamWriter outputToFile = new StreamWriter(Path.Combine(documentPath, $"{clientName}_data.txt")))
-            {
-                await outputToFile.WriteAsync(convertedData);
             }
         }
     }

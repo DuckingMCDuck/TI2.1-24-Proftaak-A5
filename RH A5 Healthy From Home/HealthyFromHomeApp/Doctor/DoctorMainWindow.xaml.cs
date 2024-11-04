@@ -35,7 +35,7 @@ namespace HealthyFromHomeApp.Doctor
 
         public int resistance = 0;
 
-        public ChartWindow chartWindow;
+       
         public DoctorMainWindow(TcpClient client, NetworkStream networkStream)
         {
             InitializeComponent();
@@ -106,6 +106,15 @@ namespace HealthyFromHomeApp.Doctor
                     string clientsList = message.Replace("clients_update:", "");
                     UpdateClientList(clientsList.Split(','));
                 }
+                else if (message.StartsWith("Doctor: file_content:")) 
+                {
+                    Console.WriteLine("FIleCONTEN RECEIVEd");
+                    string[] parts = message.Split(new[] { ':' },3);
+                    string clientName = parts[1];
+                    string fileContent = parts[2];
+                    DisplayClientData(fileContent);
+
+                }
                 else if (message.Contains("bike_data:"))
                 {
                     // Handle incoming bike data and call AppendBikeData method
@@ -115,15 +124,12 @@ namespace HealthyFromHomeApp.Doctor
 
                     if (openClientWindows.ContainsKey(clientName))
                     {
-                        
+
                         Console.WriteLine("in Bike_Data");
                         // Forward the bike data to the specific ClientChatWindow instance
                         Dispatcher.Invoke(() => openClientWindows[clientName].AppendBikeData(bikeData));
                     }
-
-                    //show data in chart
-                    Dispatcher.Invoke(() => chartWindow.AppendBikeData(clientName, bikeData));
-                }
+                } 
                 else
                 {
                     // Handle incoming messages from specific client
@@ -143,8 +149,14 @@ namespace HealthyFromHomeApp.Doctor
                     }
                 }
             }
-        }   
-
+        }
+        private void DisplayClientData(string fileContent) 
+        {
+            Dispatcher.Invoke(() => {
+                ClientInfoTextBlock.Text = fileContent;
+            });
+            
+        }
         private void NotifyDoctorOfNewMessage(string clientName, string message)
         {
             MessageBoxResult result = MessageBox.Show(
@@ -182,19 +194,6 @@ namespace HealthyFromHomeApp.Doctor
             if (selectedClient != null)
             {
                 OpenClientChatWindow(selectedClient);
-                if (chartWindow == null)
-                {
-                    chartWindow = new ChartWindow();
-                    chartWindow.Closed += ChartWindow_Closed;
-                    chartWindow.Show();
-                }
-                chartWindow.SelectedClient = selectedClient;
-                chartWindow.UpdateChart(selectedClient);
-                //if (chartWindow != null)
-                //{
-                //    chartWindow.ClearChart();
-                //     await chartWindow.LoadDataFromFileAsync(selectedClient);
-                //}
             }
 
         }
@@ -233,6 +232,22 @@ namespace HealthyFromHomeApp.Doctor
         private void chatBar_TextChanged(object sender, TextChangedEventArgs e)
         {
 
+        }
+
+        public async void RequestFileFromServer(string clientName) 
+        {
+            if (tcpClient != null && tcpClient.Connected)
+            {
+                string packet = $"request_file:{clientName}";
+                string encryptedPacket = EncryptHelper.Encrypt(packet);
+                byte[] data = Encoding.ASCII.GetBytes(encryptedPacket);
+                await stream.WriteAsync(data, 0, data.Length);
+                stream.Flush();
+            }
+        }
+        private void HistoryDataOfClient_Click(object sender, RoutedEventArgs e)
+        {
+            RequestFileFromServer(selectedClient);
         }
     }
 }
