@@ -94,7 +94,7 @@ namespace HealthyFromHomeApp.Clients
                             speed = decodedData[10].Item2.ToString();
 
                             sendToVRCounter++;
-                            if (sendToVRCounter == 4)
+                            if (sendToVRCounter == 5)
                             {
                                 double newSpeed = double.Parse(speed);
                                 if (isConnectedToVRServer)

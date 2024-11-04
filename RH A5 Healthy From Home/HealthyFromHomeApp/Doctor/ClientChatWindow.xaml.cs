@@ -114,5 +114,12 @@ namespace HealthyFromHomeApp.Doctor
             SendMessageToClient(clientName, "Resistance changed to " + resistance.ToString());
         }
 
+        private void EmergencyStop_Click(object sender, RoutedEventArgs e)
+        {
+            resistance = 200;
+            resistanceSlider.Value = resistance;
+            SendMessageToClient(clientName, "Resistance changed to " + resistance.ToString());
+            SendMessageToClient(clientName, "EMERGENCY STOP!");
+        }
     }
 }
