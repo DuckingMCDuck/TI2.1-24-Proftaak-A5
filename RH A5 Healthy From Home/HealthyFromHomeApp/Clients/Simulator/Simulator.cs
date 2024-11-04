@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using TestCode;
 
 namespace HealthyFromHomeApp.Clients
 {
@@ -41,16 +42,16 @@ namespace HealthyFromHomeApp.Clients
             string result16 = $"{simulatedMessage16}";
             Debug.WriteLine("RESULT 16: " + result16);
             clientWindow.debugText = $"\n{result16}\n";
-            DataDecoder.DecodeAndSend(simulatedMessage16, clientWindow);
-            File.AppendAllText("simulatedData.txt", result16 + "\n");
+            List<(string, int)> list16 = DataDecoder.DecodeAndSend(simulatedMessage16, clientWindow);
+            WriteDataToFile(list16);
 
             randomHexPart25 = GenerateDataPage25(rand);
             string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
             string result25 = $"{simulatedMessage25}";
             Debug.WriteLine("RESULT 25: " + result25);
             clientWindow.debugText = $"\n{result25}\n";
-            DataDecoder.DecodeAndSend(simulatedMessage25, clientWindow);
-            File.AppendAllText("simulatedData.txt", result25 + "\n");
+            List<(string, int)> list25 = DataDecoder.DecodeAndSend(simulatedMessage25, clientWindow);
+            WriteDataToFile(list25);
 
             if (dataPagePrintCount == 2)
             {
@@ -60,6 +61,37 @@ namespace HealthyFromHomeApp.Clients
             }
 
             dataPagePrintCount++;
+        }
+
+        public static void WriteDataToFile(List<(string, int)> list)
+        {
+            if (list.Count == 0)
+            {
+                return;
+            }
+            for (int i = 0; i < list.Count; i++)
+            {
+                switch (list[i].Item1)
+                {
+                    case "Elapsed_Time":
+                        File.AppendAllText("simulatedData.txt", $"Elapsed Time: {(list[i].Item2 / 4).ToString()} sec\n");
+                        break;
+                    case "Distance_Traveled":
+                        File.AppendAllText("simulatedData.txt", $"Distance Traveled: {list[i].Item2} m\n");
+                        break;
+                    case "Speed":
+                        File.AppendAllText("simulatedData.txt", $"Speed: {list[i].Item2} km/h\n");
+                        break;
+                    case "Accumulated_Power":
+                        File.AppendAllText("simulatedData.txt", $"Accumulated Power: {list[i].Item2} Watt\n");
+                        break;
+                    case "Instantaneous_Power":
+                        File.AppendAllText("simulatedData.txt", $"Instantaneous Power: {list[i].Item2} Watt\n");
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
         public string GenerateDataPage()

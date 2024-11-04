@@ -54,11 +54,33 @@ namespace Client.Virtual_Reality
                 heights = heights.Cast<float>().ToArray() };
         }
 
-        public static object CreateComponentData(string nameComponent, int[] positions)
+        public static object CreateTerrainData(string nameComponent, int[] positions)
         {
             return new { name = nameComponent, components = new {
                 transform = new { position = positions, scale = 1 },
                 terrain = new { } } };
+        }
+
+        public static object CreatePanelData(string nameComponent, string parentId, int[] positions, int[] rotations)
+        {
+            return new { name = nameComponent, parent = parentId, components = new {
+                transform = new { position = positions, scale = 1, rotation = rotations },
+                panel = new { size = new[] { 1, 1 }, resolution = new[] { 512, 512 }, background = new[] { 1, 1, 1, 1 }, castShadow = true } } };
+        }
+
+        public static object GeneralPanelData(string panelId)
+        {
+            return new { id = panelId };
+        }
+
+        public static object SetPanelColorData(string panelId, int[] rgbColor)
+        {
+            return new { id = panelId, color = rgbColor };
+        }
+
+        public static object DrawTextOnPanelData(string panelId, string setText, double[] textPosition)
+        {
+            return new { id = panelId, text = setText, position = textPosition };
         }
 
         public static object AddRoadsData(string routeUUID)
@@ -66,17 +88,17 @@ namespace Client.Virtual_Reality
             return new { route = routeUUID };
         }
 
-        public static object CreateModelData(string fileName, string nameCreation, int[] positions, int[] rotations)
+        public static object CreateModelData(string fileName, string nameCreation, string parentId, int[] positions, int[] rotations)
         {
-            return new { name = nameCreation, components = new { 
+            return new { name = nameCreation, parent = parentId, components = new { 
                 transform = new { position = positions, scale = 1, rotation = rotations },
                 model = new { file = fileName, cullbackfaces = true } } };
         }
 
-        public static object LetItemFollowRouteData(string routeUUID, string itemGUID, string rotatation, int speedObject)
+        public static object LetItemFollowRouteData(string routeUUID, string itemGUID, string rotatation, int speedObject, int[] rotationsOffset, int[] positionsOffset)
         {
             return new { route = routeUUID,  node = itemGUID, speed = speedObject, offset = 0.0, rotate = rotatation, smoothing = 1.0, 
-                followHeight = true, rotateOffset = new[] { 0, 0, 0 }, positionOffset = new[] { 0, 0, 0 } };
+                followHeight = true, rotateOffset = rotationsOffset, positionOffset = positionsOffset};
         }
 
         public static object FindNodeData(string nodeName)
@@ -87,6 +109,11 @@ namespace Client.Virtual_Reality
         public static object DeleteNodeData(string nodeId)
         {
             return new { id = nodeId };
+        }
+
+        public static object UpdateNodeSpeed(string nodeId, double newSpeed)
+        {
+            return new { node = nodeId, speed = newSpeed };
         }
 
         public static object GetRouteData()

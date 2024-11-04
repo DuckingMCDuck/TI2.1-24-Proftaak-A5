@@ -73,6 +73,20 @@ namespace HealthyFromHomeApp.Clients
                         accumulated_Power = decodedData[9].Item2.ToString();
                         instantaneous_Power = decodedData[13].Item2.ToString();
                     }
+                    if (isReceivingHeartRateData)
+                    {
+                        for (int i = 0; i < decodedData.Count; i++)
+                        {
+                            if (decodedData[i].Item1 == "HeartRate")
+                            {
+                                Dispatcher.Invoke(() =>
+                                {
+                                    TxtHeartrateData.Clear();
+                                    TxtHeartrateData.Text = decodedData[i].Item2.ToString();
+                                });
+                            }
+                        }
+                    }
                 } catch (Exception e)
                 {
 
@@ -97,6 +111,7 @@ namespace HealthyFromHomeApp.Clients
                 string prefixedData = $"bike_data:{clientName}:{decodedString}";
                 SendDataToServer(prefixedData);
             }
+            
         }
 
         private async void SendDataToServer(string data)
@@ -138,8 +153,7 @@ namespace HealthyFromHomeApp.Clients
 
         private async void HeartRateButton_Click(object sender, RoutedEventArgs e)
         {
-            await bikeHelper.ConnectToHeartRateMonitor("Decathlon Dual HR");
-            isReceivingHeartRateData = true;
+            isReceivingHeartRateData = await bikeHelper.ConnectToHeartRateMonitor("Decathlon Dual HR");
 
         }
     }
