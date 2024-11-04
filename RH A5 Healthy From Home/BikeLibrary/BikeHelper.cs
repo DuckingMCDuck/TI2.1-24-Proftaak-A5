@@ -17,6 +17,8 @@ namespace BikeLibrary
             bleHeart = new BLE();
         }
 
+        public BLE BLE { get { return bleBike; } }
+
         // List available devices
         public void ListAvailableDevices()
         {
@@ -132,6 +134,34 @@ namespace BikeLibrary
         private void BleHeart_SubscriptionValueChanged(object sender, BLESubscriptionValueChangedEventArgs e)
         {
             Console.WriteLine($"Heart rate data received: {BitConverter.ToString(e.Data).Replace("-", " ")}");
+        }
+
+        public static void SendDataToBike(BLE bike, int resistance)
+        {
+            Console.WriteLine("in methode SDTB");
+            if (resistance < 1 || resistance > 200)
+            {
+                throw new ArgumentOutOfRangeException(nameof(resistance), "Must be between 1 and 200, (0,5% - 100%)");
+            }
+            byte resitanceByte = (byte)resistance;
+
+            Console.WriteLine("updated resistance in byte: " + resitanceByte);
+
+            byte[] bytes = { 0xA4, 0x09, 0x4E, 0x05, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, resitanceByte };
+
+            byte checksum = 0x00;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                checksum ^= bytes[i];
+            }
+            //adding checksum to end of byte array + resistance is updated to new value
+            byte[] dataToSend = new byte[bytes.Length + 1];
+            bytes.CopyTo(dataToSend, 0);
+            dataToSend[dataToSend.Length - 1] = checksum;
+
+            bike.WriteCharacteristic("6e40fec3-b5a3-f393-e0a9-e50e24dcca9e", dataToSend);
+            Console.WriteLine("done SDTB");
+
         }
     }
 }
