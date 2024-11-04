@@ -86,7 +86,7 @@ namespace HealthyFromHomeApp.Clients
 
             await Task.Run(() => ListenForMessages());
 
-            await VRServer.Start();
+            //await VRServer.Start();
         }
 
         // Toggle the simulator on/off, Turning it on and off
@@ -271,14 +271,6 @@ namespace HealthyFromHomeApp.Clients
             else
             {
                 TxtBikeStatus.Text += "Failed to connect to the bike.\n";
-                BikeSessionWindow bikeSessionWindow = new BikeSessionWindow(bikeHelper, tcpClient, clientName);
-                bikeSessionWindow.Closed += (s, args) =>
-                {
-                    isSessionActive = false;
-                };
-                bikeSessionWindow.Show();
-
-                isSessionActive = true;
             }
         }
 

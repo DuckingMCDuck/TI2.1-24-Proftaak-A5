@@ -214,29 +214,5 @@ namespace HealthyFromHomeApp.Doctor
         {
 
         }
-
-        private void Button_Click_ResistanceMin(object sender, RoutedEventArgs e)
-        {
-            resistance--;
-            resistanceInputField.Text = resistance.ToString();
-            SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
-        }
-
-        private void Button_Click_ResistancePlus(object sender, RoutedEventArgs e)
-        {
-            resistance++;
-            resistanceInputField.Text = resistance.ToString();
-            SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
-
-        }
-
-        private void Key_Down_ResistanceInputField(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                resistance = Int32.Parse(resistanceInputField.Text);
-                SendMessageToClient(selectedClient, "Resistance changed to " + resistance.ToString());
-            }
-        }
     }
 }

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -21,6 +22,7 @@ namespace HealthyFromHomeApp.Doctor
         private readonly string clientName;
         private readonly TcpClient tcpClient;
         private readonly NetworkStream stream;
+        public int resistance = 0;
 
         public ClientChatWindow(string clientName, TcpClient client, NetworkStream networkStream)
         {
@@ -54,13 +56,17 @@ namespace HealthyFromHomeApp.Doctor
 
         private async void SendMessageToClient(string client, string message)
         {
-            if (tcpClient.Connected)
+            if (tcpClient != null && tcpClient.Connected)
             {
                 string packet = $"send_to:{client}:{message}";
                 string encryptedPacket = EncryptHelper.Encrypt(packet);
                 byte[] data = Encoding.ASCII.GetBytes(encryptedPacket);
                 await stream.WriteAsync(data, 0, data.Length);
                 stream.Flush();
+            }
+            else
+            {
+                // Handle the case where tcpClient is null or not connected
             }
         }
 
@@ -85,5 +91,27 @@ namespace HealthyFromHomeApp.Doctor
                 MessageBox.Show("The bike is not connected on the client side. Please check the client connection.", "Bike Not Connected", MessageBoxButton.OK, MessageBoxImage.Warning);
             });
         }
+
+        private void Button_Click_ResistanceMin(object sender, RoutedEventArgs e)
+        {
+            resistance--;
+            resistanceSlider.Value = resistance;
+            SendMessageToClient(clientName, "Resistance changed to " + resistance.ToString());
+        }
+
+        private void Button_Click_ResistancePlus(object sender, RoutedEventArgs e)
+        {
+            resistance++;
+            resistanceSlider.Value = resistance;
+            SendMessageToClient(clientName, "Resistance changed to " + resistance.ToString());
+
+        }
+
+        private void Slider_ValueChanged(object sender, DragCompletedEventArgs e)
+        {
+            resistance = (int) resistanceSlider.Value;
+            SendMessageToClient(clientName, "Resistance changed to " + resistance.ToString());
+        }
+
     }
 }

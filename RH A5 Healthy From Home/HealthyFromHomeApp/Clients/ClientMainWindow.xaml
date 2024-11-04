@@ -5,21 +5,174 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HealthyFromHomeApp.Clients"
         mc:Ignorable="d"
-        Title="Client Main Window" Height="450" Width="800" Loaded="MainWindow_Loaded" ResizeMode="NoResize">
-    <Grid Background="White" OpacityMask="#FF001FFF" Height="434" VerticalAlignment="Center" HorizontalAlignment="Right" Width="800">
+        Title="Healthy From Home - Exercise Session" 
+        Height="600" 
+        Width="1000" 
+        WindowStartupLocation="CenterScreen"
+        Loaded="MainWindow_Loaded" 
+        ResizeMode="NoResize">
+
+    <Grid Margin="20">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="20"/>
+            <!-- Spacer -->
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="17*"/>
-            <RowDefinition Height="45*"/>
-        </Grid.RowDefinitions>
-        <TextBox x:Name="TxtChat" Margin="0,0,413,111" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Height="279" TextChanged="TxtChat_TextChanged" IsReadOnly="True" Grid.RowSpan="2" HorizontalAlignment="Right" Width="377"/>
-        <TextBox x:Name="TxtBikeData" Margin="405,0,0,136" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Height="114" TextChanged="TxtBikeData_TextChanged" IsReadOnly="True" VerticalScrollBarVisibility="Visible" HorizontalAlignment="Left" Width="360" Grid.Row="1"/>
-        <TextBox x:Name="TxtTypeBar" HorizontalAlignment="Center" Margin="0,219,0,53" TextWrapping="Wrap" Text="" Width="754" Grid.Row="1" />
-        <Button x:Name="BtnSendMessage" Content="Send" Margin="0,281,180,0" Click="BtnSendMessage_Click" Grid.Row="1" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Width="430"/>
-        <Button x:Name="BtnSimulate" Content="Start/Stop Simulating" HorizontalAlignment="Left" Margin="405,184,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360" Click="BtnSimulate_Click"/>
-        <Button x:Name="BtnConnectBike" Content="Connect" HorizontalAlignment="Left" Margin="405,40,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360" Click="BtnConnectBike_Click"/>
-        <TextBox x:Name="TxtBikeStatus" HorizontalAlignment="Left" Margin="405,44,0,0" TextWrapping="Wrap" Text="Bike connection status..." VerticalAlignment="Top" Width="360" Height="110" Grid.RowSpan="2" IsReadOnly="True"/>
+
+        <!-- Left Side - Chat Section -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Chat Header -->
+            <TextBlock Grid.Row="0" 
+                       Text="Chat with Doctor" 
+                       FontSize="18" 
+                       FontWeight="SemiBold" 
+                       Margin="0,0,0,10"/>
+
+            <!-- Chat History -->
+            <Border Grid.Row="1" 
+                    BorderThickness="1" 
+                    BorderBrush="#DDDDDD" 
+                    CornerRadius="4" 
+                    Background="#F8F9FA">
+                <TextBox x:Name="TxtChat" 
+                        TextWrapping="Wrap" 
+                        IsReadOnly="True"
+                        TextChanged="TxtChat_TextChanged"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Padding="10"
+                        VerticalScrollBarVisibility="Auto"/>
+            </Border>
+
+            <!-- Message Input -->
+            <TextBox x:Name="TxtTypeBar" 
+                     Grid.Row="2" 
+                     TextWrapping="Wrap" 
+                     Height="60"
+                     Margin="0,10,0,10"
+                     Padding="10,5,10,5"
+                     BorderThickness="1"
+                     BorderBrush="#DDDDDD"/>
+
+            <!-- Send Button -->
+            <Button x:Name="BtnSendMessage" 
+                    Grid.Row="3"
+                    Content="Send Message" 
+                    Height="35"
+                    Click="BtnSendMessage_Click"
+                    Background="#007BFF"
+                    Foreground="White"
+                    FontWeight="Medium">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="4"/>
+                            </Style>
+                        </Style.Resources>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
+
+        <!-- Right Side - Bike Controls and Data -->
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Bike Section Header -->
+            <TextBlock Grid.Row="0" 
+                       Text="Exercise Bike Status" 
+                       FontSize="18" 
+                       FontWeight="SemiBold" 
+                       Margin="0,0,0,10"/>
+
+            <!-- Bike Status -->
+            <Border Grid.Row="1" 
+                    BorderThickness="1" 
+                    BorderBrush="#DDDDDD" 
+                    CornerRadius="4" 
+                    Background="#F8F9FA" 
+                    Margin="0,0,0,10">
+                <TextBox x:Name="TxtBikeStatus" 
+                        Text="Bike connection status..." 
+                        IsReadOnly="True"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="10"
+                        Height="80"/>
+            </Border>
+
+            <!-- Bike Connection Button -->
+            <Button x:Name="BtnConnectBike" 
+                    Grid.Row="2"
+                    Content="Connect to Bike" 
+                    Height="35"
+                    Margin="0,0,0,10"
+                    Click="BtnConnectBike_Click"
+                    Background="#28A745"
+                    Foreground="White"
+                    FontWeight="Medium">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="4"/>
+                            </Style>
+                        </Style.Resources>
+                    </Style>
+                </Button.Style>
+            </Button>
+
+            <!-- Bike Data Display -->
+            <Border Grid.Row="3" 
+                    BorderThickness="1" 
+                    BorderBrush="#DDDDDD" 
+                    CornerRadius="4" 
+                    Background="#F8F9FA" 
+                    Margin="0,0,0,10">
+                <TextBox x:Name="TxtBikeData" 
+                        TextWrapping="Wrap" 
+                        IsReadOnly="True"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="10"
+                        VerticalScrollBarVisibility="Auto"
+                        TextChanged="TxtBikeData_TextChanged"/>
+            </Border>
+
+            <!-- Simulation Button -->
+            <Button x:Name="BtnSimulate" 
+                    Grid.Row="4"
+                    Content="Start/Stop Simulation" 
+                    Height="35"
+                    Click="BtnSimulate_Click"
+                    Background="#FFC107"
+                    Foreground="Black"
+                    FontWeight="Medium">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="4"/>
+                            </Style>
+                        </Style.Resources>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
     </Grid>
 </Window>

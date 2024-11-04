@@ -5,15 +5,83 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HealthyFromHomeApp.Doctor"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Loaded="MainWindow_Loaded" ResizeMode="NoResize">
+        Title="Doctor Dashboard" Height="450" Width="800" 
+        Loaded="MainWindow_Loaded" 
+        ResizeMode="NoResize">
     <Grid>
-        <TextBox x:Name="chatReadOnly" HorizontalAlignment="Left" Margin="10,23,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="311" RenderTransformOrigin="2.781,7.57" Height="283" TextChanged="TextBox_TextChanged"/>
-        <TextBox x:Name="chatBar" HorizontalAlignment="Left" Margin="10,311,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="311" RenderTransformOrigin="0.502,0.535" Height="41" TextChanged="chatBar_TextChanged" />
-        <Button x:Name="sendButton" Content="Send" HorizontalAlignment="Left" Margin="10,357,0,0" VerticalAlignment="Top" Height="19" Width="311" Click="sendButton_Click"/>
-        <ComboBox x:Name="CmbClientsForDoc" HorizontalAlignment="Left" Margin="652,23,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="CmbClientsForDoc_SelectionChanged"/>
-        <Button Click="Button_Click_ResistancePlus" Content="+" HorizontalAlignment="Left" Margin="484,357,0,0" VerticalAlignment="Top" Height="19" Width="16"/>
-        <Button Click="Button_Click_ResistanceMin" Content="-" HorizontalAlignment="Left" Margin="463,357,0,0" VerticalAlignment="Top" Height="19" Width="16"/>
-        <TextBox Name="resistanceInputField" KeyDown="Key_Down_ResistanceInputField" HorizontalAlignment="Left" Margin="338,357,0,0" TextWrapping="Wrap" Text="resistance..." VerticalAlignment="Top" Width="120" Height="19"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
+        <!-- Left Side - Chat Section -->
+        <Grid Grid.Column="0" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Chat Label -->
+            <TextBlock Grid.Row="0" 
+                       Text="Chat Messages" 
+                       FontWeight="SemiBold" 
+                       Margin="0,0,0,5"/>
+
+            <!-- Chat History -->
+            <TextBox x:Name="chatReadOnly" 
+                     Grid.Row="1"
+                     TextWrapping="Wrap" 
+                     IsReadOnly="True"
+                     VerticalScrollBarVisibility="Auto"
+                     TextChanged="TextBox_TextChanged"
+                     Margin="0,0,0,10"/>
+
+            <!-- Message Input -->
+            <TextBox x:Name="chatBar" 
+                     Grid.Row="2"
+                     TextWrapping="Wrap" 
+                     Height="40"
+                     TextChanged="chatBar_TextChanged"
+                     Margin="0,0,0,10"/>
+
+            <!-- Send Button -->
+            <Button x:Name="sendButton" 
+                    Grid.Row="3"
+                    Content="Send" 
+                    Height="30"
+                    Click="sendButton_Click"/>
+        </Grid>
+
+        <!-- Right Side - Client Selection and Information -->
+        <Grid Grid.Column="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Client Selection Section -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                <TextBlock Text="Select Client" 
+                          FontWeight="SemiBold" 
+                          Margin="0,0,0,5"/>
+                <ComboBox x:Name="CmbClientsForDoc" 
+                         SelectionChanged="CmbClientsForDoc_SelectionChanged"
+                         Width="200"
+                         HorizontalAlignment="Left"/>
+            </StackPanel>
+
+            <!-- Space for additional client information or controls -->
+            <Border Grid.Row="1" 
+                    BorderBrush="#FFCCCCCC" 
+                    BorderThickness="1" 
+                    Margin="0,10,0,0">
+                <TextBlock Text="Client Information Panel" 
+                          Foreground="#FF666666" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center"/>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

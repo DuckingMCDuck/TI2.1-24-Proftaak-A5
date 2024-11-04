@@ -29,7 +29,7 @@ namespace HealthyFromHomeApp.Clients
             this.clientWindow = clientWindow;
         }
 
-        public void SimulateData()
+        public async Task SimulateData()
         {
             Random rand = new Random();
 
@@ -37,26 +37,26 @@ namespace HealthyFromHomeApp.Clients
             string randomHexPart16;
             string randomHexPart25;
 
-            randomHexPart16 = GenerateDataPage16(rand);
+            randomHexPart16 = await GenerateDataPage16(rand);
             string simulatedMessage16 = $"{fixedPrefix} {randomHexPart16}";
             string result16 = $"{simulatedMessage16}";
             Debug.WriteLine("RESULT 16: " + result16);
             clientWindow.debugText = $"\n{result16}\n";
-            List<(string, int)> list16 = DataDecoder.DecodeAndSend(simulatedMessage16, clientWindow);
+            List<(string, int)> list16 = await DataDecoder.DecodeAndSend(simulatedMessage16, clientWindow);
             WriteDataToFile(list16);
 
-            randomHexPart25 = GenerateDataPage25(rand);
+            randomHexPart25 = await GenerateDataPage25(rand);
             string simulatedMessage25 = $"{fixedPrefix} {randomHexPart25}";
             string result25 = $"{simulatedMessage25}";
             Debug.WriteLine("RESULT 25: " + result25);
             clientWindow.debugText = $"\n{result25}\n";
-            List<(string, int)> list25 = DataDecoder.DecodeAndSend(simulatedMessage25, clientWindow);
+            List<(string, int)> list25 = await DataDecoder.DecodeAndSend(simulatedMessage25, clientWindow);
             WriteDataToFile(list25);
 
             if (dataPagePrintCount == 2)
             {
                 string heartRateString = GenerateHeartRateString(rand);
-                DataDecoder.DecodeAndSend(heartRateString, clientWindow);
+                await DataDecoder.DecodeAndSend(heartRateString, clientWindow);
                 dataPagePrintCount = 0;
             }
 
@@ -94,20 +94,20 @@ namespace HealthyFromHomeApp.Clients
             }
         }
 
-        public string GenerateDataPage()
+        public async Task<string> GenerateDataPage()
         {
             Random rand = new Random();
             StringBuilder sb = new StringBuilder();
 
             string fixedPrefix = "A4 09 4E 05";
-            string randomHexPart = dataPagePrintCount % 2 == 0 ? GenerateDataPage16(rand) : GenerateDataPage25(rand);
+            string randomHexPart = dataPagePrintCount % 2 == 0 ? await GenerateDataPage16(rand) : await GenerateDataPage25(rand);
             string simulatedMessage = $"{fixedPrefix} {randomHexPart}";
 
             dataPagePrintCount++;
             return simulatedMessage;
         }
 
-        private string GenerateDataPage16(Random rand)
+        private Task<string> GenerateDataPage16(Random rand)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -140,10 +140,10 @@ namespace HealthyFromHomeApp.Clients
             int capabilitiesAndState = rand.Next(0, 256);
             sb.Append(capabilitiesAndState.ToString("X2"));
 
-            return sb.ToString();
+            return Task.FromResult(sb.ToString());
         }
 
-        private string GenerateDataPage25(Random rand)
+        private Task<string> GenerateDataPage25(Random rand)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -178,7 +178,7 @@ namespace HealthyFromHomeApp.Clients
             int flagsAndStatus = (trainerStatus << 4) | targetPowerLimit;
             sb.Append(flagsAndStatus.ToString("X2"));
 
-            return sb.ToString();
+            return Task.FromResult(sb.ToString());
         }
 
         private string GenerateHeartRateString(Random rand)

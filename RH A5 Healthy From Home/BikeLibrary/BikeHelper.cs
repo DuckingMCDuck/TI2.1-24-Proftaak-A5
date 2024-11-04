@@ -133,7 +133,17 @@ namespace BikeLibrary
 
         private void BleHeart_SubscriptionValueChanged(object sender, BLESubscriptionValueChangedEventArgs e)
         {
-            Console.WriteLine($"Heart rate data received: {BitConverter.ToString(e.Data).Replace("-", " ")}");
+            string bikeData = BitConverter.ToString(e.Data).Replace("-", " ");
+            Console.WriteLine($"Heart rate data received: {bikeData}");
+
+            if (OnBikeDataReceived != null)
+            {
+                OnBikeDataReceived.Invoke(bikeData);
+            }
+            else
+            {
+                Console.WriteLine("Warning: No subscribers for OnBikeDataReceived event");
+            }
         }
 
         public static void SendDataToBike(BLE bike, int resistance)
