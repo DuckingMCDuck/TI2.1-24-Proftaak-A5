@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34018.315
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HealthyFromHomeApp", "HealthyFromHomeApp\HealthyFromHomeApp.csproj", "{7398C32F-D121-4E6C-9567-6D7E189EB4CA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BikeLibrary", "BikeLibrary\BikeLibrary.csproj", "{EFC7A5EA-F212-4F9C-A193-A2B11BA30A37}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7398C32F-D121-4E6C-9567-6D7E189EB4CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7398C32F-D121-4E6C-9567-6D7E189EB4CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7398C32F-D121-4E6C-9567-6D7E189EB4CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7398C32F-D121-4E6C-9567-6D7E189EB4CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFC7A5EA-F212-4F9C-A193-A2B11BA30A37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFC7A5EA-F212-4F9C-A193-A2B11BA30A37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFC7A5EA-F212-4F9C-A193-A2B11BA30A37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFC7A5EA-F212-4F9C-A193-A2B11BA30A37}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C970540E-ED1E-4C01-8878-491D0771D271}
+	EndGlobalSection
+EndGlobal
