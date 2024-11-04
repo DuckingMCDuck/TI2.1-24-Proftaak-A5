@@ -80,7 +80,7 @@ namespace Client.Virtual_Reality
 
         public static object DrawTextOnPanelData(string panelId, string setText, double[] textPosition)
         {
-            return new { id = panelId, text = setText, position = textPosition };
+            return new { id = panelId, text = setText, position = textPosition, size = 128 };
         }
 
         public static object AddRoadsData(string routeUUID)
